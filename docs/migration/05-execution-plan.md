@@ -7,6 +7,34 @@
 
 This file turns the migration master plan into a controlled sequence. No stage automatically authorizes the next stage. Each stage ends with a STOP gate and review.
 
+## Harness control — mandatory for all implementation work
+
+This project uses the existing Claude/Santiago GitHub harness.
+
+### Roles
+
+- **Claude implements** the approved task on the existing branch/PR.
+- Claude must post **`READY_FOR_SANTIAGO`** with the **full 40-character current PR-head SHA** when the work is ready for independent review.
+- **Santiago reviews the exact submitted SHA**, including the linked task/Issue, protocol requirements, diff, CI and tests.
+- A stale SHA, missing SHA, or changed PR head is not eligible for verification.
+- Santiago returns one terminal review state for that exact PR + SHA:
+  - **`VERIFIED`**
+  - **`CHANGES_REQUESTED`**
+  - **`NEEDS_ZANETA`**
+- Corrections to an existing PR stay on that same PR/branch; do not dispatch them back to a parent Issue as a new implementation path.
+- **No merge, deploy, production change, publish action, secret change, or other consequential action occurs without Zaneta's explicit approval.**
+- Human approval remains the final gate even after `VERIFIED`.
+
+### Dispatch rule
+
+When Claude work is required, dispatch through the harness using **`READY_FOR_CLAUDE_CLOUD`**. Do not bypass the harness with an ad-hoc implementation prompt that writes directly to `main`.
+
+### Planning/read-only exception
+
+Pure planning, evidence review, and read-only investigation may be prepared before an implementation PR exists, but any repository change, code change, configuration change, or implementation artifact must follow the harness flow above.
+
+---
+
 ## Stage 0 — Planning control
 
 ### Objective
