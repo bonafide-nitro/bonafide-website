@@ -26,15 +26,14 @@ name: Claude Cloud Routine Bridge
 #   1. re-checks the exact `READY_FOR_CLAUDE_CLOUD` label is still present
 #      (the durable dispatch marker -- not a comment; see the script's own
 #      module docstring for why),
-#   2. makes exactly one POST to the Routine's `/fire` endpoint -- no
-#      automatic retry at any layer, in this file or in the script,
-#   3. on a confirmed 2xx, removes the label and posts a durable
-#      `ROUTINE_DISPATCHED` comment (session id/url) -- this is what makes
-#      re-queuing after this point require an explicit, deliberate human
-#      re-label, not an accidental retry,
-#   4. on any failure, leaves the label in place and posts a sanitized
-#      `ROUTINE_FIRE_FAILED` comment (HTTP status + Anthropic's own error
-#      body) with no automatic retry.
+#   2. claims the item by removing that label before any Routine fire,
+#   3. for a PR, persists a ROUTINE_DISPATCH_CLAIMED exact-head/round
+#      marker before the network call,
+#   4. makes exactly one POST to the Routine's `/fire` endpoint -- no
+#      automatic retry at any layer,
+#   5. on a confirmed 2xx, posts a durable `ROUTINE_DISPATCHED` comment,
+#   6. on failure, keeps the item unqueued and posts a sanitized
+#      `ROUTINE_FIRE_FAILED` comment; an explicit re-queue is required.
 #
 # WHY `issues: labeled` / `pull_request: labeled`, not `workflow_dispatch`:
 # every workflow in this repository with a live/write effect is normally
