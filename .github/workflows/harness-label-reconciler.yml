@@ -1,0 +1,68 @@
+name: Harness label reconciler
+
+# Issue #171 (harness golden-path sync): "Close/merge hygiene" layer 2 of 2
+# -- a periodic, idempotent, repo-wide eventual-consistency fallback for
+# .github/workflows/harness-label-close-cleanup.yml, covering a `closed`
+# webhook that bridge ever missed (a delivery outage, a manual close via
+# the API, a label applied after close). See docs/HARNESS_GOLDEN_PATH.md
+# and .github/scripts/harness_labels.py/harness_label_reconciler.py (the
+# offline-tested unit -- this file only decides when to run it and with
+# what permissions).
+#
+# REMOVAL-ONLY, REPO-WIDE, NEVER A PARTICIPANT IN THE PROTOCOL ITSELF:
+# exactly the same guarantees as the event-driven cleanup workflow -- never
+# adds a label, comments, reopens an item, requeues Claude, or wakes Codex;
+# never touches VERIFIED, COMPLETED, or any ordinary product/client/
+# non-harness label; never reads or writes anything on an open item (both
+# `gh api --paginate` list fetches inside the script are scoped to
+# `state=closed`).
+#
+# WHY A `schedule:` TRIGGER IS COMPATIBLE WITH docs/PROJECT_CONTEXT.md's OWN
+# "every workflow with a live/write effect is workflow_dispatch-only" RULE:
+# the same reasoning ADR 0083 already recorded for
+# claude-stall-watchdog.yml's own schedule-triggered sweep applies here, a
+# fortiori -- this workflow's only possible write is removing a label from
+# a strictly bounded, closed-vocabulary list (see harness_labels.py) off an
+# already-CLOSED item, and unlike that retired watchdog's own sweep, this
+# script has no Claude-dispatch capability at all: it can never fire the
+# Routine, wake Codex, or touch an open item. See ADR 0087 for the full
+# reasoning as it applies to this specific workflow.
+#
+# `actions/checkout` is pinned to the same immutable commit SHA already
+# verified (via `git ls-remote`) for the other workflows in this set.
+
+on:
+  schedule:
+    # Every 15 minutes -- normal close/merge cleanup remains event-driven
+    # and immediate (harness-label-close-cleanup.yml); this sweep is only a
+    # low-frequency fallback for whatever that event-driven path ever
+    # misses, while keeping GitHub Actions usage low.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: harness-label-reconciler
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout this repository's own trusted default-branch code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Sweep every closed Issue/PR for lingering transient/retired labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/harness_label_reconciler.py --repo "${{ github.repository }}"
