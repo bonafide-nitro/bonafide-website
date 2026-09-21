@@ -26,7 +26,9 @@ jobs:
           REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          COMMENT_BODY: ${{ github.event.comment.body || '' }}\n          COMMENTER: ${{ github.event.comment.user.login || '' }}\n          AUTHORIZED_HUMAN: ${{ vars.HARNESS_HUMAN_LOGIN }}
+          COMMENT_BODY: ${{ github.event.comment.body || '' }}
+          COMMENTER: ${{ github.event.comment.user.login || '' }}
+          AUTHORIZED_HUMAN: ${{ vars.HARNESS_HUMAN_LOGIN }}
         run: |
           set -euo pipefail
 
@@ -41,14 +43,21 @@ jobs:
             exit 1
           fi
 
-          if [[ "${EVENT_NAME}" == "issue_comment" ]]; then\n            authorized="${AUTHORIZED_HUMAN:-zanetaseiler}"\n            if [[ "${COMMENTER}" != "${authorized}" ]]; then\n              echo "Ignoring READY_FOR_SANTIAGO comment from unauthorized commenter ${COMMENTER}."\n              exit 0\n            fi
-            first_nonblank="$(printf '%s\n' "${COMMENT_BODY}" | sed '/^[[:space:]]*$/d' | head -n1 | xargs)"
+          if [[ "${EVENT_NAME}" == "issue_comment" ]]; then
+            authorized="${AUTHORIZED_HUMAN:-zanetaseiler}"
+            if [[ "${COMMENTER}" != "${authorized}" ]]; then
+              echo "Ignoring READY_FOR_SANTIAGO comment from unauthorized commenter ${COMMENTER}."
+              exit 0
+            fi
+            first_nonblank="$(printf '%s
+' "${COMMENT_BODY}" | sed '/^[[:space:]]*$/d' | head -n1 | xargs)"
             if [[ "${first_nonblank}" != "READY_FOR_SANTIAGO" ]]; then
               echo "Ignoring non-handoff comment."
               exit 0
             fi
 
-            claimed_head="$(printf '%s\n' "${COMMENT_BODY}" | sed -nE 's/.*exact head commit SHA:[[:space:]]*`?([0-9a-f]{7,40})`?.*/\1/p' | head -n1)"
+            claimed_head="$(printf '%s
+' "${COMMENT_BODY}" | sed -nE 's/.*exact head commit SHA:[[:space:]]*`?([0-9a-f]{7,40})`?.*/\1/p' | head -n1)"
             if [[ -z "${claimed_head}" ]]; then
               echo "Ignoring READY_FOR_SANTIAGO without an exact-head claim."
               exit 0
