@@ -28,9 +28,11 @@ jobs:
           AUTHORIZED_HUMAN: ${{ vars.HARNESS_HUMAN_LOGIN }}
         run: |
           set -euo pipefail
-          first_nonblank="$(printf '%s\n' "$COMMENT_BODY" | sed '/^[[:space:]]*$/d' | head -n1 | xargs)"
+          first_nonblank="$(printf '%s
+' "$COMMENT_BODY" | sed '/^[[:space:]]*$/d' | head -n1 | xargs)"
           if [ "$first_nonblank" != "CHANGES_REQUESTED" ]; then exit 0; fi
-          authorized="${AUTHORIZED_HUMAN:-zanetaseiler}"\n          if [ "$COMMENTER" != "$authorized" ]; then exit 0; fi
+          authorized="${AUTHORIZED_HUMAN:-zanetaseiler}"
+          if [ "$COMMENTER" != "$authorized" ]; then exit 0; fi
           head_sha="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.head.sha')"
           if [[ ! "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then exit 1; fi
           if [[ "$COMMENT_BODY" != *"$head_sha"* ]]; then exit 0; fi
