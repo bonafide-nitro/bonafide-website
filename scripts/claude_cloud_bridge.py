@@ -82,7 +82,7 @@ Given one exact GitHub work item (a repo + issue/PR number):
      (configured once, by a human, in Claude Code web -- see
      `docs/AGENT_WORKFLOW.md` for the exact one-time checklist) is what
      tells the fired session to load `CLAUDE.md`, `AGENTS.md`,
-     `docs/PROJECT_CONTEXT.md`, `docs/AGENT_WORKFLOW.md`, then act on the
+     `docs/AGENT_WORKFLOW.md`, then act on the
      work item named in the fire payload, preserving the same
      `CONTEXT_RECEIPT`/`READY_FOR_SANTIAGO`/`NEEDS_ZANETA`/STOP discipline
      every other Block already follows.
