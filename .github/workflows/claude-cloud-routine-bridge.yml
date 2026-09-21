@@ -1,0 +1,173 @@
+name: Claude Cloud Routine Bridge
+
+# Block 1C (Issue #105), corrected per Santiago's CHANGES_REQUESTED review
+# on PR #107: the one, repository-controlled trigger that fires a
+# pre-configured Claude Code Routine so a labeled GitHub Issue or PR starts
+# a Claude cloud session with NO dependency on Zaneta's Mac being awake or
+# online, and no reliance on this repository's own `claude-code.yml`
+# (unmodified by this file -- that workflow still exists solely to answer a
+# real @claude mention; this one is a different, narrower entry point).
+#
+# WHY ONE WORKFLOW, NOT TWO PATHS: Santiago's review found the original
+# design (a native Claude Code Routine GitHub-event trigger for PRs, plus a
+# separately-invoked script for Issues) insufficient -- it left a race
+# between firing and the fired session's own later comment, during which a
+# retry or duplicate delivery could fire twice, and it let an item with no
+# queue marker at all be fired. This workflow is the single replacement:
+# every fire, for an Issue or a PR, goes through this one path, and no
+# native Routine GitHub-event trigger is configured for this protocol
+# anywhere else -- see docs/AGENT_WORKFLOW.md's "Cloud Claude Routine
+# bridge" section for the full design this file implements.
+#
+# ALL FIRE/IDEMPOTENCY LOGIC LIVES IN scripts/claude_cloud_bridge.py, not
+# here -- this file only decides *when* to run it and *with what
+# permissions*, and the script is the offline-tested unit
+# (tests/isolation/test_claude_cloud_bridge.py). In order, the script:
+#   1. re-checks the exact `READY_FOR_CLAUDE_CLOUD` label is still present
+#      (the durable dispatch marker -- not a comment; see the script's own
+#      module docstring for why),
+#   2. makes exactly one POST to the Routine's `/fire` endpoint -- no
+#      automatic retry at any layer, in this file or in the script,
+#   3. on a confirmed 2xx, removes the label and posts a durable
+#      `ROUTINE_DISPATCHED` comment (session id/url) -- this is what makes
+#      re-queuing after this point require an explicit, deliberate human
+#      re-label, not an accidental retry,
+#   4. on any failure, leaves the label in place and posts a sanitized
+#      `ROUTINE_FIRE_FAILED` comment (HTTP status + Anthropic's own error
+#      body) with no automatic retry.
+#
+# WHY `issues: labeled` / `pull_request: labeled`, not `workflow_dispatch`:
+# every workflow in this repository with a live/write effect is normally
+# `workflow_dispatch`-only, gated behind a typed human confirmation
+# (docs/PROJECT_CONTEXT.md) -- but that rule is about never triggering on a
+# push or a schedule alone. This workflow is gated the same way
+# `claude-code.yml` already is: behind one explicit, deliberate human (or
+# separately-authorized, already-scoped incident-detection code's) action
+# -- applying the exact `READY_FOR_CLAUDE_CLOUD` label -- never a push or a
+# schedule. The `if:` condition below requires that exact label name, so no
+# other label event ever reaches the fire step.
+#
+# INERT UNTIL A SEPARATE ZANETA_DECISION: this file references
+# `secrets.CLAUDE_ROUTINE_FIRE_URL`/`secrets.CLAUDE_ROUTINE_FIRE_TOKEN` by
+# name only -- neither secret is created by this Block. Until a human
+# creates both (per the one-time activation checklist in
+# docs/AGENT_WORKFLOW.md), any run of this workflow fails closed at the
+# fire step with a clear "not set" error and performs no GitHub write --
+# exactly the same posture `claude-code.yml` itself has for
+# `CLAUDE_CODE_OAUTH_TOKEN` before that secret exists.
+#
+# WHAT THIS DOES NOT AUTHORIZE: this workflow never merges, deploys,
+# publishes, sends, spends, or dispatches any other workflow -- its own
+# GitHub write access is `issues: write`/`pull-requests: write` only (for
+# scripts/claude_cloud_bridge.py's label-removal and comment-posting), and
+# scripts/claude_cloud_bridge.py itself contains no such capability (see
+# its own offline tests). Anything the Routine's own fired Claude session
+# later does is governed by that session's own CLAUDE.md/AGENTS.md
+# instructions, exactly as every other Block already is -- never by this
+# workflow.
+#
+# LOOP PREVENTION: a `labeled` event fires once per explicit label
+# application. Neither this workflow nor scripts/claude_cloud_bridge.py
+# ever re-applies `READY_FOR_CLAUDE_CLOUD` to anything, and the Routine's
+# own saved prompt (configured outside this repository, in Claude Code web)
+# must instruct the fired session never to call `/fire` or touch this label
+# itself (docs/AGENT_WORKFLOW.md) -- so nothing this workflow does can
+# cause it to refire on its own output.
+#
+# TRUSTED CODE ONLY, EVER, IN THE FIRE STEP -- Santiago's security finding
+# on this exact file: `pull_request: labeled` fires with this job's secrets
+# (CLAUDE_ROUTINE_FIRE_TOKEN, GH_TOKEN) in the environment, and `actions/
+# checkout` with no `ref:` follows `pull_request`'s own default checkout
+# behavior, which can select the PR's own (attacker- or accident-
+# influenced) revision. A labeled PR authorizes *firing the Routine for
+# that PR*; it does not authorize running that PR's own copy of
+# scripts/claude_cloud_bridge.py with live secrets. The checkout step below
+# therefore pins an explicit `ref:` to this repository's own default
+# branch, for both `issues` and `pull_request` label events alike -- the
+# script that actually sees the secrets is always this repository's own
+# trusted, already-reviewed copy, never a labeled PR's. This is also why
+# `persist-credentials: false` is set: the bridge already receives its own
+# `GH_TOKEN` explicitly (via `env:` on the fire step), so checkout leaving
+# a second credential in the runner's git config is unnecessary attack
+# surface, not a capability this workflow uses.
+#
+# `actions/checkout` is pinned to an immutable full commit SHA, not a
+# floating tag -- Santiago's second finding. As of this correction,
+# 11d5960a326750d5838078e36cf38b85af677262 is the exact commit
+# refs/tags/v4.4.0 points to in https://github.com/actions/checkout
+# (verified directly via `git ls-remote`, re-verified again for this
+# correction rather than assumed unchanged). Bumping this pin is a
+# deliberate, visible, future edit.
+#
+# ISSUE/PR NUMBER ROUTING (fixed after GitHub Actions run 33740930787
+# failed in production): `github.event.number` only exists at the top
+# level of a `pull_request` event payload -- the `issues` event payload
+# carries the item's number under `issue.number` only, never a top-level
+# `number`. Using `github.event.number` unconditionally, as an earlier
+# version of this file did, resolves correctly for `pull_request` events
+# but is empty for `issues` events, which run 33740930787 demonstrated:
+# `claude_cloud_bridge.py --issue ""` failed outright with `invalid int
+# value: ''`. Every reference to the work item's number below uses
+# `github.event.issue.number || github.event.pull_request.number` instead
+# -- exactly one of the two is ever populated per event type, and this is
+# the same pattern `.github/workflows/claude-code.yml` already uses for
+# its own concurrency group.
+
+on:
+  issues:
+    types: [labeled]
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+# One run per work item at a time. cancel-in-progress is deliberately
+# false: a second `labeled` delivery for the same item queues behind the
+# first rather than cancelling it, so the label-presence check the second
+# run performs (inside scripts/claude_cloud_bridge.py) always sees the
+# first run's own result -- already-removed if the first run fired
+# successfully -- rather than two runs racing to read the label
+# concurrently. See "ISSUE/PR NUMBER ROUTING" above for why this reads
+# github.event.issue.number/pull_request.number rather than the
+# nonexistent-for-issues github.event.number.
+concurrency:
+  group: claude-cloud-routine-bridge-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  fire:
+    if: github.event.label.name == 'READY_FOR_CLAUDE_CLOUD'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout this repository's own trusted default-branch code
+        # See the header comment above for why: never the labeled PR's own
+        # revision of scripts/claude_cloud_bridge.py, which would otherwise
+        # run with CLAUDE_ROUTINE_FIRE_TOKEN/GH_TOKEN in its environment.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Determine issue/PR flag
+        id: item
+        run: |
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            echo "flag=--issue" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=--pr" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fire Claude cloud Routine
+        env:
+          CLAUDE_ROUTINE_FIRE_URL: ${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}
+          CLAUDE_ROUTINE_FIRE_TOKEN: ${{ secrets.CLAUDE_ROUTINE_FIRE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/claude_cloud_bridge.py \
+            --repo "${{ github.repository }}" \
+            ${{ steps.item.outputs.flag }} "${{ github.event.issue.number || github.event.pull_request.number }}"

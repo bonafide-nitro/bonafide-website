@@ -1,0 +1,151 @@
+name: Claude Code
+
+# Block 0 (Issue #100): the minimal entry point for @claude Issue/PR
+# correction requests and bounded automation, under the protocol
+# AGENTS.md/docs/AGENT_WORKFLOW.md define. Interactive mode only -- no
+# `prompt` input, so this never runs unprompted or on a schedule; it only
+# ever responds to a real human with write access mentioning @claude on an
+# issue or pull request comment (no bot is allowlisted -- see "PREVENTING
+# AUTONOMOUS LOOPS" below). "Bounded" here means: --max-turns caps how long
+# a single response can run, and every permission granted below -- both the
+# workflow-level block and the action's own `additional_permissions` input,
+# see the next comment for why both exist -- is the narrowest set the
+# action's own docs say it needs for push + comment, nothing more.
+#
+# PINNED TO AN IMMUTABLE FULL COMMIT SHA, not a floating tag. As of this
+# Block, 8251c103ac8c1d761882c86aba1412c7f583c844 is the exact commit
+# refs/tags/v1 and refs/tags/v1.0.213 both point to in
+# https://github.com/anthropics/claude-code-action (verified directly via
+# `git ls-remote`, not taken from a doc page alone). Bumping this pin is a
+# deliberate, visible, future edit -- never an automatic floating-tag
+# update -- so a compromised or unexpectedly-changed upstream release can
+# never silently start running in this repository.
+#
+# TWO DIFFERENT TOKENS ARE IN PLAY HERE, and only one is scoped by the
+# `permissions:` block below. Because no `github_token` input is passed,
+# this action does NOT use the workflow's own default `GITHUB_TOKEN` for
+# GitHub operations at all -- it exchanges the job's OIDC token (hence
+# `id-token: write`) for a separate Claude GitHub App installation token
+# (`src/github/token.ts::setupGitHubToken()` at the pinned commit below).
+# The workflow-level `permissions:` block still matters (it scopes
+# `GITHUB_TOKEN`, which `actions/checkout` and any other default-token use
+# still relies on, and is good baseline hygiene), but it does NOT by
+# itself narrow the exchanged App token Claude actually performs its
+# GitHub operations with. That token is narrowed separately, by the
+# action's own `additional_permissions` input below -- omitting it (an
+# earlier version of this file did) means the exchange requests no
+# explicit permission subset at all, which is not the same as getting the
+# narrow default; see `docs/configuration.md` in
+# https://github.com/anthropics/claude-code-action at the pinned commit,
+# "Additional Permissions for CI/CD Integration", for the two-part pattern
+# this file now follows (workflow-level `permissions: actions: read` +
+# the action's own `additional_permissions: actions: read`).
+#
+# WHAT THIS DOES NOT AUTHORIZE, and how that boundary actually holds:
+#   * merge a pull request -- GitHub's permission model has no separate bit
+#     for "push and comment, but never merge"; `contents: write` +
+#     `pull_requests: write` (both required for Claude to push a commit and
+#     leave a review comment at all, and both part of the exchanged App
+#     token's own always-included default set) technically also permit a
+#     merge call. This boundary is enforced by protocol (AGENTS.md: "no
+#     agent merges a PR, ever") and required human review before any
+#     merge, not by any permission scope -- documented here rather than
+#     implied.
+#   * dispatch or manage any other workflow in this repository (a live
+#     collection run, a report render, a schedule trigger, anything with a
+#     real effect) -- the exchanged App token is explicitly requested with
+#     `actions: read` only (via `additional_permissions` below), never
+#     `actions: write`, and the workflow-level block matches it for
+#     `GITHUB_TOKEN`. Every workflow in this repository with a live/write
+#     effect is already `workflow_dispatch`-only with no `push`/
+#     `pull_request` trigger (see docs/PROJECT_CONTEXT.md), so a
+#     Claude-authored push cannot fire one by side effect either.
+#   * deploy, publish, spend, send, or mutate client data -- nothing in
+#     this repository's own tooling gives a GitHub Actions job that
+#     capability in the first place (ADR 0006's consequence classes); nothing
+#     added here changes that.
+#   * install anything, create/expose a secret, or approve its own output --
+#     AGENTS.md's consequential-action rule covers this identically to a
+#     human-invoked session; a run triggered by this workflow follows the
+#     same CLAUDE.md/AGENTS.md instructions a manually-invoked session does.
+#
+# PREVENTING AUTONOMOUS LOOPS:
+#   * no `allowed_bots` is set, so the action's own default holds: every
+#     bot-authored trigger (including a scheduled run attributed to a bot
+#     account) is rejected outright. Santiago's own GitHub identity is not
+#     yet known, so nothing is pre-allowlisted here -- allowlisting it is a
+#     later, separate, human-approved change once that identity exists.
+#   * the action's own default "write access" check rejects any comment
+#     author without write access to this repository (see the action's own
+#     docs, "Who can trigger runs") -- unset here, so that default applies.
+#   * `claude_args: --max-turns 15` bounds a single response's own length,
+#     so a misfiring prompt cannot run indefinitely.
+#   * this workflow provides no `prompt` input, so it only ever answers a
+#     real @claude mention -- it never runs automation-mode on its own.
+#
+# AUTHENTICATION: approved by ZANETA_DECISION on PR #101 -- the Claude
+# GitHub App is installed for this repository only, and the
+# `CLAUDE_CODE_OAUTH_TOKEN` repository secret (Zaneta's own Claude
+# subscription OAuth credential, generated with `claude setup-token`, per
+# the action's own docs) is the sole approved authentication method here.
+# API-key billing (`ANTHROPIC_API_KEY`) was explicitly not approved --
+# do not reintroduce it without a separate recorded decision. This
+# secret's value is never read, printed, logged, or committed by this
+# workflow or by any agent working on it; only its name is ever
+# referenced, exactly as below.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+# Workflow-level (not job-level) permissions, matching every other workflow
+# in this repository -- functionally identical here (there is only one
+# job), and keeps this file consistent with the repo's own convention.
+# Scopes GITHUB_TOKEN only -- see the header comment above for why the
+# exchanged Claude GitHub App token this action actually uses is narrowed
+# separately, by `additional_permissions` on the action step below.
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+# One run per triggering thread at a time -- a second @claude mention on
+# the same issue/PR while one run is still in flight waits rather than
+# piling up a second runner against the same branch.
+concurrency:
+  group: claude-code-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        # See the header comment above for the exact provenance of this SHA.
+        uses: anthropics/claude-code-action@8251c103ac8c1d761882c86aba1412c7f583c844
+        with:
+          # ZANETA_DECISION on PR #101: OAuth subscription token, not an
+          # API key -- see the header comment above.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Narrows the exchanged Claude GitHub App installation token --
+          # this is the input that actually matters for "actions: read
+          # only, never write" on the token Claude's GitHub operations run
+          # with, not the workflow-level `permissions:` block above (which
+          # scopes only GITHUB_TOKEN, unused here since no `github_token`
+          # input is passed). Merged, at the pinned commit, with the
+          # action's own always-included default of
+          # `contents/pull_requests/issues: write` -- see the header
+          # comment above for the exact source citation.
+          additional_permissions: |
+            actions: read
+          claude_args: "--max-turns 15"
