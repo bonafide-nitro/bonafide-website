@@ -49,15 +49,13 @@ jobs:
               echo "Ignoring READY_FOR_SANTIAGO comment from unauthorized commenter ${COMMENTER}."
               exit 0
             fi
-            first_nonblank="$(printf '%s
-' "${COMMENT_BODY}" | sed '/^[[:space:]]*$/d' | head -n1 | xargs)"
+            first_nonblank="$(printf '%s\n' "${COMMENT_BODY}" | sed '/^[[:space:]]*$/d' | head -n1 | xargs)"
             if [[ "${first_nonblank}" != "READY_FOR_SANTIAGO" ]]; then
               echo "Ignoring non-handoff comment."
               exit 0
             fi
 
-            claimed_head="$(printf '%s
-' "${COMMENT_BODY}" | sed -nE 's/.*exact head commit SHA:[[:space:]]*`?([0-9a-f]{7,40})`?.*/\1/p' | head -n1)"
+            claimed_head="$(printf '%s\n' "${COMMENT_BODY}" | sed -nE 's/.*exact head commit SHA:[[:space:]]*`?([0-9a-f]{7,40})`?.*/\1/p' | head -n1)"
             if [[ -z "${claimed_head}" ]]; then
               echo "Ignoring READY_FOR_SANTIAGO without an exact-head claim."
               exit 0
