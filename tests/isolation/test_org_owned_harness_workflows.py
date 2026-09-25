@@ -29,9 +29,12 @@ class TestOrganizationOwnedHarness(unittest.TestCase):
 
     def test_ready_trigger_environment_entries_are_real_yaml_lines(self):
         text = READY.read_text(encoding="utf-8")
-        expected = "COMMENT_BODY: ${{ github.event.comment.body || '' }}\n          COMMENTER:"
+        # The comment body is now read by the shared parser from the event
+        # payload (.github/scripts/harness_handoff.py); the authorized-human
+        # entry must still be a real YAML line, not a literal "\\n".
+        expected = "AUTHORIZED_HUMAN: ${{ vars.HARNESS_HUMAN_LOGIN }}\n        run: |"
         self.assertIn(expected, text)
-        self.assertNotIn("COMMENT_BODY: ${{ github.event.comment.body || '' }}\\n", text)
+        self.assertNotIn("${{ vars.HARNESS_HUMAN_LOGIN }}\\n", text)
 
     def test_requeue_authorization_is_real_shell_lines(self):
         text = REQUEUE.read_text(encoding="utf-8")
