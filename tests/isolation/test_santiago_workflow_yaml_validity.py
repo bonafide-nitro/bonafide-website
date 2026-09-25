@@ -68,15 +68,11 @@ class TestSantiagoWorkflowYamlValidity(unittest.TestCase):
                 )
 
     def test_ready_trigger_printf_newline_is_escaped_on_one_line(self):
+        # Handoff parsing moved into .github/scripts/harness_handoff.py (the
+        # shared kit, docs/HARNESS_TEMPLATE.md); the workflow must still never
+        # carry a literal line break inside a printf format string.
         text = READY.read_text(encoding="utf-8")
-        self.assertIn(
-            'printf \'%s\\n\' "${COMMENT_BODY}" | sed \'/^[[:space:]]*$/d\' | head -n1 | xargs',
-            text,
-        )
-        self.assertIn(
-            'printf \'%s\\n\' "${COMMENT_BODY}" | sed -nE',
-            text,
-        )
+        self.assertIn(".github/scripts/harness_handoff.py", text)
         self.assertNotIn("printf '%s\n", text)
 
     def test_requeue_printf_newline_is_escaped_on_one_line(self):
