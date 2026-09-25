@@ -125,9 +125,13 @@ class TestIssuePrNumberRouting(unittest.TestCase):
     def test_the_bare_broken_expression_never_appears_in_live_yaml(self):
         self.assertNotIn("github.event.number", self.live)
 
-    def test_the_fire_step_uses_the_event_aware_routing_expression(self):
+    def test_the_route_step_uses_the_event_aware_routing_expression(self):
+        # The fire step then uses the routed Block target (harness_guard.py).
+        route_step = self.text[self.text.index("Route the label to the Block's PR"):
+                               self.text.index("\n  fire:")]
+        self.assertIn(self.ROUTING_EXPR, route_step)
         fire_step = self.text[self.text.index("Fire Claude cloud Routine"):]
-        self.assertIn(self.ROUTING_EXPR, fire_step)
+        self.assertIn("needs.route.outputs.target", fire_step)
 
     def test_the_concurrency_group_uses_the_same_routing_expression(self):
         block = self.text[self.text.index("\nconcurrency:"):self.text.index("\njobs:")]
@@ -222,7 +226,7 @@ class TestNoAutomaticRetryOrConsequentialAction(unittest.TestCase):
     def test_it_has_a_bounded_timeout(self):
         self.assertIn("timeout-minutes:", self.text)
 
-    def test_exactly_one_job(self):
+    def test_only_the_route_and_fire_jobs(self):
         lines = self.live.splitlines()
         jobs_index = next(i for i, line in enumerate(lines) if line == "jobs:")
         headers = [
@@ -230,7 +234,9 @@ class TestNoAutomaticRetryOrConsequentialAction(unittest.TestCase):
             if i > jobs_index and line.startswith("  ") and not line.startswith("   ")
             and line.endswith(":")
         ]
-        self.assertEqual(headers, ["fire"])
+        # `route` only resolves the Block (Issue -> its open PR); `fire`
+        # is still the one job that can fire the Routine.
+        self.assertEqual(headers, ["route", "fire"])
 
 
 if __name__ == "__main__":
