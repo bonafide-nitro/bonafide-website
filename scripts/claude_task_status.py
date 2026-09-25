@@ -63,7 +63,14 @@ PROTOCOL_STATE_KEYWORDS = (
 #: must recognize as such rather than via a raw substring search.
 BRIDGE_KEYWORDS = ("ROUTINE_DISPATCHED", "ROUTINE_FIRE_FAILED", "ROUTINE_DISPATCH_CLAIMED")
 
-RECOGNIZED_KEYWORDS = frozenset(PROTOCOL_STATE_KEYWORDS) | frozenset(BRIDGE_KEYWORDS)
+#: Žaneta's answer to a NEEDS_ZANETA. `.github/workflows/harness-requeue.yml`
+#: restarts Claude on it, so it opens a new correction round exactly like
+#: CHANGES_REQUESTED -- otherwise the bridge's per-(PR, head SHA, round)
+#: idempotency would refuse to restart Claude on an unchanged head.
+HUMAN_DECISION_KEYWORDS = ("ZANETA_DECISION",)
+
+RECOGNIZED_KEYWORDS = (frozenset(PROTOCOL_STATE_KEYWORDS) | frozenset(BRIDGE_KEYWORDS)
+                       | frozenset(HUMAN_DECISION_KEYWORDS))
 
 
 class TaskStatusError(RuntimeError):
@@ -217,13 +224,14 @@ def merge_events_chronologically(*event_lists):
 
 
 def count_correction_rounds(events):
-    """How many `CHANGES_REQUESTED` protocol events `events` (already
+    """How many `CHANGES_REQUESTED` (or `ZANETA_DECISION`) protocol events `events` (already
     classified/merged) contains -- the current correction-round number a
     Block is on. Factored out (Issue #137) so `scripts/claude_cloud_bridge.py`
     can compute the exact same round number its own persistent
     per-(PR, head SHA, round) dispatch-idempotency check needs, without
     duplicating this counting rule."""
-    return sum(1 for event in events if event.keyword == "CHANGES_REQUESTED")
+    return sum(1 for event in events
+               if event.keyword == "CHANGES_REQUESTED" or event.keyword in HUMAN_DECISION_KEYWORDS)
 
 
 def count_pr_correction_rounds(comments, reviews):
