@@ -15,7 +15,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 READY = REPO_ROOT / ".github" / "workflows" / "santiago-ready-label-trigger.yml"
-REQUEUE = REPO_ROOT / ".github" / "workflows" / "santiago-changes-requested-requeue.yml"
+# santiago-changes-requested-requeue.yml was retired (2026-09-26); see
+# harness-requeue.yml --changes-requested.
+REQUEUE = REPO_ROOT / ".github" / "workflows" / "harness-requeue.yml"
 
 
 def _run_block_indents(text):
@@ -75,12 +77,10 @@ class TestSantiagoWorkflowYamlValidity(unittest.TestCase):
         self.assertIn(".github/scripts/harness_handoff.py", text)
         self.assertNotIn("printf '%s\n", text)
 
-    def test_requeue_printf_newline_is_escaped_on_one_line(self):
+    def test_requeue_runs_the_shared_script_with_changes_requested(self):
         text = REQUEUE.read_text(encoding="utf-8")
-        self.assertIn(
-            'printf \'%s\\n\' "$COMMENT_BODY" | sed \'/^[[:space:]]*$/d\' | head -n1 | xargs',
-            text,
-        )
+        self.assertIn("python3 .github/scripts/harness_requeue.py", text)
+        self.assertIn("--changes-requested", text)
         self.assertNotIn("printf '%s\n", text)
 
     def test_ready_trigger_parses_as_yaml_when_pyyaml_available(self):
