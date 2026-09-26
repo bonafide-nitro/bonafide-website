@@ -84,8 +84,11 @@ A human with cPanel access (or a GoDaddy support ticket) should confirm and repo
 3. Whether `rsync` is available over that SSH/SFTP access.
 4. Whether sibling directories outside `public_html` (e.g. `/home/<user>/sites/`)
    are permitted and reachable by the same account.
-5. Which PHP version(s) remain available post-cutover, in case Model A′ needs a
-   fallback PHP mail handler.
+5. Which PHP version(s) remain available post-cutover. Per
+   `04-wordpress-to-static-migration-master-plan.md:764`, PHP must remain
+   available after cutover for the clean WordPress rollback copy regardless
+   of Model A vs. A′ or the D11 hosted-form decision — static production
+   itself does not need PHP, but the rollback copy does.
 
 Once reported (in this Issue or a follow-up), this Block or a follow-up Block can
 record the model decision (A vs. A′) as resolved.
@@ -134,8 +137,10 @@ any request reaches the live domain, so it says nothing about the redirects
 themselves.
 
 ### Recommended next action
-Run `curl -I` (or equivalent) against each of the 15 URLs and variants above from
-a machine/session with outbound access to `bonafidenitro.com` — e.g. a human
+Run `curl -IL` (or equivalent — follow every `Location` header and repeat the
+request until a non-redirect status, not a single `curl -I`, which shows only
+the first hop) against each of the 15 URLs and variants above from a
+machine/session with outbound access to `bonafidenitro.com` — e.g. a human
 operator's own shell, or a Claude Cloud session/environment configured with
 egress allowed to this one domain — and record, per URL: HTTP status, `Location`
 header(s), full hop chain, final destination, internal/external classification,
