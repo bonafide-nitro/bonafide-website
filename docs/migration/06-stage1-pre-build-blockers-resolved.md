@@ -95,12 +95,15 @@ record the model decision (A vs. A′) as resolved.
 ## I1 — Unknown redirect destinations (UNRESOLVED — blocked on access)
 
 ### The 15 items requiring live inspection
-Per `04-wordpress-to-static-migration-master-plan.md` §7.7 (I1), blocking:
+Per `04-wordpress-to-static-migration-master-plan.md` §7.7 (I1), corroborated by
+the full cross-origin redirect list in
+`03-products-products-2-forensic-seo-preservation.md:649`, blocking:
 `/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`, `/collections/`,
 `/sustainability/`, `/copyright-notice/`, `/kegging-service/` (+ `http://` and
 `www.` variants), `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`,
 `/author/raul/`, `/cold-brew-coffee-tap-future-serve/`, `/contact-email/`,
-`/collections-nitro-coffee/`.
+`/collections-nitro-coffee/`,
+`/healthy-benefits-drinking-nitro-coffee-nitro-coffee-health-benefits/`.
 
 The master plan specifies the exact method: run `curl -I` against each URL from a
 shell and record the real `Location` header, hop count, final destination, and
