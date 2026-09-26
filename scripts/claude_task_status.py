@@ -30,6 +30,7 @@ every function here is exercisable offline with no real process spawned.
 """
 
 import json
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -71,6 +72,10 @@ HUMAN_DECISION_KEYWORDS = ("ZANETA_DECISION",)
 
 RECOGNIZED_KEYWORDS = (frozenset(PROTOCOL_STATE_KEYWORDS) | frozenset(BRIDGE_KEYWORDS)
                        | frozenset(HUMAN_DECISION_KEYWORDS))
+
+
+_ROUND_KEYWORD_LINE = re.compile(
+    r"^\**(CHANGES_REQUESTED|" + "|".join(map(re.escape, HUMAN_DECISION_KEYWORDS)) + r")\**(?!\w)")
 
 
 class TaskStatusError(RuntimeError):
@@ -153,6 +158,16 @@ def extract_keyword(body):
             continue
         if stripped in RECOGNIZED_KEYWORDS:
             found = stripped
+            continue
+        # A correction-round keyword may carry text after it on the same
+        # line ("CHANGES_REQUESTED — Santiago exact-SHA review of <sha>",
+        # "ZANETA_DECISION — 2026-09-25"). Counting only the bare line made
+        # the bridge treat those restarts as already-dispatched duplicates
+        # (trafficdom #221/#228, 2026-09-26). A quoted line ("> ...") still
+        # never counts.
+        round_keyword = _ROUND_KEYWORD_LINE.match(stripped)
+        if round_keyword:
+            found = round_keyword.group(1)
     return found
 
 
