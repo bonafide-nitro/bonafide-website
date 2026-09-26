@@ -151,8 +151,10 @@ follow-up Block) so I1 can be closed out and folded into the redirect register i
 ### Already documented (not a live check, cited for context only)
 - `04-wordpress-to-static-migration-master-plan.md` line 228: "BookingPress
   generates 6 pages and parameter URLs — Decision gate — see §11."
-- Line 682: BookingPress is listed among the plugin-driven integrations
-  configured via the Head & Footer Code plugin.
+- Lines 92-94: the plugin-driven integrations actually configured via the
+  Head & Footer Code plugin are documented as GTM, Facebook Pixel, and
+  Klaviyo only ("Clean... No injection") — BookingPress is a separate
+  plugin/integration, not something delivered through Head & Footer Code.
 - Line 734: if booking is retired, 301 the six URLs and eliminate the
   `?bpa_page=` parameter URLs; if required, embed a hosted scheduler instead.
 - Line 1079 (§18, D5/I5): "Is BookingPress appointment booking still used? —
