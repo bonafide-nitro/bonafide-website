@@ -317,5 +317,30 @@ class TestFetchReviews(unittest.TestCase):
             calls, [["gh", "api", "repos/z/t/pulls/42/reviews", "--paginate"]])
 
 
+class TestRoundKeywordsWithTrailingText(unittest.TestCase):
+    """trafficdom #221/#228 (2026-09-26): Santiago's and Žaneta's real
+    comments carry text after the keyword on the same line."""
+
+    def test_trailing_text_still_counts_as_a_round(self):
+        for body, keyword in (
+                ("CHANGES_REQUESTED — Santiago exact-SHA review of `1b63b35`\n\nBlocking.",
+                 "CHANGES_REQUESTED"),
+                ("ZANETA_DECISION — 2026-09-25\n\nApproved.", "ZANETA_DECISION"),
+                ("**CHANGES_REQUESTED**: see below", "CHANGES_REQUESTED")):
+            with self.subTest(body=body):
+                self.assertEqual(status_mod.extract_keyword(body), keyword)
+
+    def test_quoted_or_longer_words_do_not_count(self):
+        handoff = "READY_FOR_SANTIAGO\n\n> CHANGES_REQUESTED — Santiago review\n"
+        self.assertEqual(status_mod.extract_keyword(handoff), "READY_FOR_SANTIAGO")
+        self.assertEqual(status_mod.extract_keyword("CHANGES_REQUESTED_LATER\n"), "")
+
+    def test_rounds_counted_from_real_comments(self):
+        events = status_mod.classify_comments([
+            {"body": "CHANGES_REQUESTED — Santiago exact-SHA review of `0d59b28`", "created_at": "1"},
+            {"body": "ZANETA_DECISION — 2026-09-25\n\nGo.", "created_at": "2"}])
+        self.assertEqual(status_mod.count_correction_rounds(events), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
