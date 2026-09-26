@@ -18,7 +18,7 @@ READY_FOR_CLAUDE_CLOUD (label on approved Issue or correction PR)
   → human merge gate
 ```
 
-A literal human `CHANGES_REQUESTED` comment naming the exact current head can also requeue the same PR through `santiago-changes-requested-requeue.yml`.
+Santiago's `CHANGES_REQUESTED` review (a comment from the authorized human that opens with a `CHANGES_REQUESTED` line and names the PR's exact current head) also requeues the same PR, through `harness-requeue.yml --changes-requested`; it replaced `santiago-changes-requested-requeue.yml` on 2026-09-26.
 
 ## Labels
 

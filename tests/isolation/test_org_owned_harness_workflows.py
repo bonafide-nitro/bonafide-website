@@ -10,7 +10,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 READY = REPO_ROOT / ".github" / "workflows" / "santiago-ready-label-trigger.yml"
-REQUEUE = REPO_ROOT / ".github" / "workflows" / "santiago-changes-requested-requeue.yml"
+# santiago-changes-requested-requeue.yml was retired (2026-09-26); Santiago's
+# CHANGES_REQUESTED is handled by the shared harness-requeue.yml.
+REQUEUE = REPO_ROOT / ".github" / "workflows" / "harness-requeue.yml"
 
 
 class TestOrganizationOwnedHarness(unittest.TestCase):
@@ -38,8 +40,8 @@ class TestOrganizationOwnedHarness(unittest.TestCase):
 
     def test_requeue_authorization_is_real_shell_lines(self):
         text = REQUEUE.read_text(encoding="utf-8")
-        self.assertIn('authorized="${AUTHORIZED_HUMAN:-zanetaseiler}"\n', text)
-        self.assertNotIn('authorized="${AUTHORIZED_HUMAN:-zanetaseiler}"\\n', text)
+        self.assertIn('--human "${AUTHORIZED_HUMAN:-zanetaseiler}" \\\n', text)
+        self.assertIn("--changes-requested", text)
 
 
 if __name__ == "__main__":
