@@ -206,8 +206,10 @@ and the retire-vs-replace decision in §7.4/§11 can be finalized.
 1. **D1, D5:** a human operator with cPanel and WordPress-admin access answers
    the specific checks listed above and posts the results on Issue #19.
 2. **I1:** a human operator (or a session/environment with egress allowed to
-   `bonafidenitro.com`) runs the specified `curl -I` checks and posts the raw
-   results on Issue #19.
+   `bonafidenitro.com`) runs `curl -IL` (following every `Location` header and
+   repeating the request until a non-redirect status, not a single `curl -I`,
+   which shows only the first hop) against each of the 15 URLs and posts the
+   raw results on Issue #19.
 3. Once D1/I1/D5 are answered, a follow-up Block updates this report (or opens
    Block 2) to record them as resolved, and only then does Stage 1 fully close
    ahead of Stage 2 (forensic preservation).
