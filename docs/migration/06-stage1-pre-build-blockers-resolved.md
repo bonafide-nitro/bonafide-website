@@ -15,7 +15,7 @@ operational-blocker findings (D1, I1, D5, D11) layered on top of that evidence.
 | Item | Status | Notes |
 | --- | --- | --- |
 | D11 — static form approach | **RESOLVED** (already-approved decision, recorded) | No live check needed |
-| D1 — hosting/deployment capability | **RESOLVED** (evidence-backed deployment decision) | Symlink/custom-primary-docroot/rsync not assumed; static production deploys into existing `/public_html` via SSH/SFTP-or-File-Manager; clean WordPress rollback copy kept isolated in a sibling, non-public location per master-plan §12.2. Sibling-directory creation and PHP version/post-cutover availability are **not yet operator-verified**; confirming both is an explicit, gated prerequisite for the later deployment Block, not a Stage 1 blocker |
+| D1 — hosting/deployment capability | **RESOLVED** (architecture decision recorded for all six `05-execution-plan.md:63-70` sub-items; two explicitly deferred by Žaneta) | Symlink, custom-primary-docroot, and cPanel Terminal are determined **not available/not assumed**; SSH/SFTP is determined **available**; rsync is **not assumed**. Static production deploys into existing `/public_html` via SSH/SFTP-or-File-Manager, with every deployment (initial and later redeploys) required to be deletion-aware, not just overlay-copy. Clean WordPress rollback copy kept isolated in a sibling, non-public location per master-plan §12.2. Sibling-directory creation and PHP version/post-cutover availability are the two remaining sub-items, **not yet operator-verified**; per Žaneta's decision, confirming both on this account is an explicit, gated prerequisite for the later deployment Block — a deliberate, recorded deferral of those two sub-items, not a Stage 1 blocker and not an unverified assumption presented as settled fact |
 | I1 — 15 unknown redirect destinations | **RESOLVED** (operator curl evidence) | 17 tested legacy URL variants currently land on the HTTP homepage via the "404 to Start" behaviour (recorded as observed fact, not reproduced); `/collections-nitro-coffee/` is a confirmed external 301; no redirect loop; erroneous §7.4 URL removed from the I1 list |
 | D5 — BookingPress usage | **RESOLVED** (operator dashboard evidence + decision) | BookingPress is unused (0 appointments/customers/revenue); Calendly is the actual scheduling integration |
 
@@ -55,6 +55,31 @@ scheduler and the other five URLs 301 to it — not the "retire; 301 all six to
 the contact page" outcome. The D5 section and the consolidated recommended
 next action below now state this explicitly. This does not change D5's
 resolved status or the underlying operator evidence/decision.
+
+A further Codex review on this PR (P1 finding, comment
+[discussion_r4114666407](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4114666407))
+noted that `docs/migration/05-execution-plan.md:63-70` lists sibling release
+directories and PHP/runtime constraints among the sub-items D1 must
+determine, and that neither has operator evidence yet, so declaring D1
+resolved could read as advancing past a blocking unknown. The Summary table
+and D1 section below now state explicitly which of D1's six
+`05-execution-plan.md:63-70` sub-items are determined now (symlink,
+custom-primary-docroot, cPanel Terminal: not available/not assumed; SSH/SFTP:
+available; rsync: not assumed) and which two remain intentionally deferred by
+Žaneta's own decision (sibling-directory creation, PHP version/post-cutover
+availability) rather than silently assumed — the same deferral Žaneta already
+applied to symlink/rsync verification on this PR. This does not reopen D1's
+resolved status.
+
+A further Codex review on this PR (P2 finding, comment
+[discussion_r4114666417](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4114666417))
+correctly noted that the report required a deletion-aware copy mechanism only
+for the WordPress rollback restore (step 4 below), not for the static
+production deployment itself (step 1) or later redeploys — so a redeploy that
+removes or renames a page could leave the old file reachable in `/public_html`
+and defeat its intended redirect/404. Step 1 and the consolidated recommended
+next action below now require every static deployment, not only the
+rollback restore, to be deletion-aware.
 
 ---
 
@@ -100,7 +125,9 @@ a hosted form service (Formspree, Basin, Web3Forms)").
   ([5853615506](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5853615506)).
 
 ### Deployment decision (recorded per the `CHANGES_REQUESTED` review on this PR and the follow-up `ZANETA_DECISION`, not independently derived by this session)
-Per comment
+`docs/migration/05-execution-plan.md:63-70` lists six sub-items D1 must
+determine: symlink-based release switching, custom document root, SSH/SFTP,
+rsync, sibling release directories, and PHP/runtime constraints. Per comment
 [5853644604](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5853644604):
 current GoDaddy Web Hosting (cPanel) documentation states SSH is supported and
 the primary-domain document root is `/public_html`; GoDaddy documents custom
@@ -134,7 +161,15 @@ unverified symlink/`rsync`/Terminal capabilities:
    action requiring its own separate, explicit Žaneta approval per
    `AGENTS.md` and is **not** authorized by this Block. If SSH is not
    enabled/authorized by the time of deployment, fall back to the cPanel File
-   Manager for the static-file upload.
+   Manager for the static-file upload. **Every static deployment — the
+   initial one and every later redeploy — must clear/delete any
+   destination-only file in `/public_html` that is not part of the new build
+   (e.g. `rsync --delete`, or an equivalent explicit delete-then-copy step for
+   SFTP/File Manager), not just overlay-copy.** Without this, a page removed
+   or renamed in a later build can remain reachable at its old URL and defeat
+   the redirect or 404 the migration intends for it — the same risk step 4
+   below addresses for the WordPress rollback restore, applied here to
+   routine static deployments.
 2. The clean WordPress rollback copy is prepared and preserved **outside**
    `/public_html`, in a sibling/non-public location (e.g. the pattern in
    `04-wordpress-to-static-migration-master-plan.md:753`,
@@ -379,7 +414,9 @@ follow-up work for later Blocks, not open Stage 1 items:
    `/public_html` so they are no longer publicly reachable, per the detailed
    D1 architecture above, and only then (d) deploys the static build into
    `/public_html` via SSH/SFTP (or File Manager, if SSH is not enabled by
-   then).
+   then), clearing/deleting any destination-only file left over from the
+   previous build (not just overlay-copy) — and repeats that same
+   deletion-aware step on every later redeploy, not only at rollback.
 2. **I1:** the final redirect register (Stage 2+ planning) must assign each of
    the 17 tested legacy URL variants a deliberate final destination reachable
    from apex HTTPS in a single hop, per §7.5/SEO-12 — not the observed
