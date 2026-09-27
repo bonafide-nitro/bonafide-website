@@ -44,6 +44,18 @@ this report already applies to symlink/custom-primary-docroot/`rsync` — rather
 than implying the account's support for them is established. This does not
 change the chosen architecture or reopen D1's resolved status.
 
+A further Codex review on this PR (P2 finding, comment
+[discussion_r4114601599](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4114601599))
+correctly noted that the D5 section's citation of master-plan line 1079 as
+"confirmed" selected the wrong §7.4 branch: since Calendly (not BookingPress)
+is the actual, surviving scheduling workflow, the booking *function* survives
+even though BookingPress itself does not, so §7.4 line 421's "booking
+survives" outcome applies — a 200 `/book-appointment/` page with an embedded
+scheduler and the other five URLs 301 to it — not the "retire; 301 all six to
+the contact page" outcome. The D5 section and the consolidated recommended
+next action below now state this explicitly. This does not change D5's
+resolved status or the underlying operator evidence/decision.
+
 ---
 
 ## D11 — Static form approach (RESOLVED)
@@ -269,9 +281,21 @@ path.
   plugin/integration, not something delivered through Head & Footer Code.
 - Line 734: if booking is retired, 301 the six URLs and eliminate the
   `?bpa_page=` parameter URLs; if required, embed a hosted scheduler instead.
-- Line 1079 (§18, D5/I5): "Is BookingPress appointment booking still used? —
-  Business — §7.4, Part G — Retire; 301 the six URLs" (a *provisional*
-  recommendation, now confirmed by the operator evidence below).
+- §7.4 line 421 states the same fork explicitly for the six booking URLs
+  (`/book-appointment/`, `/my-bookings/`, `/cancel-appointment/`,
+  `/cancel-payment/`, `/appointment-cancellation-confirmation/`,
+  `/thank-you/`): "If booking is retired → 301 all six to
+  `/contact-bona-fide-nitro-coffee-and-tea/`. If booking survives → a single
+  static `/book-appointment/` at 200 with an embedded scheduler, and the other
+  five 301 to it."
+- Line 1079 (§18, D5/I5), "Is BookingPress appointment booking still used? —
+  Business — §7.4, Part G — Retire; 301 the six URLs," is only a *provisional*
+  shorthand recommendation made before the operator evidence below existed. The
+  operator evidence and decision below confirm BookingPress-the-plugin is
+  unused and is not recreated, but the booking *function* survives via
+  Calendly — so the applicable outcome is §7.4 line 421's "booking survives"
+  branch, not the "booking is retired" branch line 1079 shorthand-names. The
+  six-URL 301-to-contact-page treatment does **not** apply.
 
 ### Operator evidence (2026-09-27, Issue #19)
 Žaneta opened BookingPress in the live WordPress admin
@@ -348,7 +372,14 @@ follow-up work for later Blocks, not open Stage 1 items:
 3. **D5:** preserve/reimplement Calendly as the scheduling integration in the
    later integrations stage; BookingPress is not recreated in the static site
    and its removal from WordPress is deferred to the authorized forensic
-   preservation/security-remediation stage, not before.
+   preservation/security-remediation stage, not before. Because booking as a
+   *function* survives (via Calendly), the redirect register (Stage 2+) must
+   apply §7.4 line 421's "booking survives" branch to the six booking URLs:
+   `/book-appointment/` remains a static 200 page with the embedded Calendly
+   scheduler, and the other five (`/my-bookings/`, `/cancel-appointment/`,
+   `/cancel-payment/`, `/appointment-cancellation-confirmation/`,
+   `/thank-you/`) 301 to it — **not** the "retire; 301 all six to the contact
+   page" branch, which applies only if booking itself were retired.
 
 No further action is authorized under this Block beyond recording these
 resolutions. Stage 2 dispatch is a separate Block decision, not authorized here.
