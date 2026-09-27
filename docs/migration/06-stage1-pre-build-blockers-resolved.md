@@ -15,7 +15,7 @@ operational-blocker findings (D1, I1, D5, D11) layered on top of that evidence.
 | Item | Status | Notes |
 | --- | --- | --- |
 | D11 — static form approach | **RESOLVED** (already-approved decision, recorded) | No live check needed |
-| D1 — hosting/deployment capability | **RESOLVED** (evidence-backed deployment decision) | Symlink/custom-primary-docroot/rsync not assumed; static production deploys into existing `/public_html` via SSH/SFTP-or-File-Manager; clean WordPress rollback copy kept isolated in a sibling, non-public location per master-plan §12.2 |
+| D1 — hosting/deployment capability | **RESOLVED** (evidence-backed deployment decision) | Symlink/custom-primary-docroot/rsync not assumed; static production deploys into existing `/public_html` via SSH/SFTP-or-File-Manager; clean WordPress rollback copy kept isolated in a sibling, non-public location per master-plan §12.2. Sibling-directory creation and PHP version/post-cutover availability are **not yet operator-verified**; confirming both is an explicit, gated prerequisite for the later deployment Block, not a Stage 1 blocker |
 | I1 — 15 unknown redirect destinations | **RESOLVED** (operator curl evidence) | 17 tested legacy URL variants currently land on the HTTP homepage via the "404 to Start" behaviour (recorded as observed fact, not reproduced); `/collections-nitro-coffee/` is a confirmed external 301; no redirect loop; erroneous §7.4 URL removed from the I1 list |
 | D5 — BookingPress usage | **RESOLVED** (operator dashboard evidence + decision) | BookingPress is unused (0 appointments/customers/revenue); Calendly is the actual scheduling integration |
 
@@ -32,6 +32,17 @@ response to a subsequent Codex review.
 This supersedes the prior partial/documentation-only version of this report (option
 (b) from the original `NEEDS_ZANETA` on Issue #19), which recorded D1/I1/D5 as
 blocked on access this session did not have.
+
+A subsequent Codex review on this PR (P1 finding, comment
+[discussion_r4114574984](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4114574984))
+correctly noted that the D1 section stated the sibling-directory and PHP
+capabilities as if verified, when neither has operator evidence behind it yet.
+The D1 section below now states explicitly that sibling-directory creation and
+PHP version/post-cutover availability are unverified and deferred to the later
+deployment Block — the same "unverified, non-required capability" treatment
+this report already applies to symlink/custom-primary-docroot/`rsync` — rather
+than implying the account's support for them is established. This does not
+change the chosen architecture or reopen D1's resolved status.
 
 ---
 
@@ -115,11 +126,18 @@ unverified symlink/`rsync`/Terminal capabilities:
 2. The clean WordPress rollback copy is prepared and preserved **outside**
    `/public_html`, in a sibling/non-public location (e.g. the pattern in
    `04-wordpress-to-static-migration-master-plan.md:753`,
-   `/home/<user>/sites/wp-clean/`, or the closest equivalent this account
-   supports) — **not** co-located under the public static docroot. This
+   `/home/<user>/sites/wp-clean/`, or the closest equivalent structure the
+   account allows) — **not** co-located under the public static docroot. This
    satisfies the §12.2 isolation requirement without depending on symlink or
    `rsync` availability, because the rollback copy itself is what moves, not
-   a live symlink target.
+   a live symlink target. **This session has not independently verified that
+   such a sibling/non-public directory can actually be created and is
+   inaccessible from the public web on this account** — no cPanel/WHM access
+   and no operator evidence for it exist yet, the same evidentiary position
+   this report already applies to symlink/custom-primary-docroot/`rsync`
+   above. That verification is an explicit, gated prerequisite for the later
+   deployment Block (see "What remains for a later Block" below), not an
+   assumed fact of this decision.
 3. After cutover, the current live WordPress installation's executable,
    plugin, and theme files must **not** remain publicly reachable in
    `/public_html` — retiring the live installation from `/public_html` (once
@@ -132,21 +150,29 @@ unverified symlink/`rsync`/Terminal capabilities:
    on this account). The exact procedure must be rehearsed and timed in the
    later cutover/rollback Block, per
    `04-wordpress-to-static-migration-master-plan.md:786`.
-5. PHP remains available on the hosting account. Static production itself has
-   no PHP dependency; PHP is retained only because the sibling clean
-   WordPress copy may need it if restored. Per
-   `04-wordpress-to-static-migration-master-plan.md:764`, PHP must remain
-   available after cutover for that rollback copy regardless of Model A vs.
-   A′ or the D11 hosted-form decision.
+5. PHP must remain available on the hosting account after cutover, per
+   `04-wordpress-to-static-migration-master-plan.md:764` — static production
+   itself has no PHP dependency; PHP is retained only because the sibling
+   clean WordPress copy may need it if restored, regardless of Model A vs.
+   A′ or the D11 hosted-form decision. **This session has not independently
+   confirmed the PHP version currently installed on the account, nor that it
+   (or a compatible version) remains enabled after cutover** — no cPanel/WHM
+   access and no operator evidence for either fact exist yet. That
+   confirmation is an explicit, gated prerequisite for the later deployment
+   Block, not an assumed fact of this decision.
 
 ### What remains for a later Block (not a Stage 1 blocker)
-Creating and authorizing the actual SSH deploy key, preparing the sibling
-clean-WordPress rollback copy, retiring the live WordPress installation from
-`/public_html`, and executing/rehearsing the first deployment and rollback,
-are all separate, explicitly-gated actions for a future Block — they do not
-block recording this architecture decision now. No hosting configuration, SSH
-key, WordPress file, or `.htaccess` setting was created, imported, moved,
-authorized, enabled, or otherwise changed by this Block.
+Creating and authorizing the actual SSH deploy key; **confirming the sibling
+clean-WordPress rollback location can be created and is inaccessible from the
+public web**; **confirming the current PHP version and its continued
+availability after cutover**; preparing the sibling clean-WordPress rollback
+copy; retiring the live WordPress installation from `/public_html`; and
+executing/rehearsing the first deployment and rollback — are all separate,
+explicitly-gated actions for a future Block. They do not block recording this
+architecture decision now, the same way the D11 hosted-form decision is
+recorded as resolved without yet purchasing a provider. No hosting
+configuration, SSH key, WordPress file, or `.htaccess` setting was created,
+imported, moved, authorized, enabled, or otherwise changed by this Block.
 
 ---
 
