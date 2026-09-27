@@ -159,9 +159,22 @@ unverified symlink/`rsync`/Terminal capabilities:
    back into `/public_html`, using whichever supported copy mechanism is
    available at that time (SSH/SFTP or File Manager fallback — the same
    mechanisms as (1), not `rsync`, since `rsync` availability is unverified
-   on this account). The exact procedure must be rehearsed and timed in the
-   later cutover/rollback Block, per
-   `04-wordpress-to-static-migration-master-plan.md:786`.
+   on this account). The authoritative Model A′ procedure
+   (`04-wordpress-to-static-migration-master-plan.md:782`) performs this
+   restoration with `rsync -a --delete`, whose `--delete` flag removes any
+   destination-only file — meaning a route-level static file (e.g. an
+   `index.html` left over from the static production build) is removed, not
+   just overwritten. A copy-only SSH/SFTP-or-File-Manager restore does
+   **not** do this: it can leave such static-only files in place, where they
+   would continue to be served instead of the restored WordPress
+   installation for that path, leaving rollback serving a mixture of both
+   applications. Whichever copy mechanism is actually available at rollback
+   time must therefore **first clear `/public_html` of the static
+   production's files** (delete-then-copy, not overlay-copy) before copying
+   the clean WordPress files in — an equivalent to `--delete` is required
+   even when `rsync` itself is not. The exact procedure, including this
+   clearing step, must be rehearsed and timed in the later cutover/rollback
+   Block, per `04-wordpress-to-static-migration-master-plan.md:786`.
 5. PHP must remain available on the hosting account after cutover, per
    `04-wordpress-to-static-migration-master-plan.md:764` — static production
    itself has no PHP dependency; PHP is retained only because the sibling
@@ -357,7 +370,10 @@ follow-up work for later Blocks, not open Stage 1 items:
    credential/permission approval, (b) prepares the clean WordPress rollback
    copy in its sibling, non-public location and rehearses/times the
    SSH/SFTP-or-File-Manager restore-to-`/public_html` procedure before
-   cutover, per `04-wordpress-to-static-migration-master-plan.md`
+   cutover — first clearing `/public_html` of the static production's files
+   (delete-then-copy, not overlay-copy) before copying the clean WordPress
+   files in, the same effect `rsync --delete` gives Model A′ — per
+   `04-wordpress-to-static-migration-master-plan.md`
    §12.2/§12.3, (c) once that sibling copy exists, retires the live
    WordPress installation's executable, plugin, and theme files from
    `/public_html` so they are no longer publicly reachable, per the detailed
