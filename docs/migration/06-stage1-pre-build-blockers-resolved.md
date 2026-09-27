@@ -354,12 +354,16 @@ follow-up work for later Blocks, not open Stage 1 items:
 
 1. **D1:** a later Block (a) creates and authorizes a dedicated SSH deploy key
    (e.g. `bonafide-git-deploy`), subject to its own explicit Žaneta
-   credential/permission approval, before the static build is first deployed
-   into `/public_html` via SSH/SFTP (or File Manager, if SSH is not enabled by
-   then), and (b) prepares the clean WordPress rollback copy in its sibling,
-   non-public location and rehearses/times the SSH/SFTP-or-File-Manager
-   restore-to-`/public_html` procedure before cutover, per
-   `04-wordpress-to-static-migration-master-plan.md` §12.2/§12.3.
+   credential/permission approval, (b) prepares the clean WordPress rollback
+   copy in its sibling, non-public location and rehearses/times the
+   SSH/SFTP-or-File-Manager restore-to-`/public_html` procedure before
+   cutover, per `04-wordpress-to-static-migration-master-plan.md`
+   §12.2/§12.3, (c) once that sibling copy exists, retires the live
+   WordPress installation's executable, plugin, and theme files from
+   `/public_html` so they are no longer publicly reachable, per the detailed
+   D1 architecture above, and only then (d) deploys the static build into
+   `/public_html` via SSH/SFTP (or File Manager, if SSH is not enabled by
+   then).
 2. **I1:** the final redirect register (Stage 2+ planning) must assign each of
    the 17 tested legacy URL variants a deliberate final destination reachable
    from apex HTTPS in a single hop, per §7.5/SEO-12 — not the observed
