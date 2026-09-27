@@ -8,23 +8,26 @@
 `04-wordpress-to-static-migration-master-plan.md`. Per the `ZANETA_DECISION` comment
 on Issue #19 (2026-09-26), those four documents remain the authoritative SEO
 baseline and are not repeated here. This report only adds the Stage 1
-operational-blocker findings (D1, I1, D5, D11) layered on top of that evidence,
-and keeps the still-unresolved access blockers below clearly separated from the
-completed SEO analysis.
+operational-blocker findings (D1, I1, D5, D11) layered on top of that evidence.
 
 ## Summary
 
 | Item | Status | Notes |
 | --- | --- | --- |
 | D11 — static form approach | **RESOLVED** (already-approved decision, recorded) | No live check needed |
-| D1 — hosting/deployment capability | **UNRESOLVED — blocked on access** | Partial operator-confirmed facts recorded; symlink/SSH/rsync/PHP-after-cutover capability not yet confirmed |
-| I1 — 15 unknown redirect destinations | **UNRESOLVED — blocked on access** | Outbound network egress to `bonafidenitro.com` is blocked from this environment |
-| D5 — BookingPress usage | **UNRESOLVED — blocked on access** | Requires WordPress admin access not available to this session |
+| D1 — hosting/deployment capability | **RESOLVED** (evidence-backed deployment decision) | Symlink/custom-primary-docroot/rsync not assumed; safe-fallback SSH/SFTP-or-File-Manager deploy into existing `/public_html` decided instead |
+| I1 — 15 unknown redirect destinations | **RESOLVED** (operator curl evidence) | 17 tested legacy URL variants resolve to the HTTP homepage; `/collections-nitro-coffee/` is a confirmed external 301; no redirect loop |
+| D5 — BookingPress usage | **RESOLVED** (operator dashboard evidence + decision) | BookingPress is unused (0 appointments/customers/revenue); Calendly is the actual scheduling integration |
 
-Stage 1 is therefore **partially** complete: D11 is resolved; D1, I1, and D5 remain
-open pending the access described below. This is a documentation-only deliverable,
-consistent with option (b) offered in the prior `NEEDS_ZANETA` comment on Issue #19
-and not contradicted by the subsequent `ZANETA_DECISION`.
+Stage 1 is therefore **complete**: D11, D1, I1, and D5 are all resolved, using the
+operator-supplied evidence recorded on Issue #19 on 2026-09-27 and the deployment
+decision recorded in the `CHANGES_REQUESTED` review on this PR (comment
+[5853644604](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5853644604)),
+confirmed by the follow-up `ZANETA_DECISION`
+([5853694950](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5853694950)).
+This supersedes the prior partial/documentation-only version of this report (option
+(b) from the original `NEEDS_ZANETA` on Issue #19), which recorded D1/I1/D5 as
+blocked on access this session did not have.
 
 ---
 
@@ -45,62 +48,78 @@ a hosted form service (Formspree, Basin, Web3Forms)").
 
 ---
 
-## D1 — Hosting/deployment capability (UNRESOLVED — blocked on access)
+## D1 — Hosting/deployment capability (RESOLVED)
 
 ### Facts observed (operator-confirmed, per Issue #19 body)
 - `bonafidenitro.com` cPanel Document Root is `/public_html`.
 - The active WordPress installation is in `/public_html`.
 - A backup copy of the current root `.htaccess` has been created.
 
-### Already-documented plan (not yet confirmed against actual hosting capability)
-From `04-wordpress-to-static-migration-master-plan.md` §7.5/§18:
-- **Model A (preferred):** symlink-based release switching — `public_html` (or the
-  vhost document root) is a symlink to a `current` directory; cutover/rollback is
-  an atomic symlink flip. Requires the cPanel plan to permit a symlinked
-  `public_html`/custom document root and not have "symlink protection" enabled.
-- **Model A′ (fallback):** `rsync --delete` deployment into a real `public_html`
-  directory. Slower (minutes, not seconds) but universally supported on shared
-  cPanel hosting.
+### Operator evidence (2026-09-27, Issue #19)
+- SSH Access section with a **Manage** control is exposed in the Bona Fide
+  cPanel dashboard, confirming SSH capability exists on the account
+  ([5845559488](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5845559488)).
+- cPanel → SSH Access → Manage SSH Keys shows **no public or private keys
+  currently installed**; key import/generation and authorization workflows are
+  available but unused so far
+  ([5845575840](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5845575840)).
+- A separate, working GoDaddy/cPanel account in Žaneta's own environment
+  already uses this exact key-based deployment pattern (dedicated,
+  purpose-named authorized keys such as `molosoc-git-deploy` and
+  `molosoc-reports-ci`, rather than one shared credential), proving the
+  pattern is viable on this hosting provider
+  ([5845585016](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5845585016)).
+- The Bona Fide cPanel account does **not** expose the cPanel Terminal feature
+  ([5853615506](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5853615506)).
 
-### What remains unresolved
-Whether this specific GoDaddy/cPanel plan actually supports:
-- symlink-based release switching / a symlinked or custom document root,
-- SSH/SFTP access,
-- `rsync`,
-- sibling release directories,
-- continued PHP availability after the static site goes live (in case a hardened
-  PHP mail handler or other PHP asset is still needed).
+### Deployment decision (recorded per the `CHANGES_REQUESTED` review on this PR, not independently derived by this session)
+Per comment
+[5853644604](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5853644604):
+current GoDaddy Web Hosting (cPanel) documentation states SSH is supported and
+the primary-domain document root is `/public_html`; GoDaddy documents custom
+document-root changes for addon/subdomains, not the primary domain. Combined
+with the operator evidence above (no confirmed symlink/custom-primary-docroot
+capability, cPanel Terminal unavailable), the migration does **not** assume
+**Model A** (symlink-based release switching) from
+`04-wordpress-to-static-migration-master-plan.md` §7.5/§18. Symlink support,
+custom-primary-docroot support, and `rsync` availability are all treated as
+**unverified, non-required capabilities** — they are not blockers, because the
+architecture below does not depend on them.
 
-This determination requires either direct cPanel/WHM access, a GoDaddy
-support-confirmed answer, or a human operator running the checks below. This
-session was given no cPanel/WHM credentials and cannot obtain or safely
-provision them itself.
-
-### Recommended next action
-A human with cPanel access (or a GoDaddy support ticket) should confirm and report:
-1. Whether "symlink protection" is enabled/disabled for the account, and whether
-   `public_html` (or the vhost document root) can be replaced with a symlink.
-2. Whether SSH/SFTP access is available and what deploy method it permits.
-3. Whether `rsync` is available over that SSH/SFTP access.
-4. Whether sibling directories outside `public_html` (e.g. `/home/<user>/sites/`)
-   are permitted and reachable by the same account.
-5. Which PHP version(s) remain available post-cutover. Per
+**Chosen safe-fallback architecture:**
+1. Deploy the approved static build directly into the existing `/public_html`
+   via SSH/SFTP, once a dedicated, authorized deploy key (e.g.
+   `bonafide-git-deploy`, following the proven pattern above) has been created
+   — creating/authorizing that key is a credential/permission action requiring
+   its own separate, explicit Žaneta approval per `AGENTS.md` and is **not**
+   authorized by this Block.
+2. If SSH is not enabled/authorized by the time of deployment, fall back to
+   the cPanel File Manager for the static-file upload.
+3. Retain the current WordPress installation underneath `/public_html` as the
+   rollback copy; its retirement is a separate, later, explicitly-approved
+   decision (not this Block's).
+4. PHP remains available on the hosting account. The static production site
+   itself has no PHP dependency; the retained WordPress rollback copy can
+   continue to depend on PHP. Per
    `04-wordpress-to-static-migration-master-plan.md:764`, PHP must remain
-   available after cutover for the clean WordPress rollback copy regardless
-   of Model A vs. A′ or the D11 hosted-form decision — static production
-   itself does not need PHP, but the rollback copy does.
+   available after cutover for that rollback copy regardless of the D11
+   hosted-form decision.
 
-Once reported (in this Issue or a follow-up), this Block or a follow-up Block can
-record the model decision (A vs. A′) as resolved.
+### What remains for a later Block (not a Stage 1 blocker)
+Creating and authorizing the actual SSH deploy key, and executing the first
+deployment, are separate, explicitly-gated actions for a future Block — they
+do not block recording this architecture decision now. No hosting
+configuration, SSH key, or `.htaccess` setting was created, imported,
+authorized, enabled, or otherwise changed by this Block.
 
 ---
 
-## I1 — Unknown redirect destinations (UNRESOLVED — blocked on access)
+## I1 — Unknown redirect destinations (RESOLVED)
 
 ### The 15 items requiring live inspection
 Per `04-wordpress-to-static-migration-master-plan.md` §7.7 (I1), corroborated by
 the full cross-origin redirect list in
-`03-products-products-2-forensic-seo-preservation.md:649`, blocking:
+`03-products-products-2-forensic-seo-preservation.md:649`:
 `/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`, `/collections/`,
 `/sustainability/`, `/copyright-notice/`, `/kegging-service/` (+ `http://` and
 `www.` variants), `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`,
@@ -108,50 +127,58 @@ the full cross-origin redirect list in
 `/collections-nitro-coffee/`,
 `/healthy-benefits-drinking-nitro-coffee-nitro-coffee-health-benefits/`.
 
-The master plan specifies the exact method: run `curl -I` against each URL from a
-shell and record the real `Location` header, hop count, final destination, and
-whether it is internal or external — noting that several may resolve to the
-homepage via the "404 to Start" plugin, in which case they are not real redirects
-and each needs a deliberate destination decided later.
+This session's own outbound access to `bonafidenitro.com` remains blocked at
+this environment's egress proxy (unchanged from prior sessions), so the check
+below was run by Žaneta directly and posted as operator evidence
+([5853636069](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5853636069)),
+per the recommended next action from the prior correction round.
 
-### What was attempted, and why it could not be completed
-This session attempted the required check twice, independently of the prior
-session's attempt:
-```
-$ curl -sS -m 10 -o /dev/null -w "HTTP_STATUS:%{http_code}\n" https://bonafidenitro.com/
-curl: (56) CONNECT tunnel failed, response 403
-HTTP_STATUS:000
-```
-The environment's outbound-proxy status endpoint independently confirms this is a
-network-policy denial, not a DNS or site-side failure:
-```
-"recentRelayFailures": [{
-  "kind": "connect_rejected",
-  "detail": "gateway answered 403 to CONNECT (policy denial or upstream failure)",
-  "host": "bonafidenitro.com:443"
-}]
-```
-This is an environment/sandbox egress restriction on the Claude Cloud session, not
-a fact about `bonafidenitro.com` or WordPress — the 403 occurs at the proxy before
-any request reaches the live domain, so it says nothing about the redirects
-themselves.
+### Operator evidence (2026-09-27, Issue #19) — 17 tested URL variants
+**Direct one-hop HTTPS → HTTP homepage** (`http://bonafidenitro.com/` → 200 OK):
+`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`, `/collections/`,
+`/sustainability/`, `/copyright-notice/`, `/kegging-service/`,
+`/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`, `/author/raul/`,
+`/cold-brew-coffee-tap-future-serve/`, `/contact-email/` (13 URLs).
 
-### Recommended next action
-Run `curl -IL` (or equivalent — follow every `Location` header and repeat the
-request until a non-redirect status, not a single `curl -I`, which shows only
-the first hop) against each of the 15 URLs and variants above from a
-machine/session with outbound access to `bonafidenitro.com` — e.g. a human
-operator's own shell, or a Claude Cloud session/environment configured with
-egress allowed to this one domain — and record, per URL: HTTP status, `Location`
-header(s), full hop chain, final destination, internal/external classification,
-and whether the behavior looks intentional or suspicious (e.g. everything routing
-through the "404 to Start" plugin). Paste the raw results into this Issue (or a
-follow-up Block) so I1 can be closed out and folded into the redirect register in
-`04-wordpress-to-static-migration-master-plan.md` §7.7.
+**Two-hop variants**, same final destination (`http://bonafidenitro.com/` → 200):
+`https://www.bonafidenitro.com/where-to-refill-your-`,
+`http://bonafidenitro.com/where-to-refill-your-`,
+`https://www.bonafidenitro.com/kegging-service/`,
+`http://bonafidenitro.com/kegging-service/` — each: 301 → canonical
+`https://bonafidenitro.com/...` → 301 → `http://bonafidenitro.com` → 200 (4 URLs).
+
+Total: **17 tested legacy URL variants resolve internally to the HTTP homepage**,
+with no infinite redirect loop observed.
+
+**Confirmed external redirect:** `https://bonafidenitro.com/collections-nitro-coffee/`
+→ 301 → `https://www.nitrocoffee.store/collections/nitro-coffee` → 200. This
+matches the previously documented legitimate Simple 301 Redirects rule for that
+path.
+
+(`/healthy-benefits-drinking-nitro-coffee-nitro-coffee-health-benefits/`, added to
+this checklist in a prior correction round, was not separately called out in the
+operator's tested-URL list; it falls under the same homepage-redirect pattern as
+the other legacy paths above and should be confirmed individually before the
+redirect register in `04-wordpress-to-static-migration-master-plan.md` §7.7 is
+finalized.)
+
+### Classification and Stage 1 conclusion
+- `/collections-nitro-coffee/` is a confirmed intentional external redirect and
+  must be represented explicitly in the migration redirect manifest.
+- The remaining tested legacy paths currently redirect to the homepage. This
+  behavior is consistent, reproducible, and not a redirect loop, but the
+  HTTPS → HTTP downgrade on the homepage hop is legacy/undesirable behavior
+  that must **not** be "cleaned up" casually during migration — the
+  authoritative SEO evidence already documents material Google activity on the
+  HTTP homepage variant. Encode these behaviors deliberately in the migration;
+  any later normalization of HTTP/HTTPS or redirect chains is a separate,
+  explicitly-approved SEO/optimization decision, not part of Stage 1.
+- I1 is resolved on the operator evidence above. No redirects, WordPress
+  settings, `.htaccess` rules, or production files were changed by this check.
 
 ---
 
-## D5 — BookingPress usage (UNRESOLVED — blocked on access)
+## D5 — BookingPress usage (RESOLVED)
 
 ### Already documented (not a live check, cited for context only)
 - `04-wordpress-to-static-migration-master-plan.md` line 228: "BookingPress
@@ -164,54 +191,81 @@ follow-up Block) so I1 can be closed out and folded into the redirect register i
   `?bpa_page=` parameter URLs; if required, embed a hosted scheduler instead.
 - Line 1079 (§18, D5/I5): "Is BookingPress appointment booking still used? —
   Business — §7.4, Part G — Retire; 301 the six URLs" (a *provisional*
-  recommendation pending confirmation, not a confirmed usage fact).
+  recommendation, now confirmed by the operator evidence below).
 
-### What remains unresolved
-Whether BookingPress is **actually in current use** — configured services,
-existing appointments, recent or future bookings, and which pages/forms embed
-it — can only be determined from WordPress admin access (the BookingPress plugin
-screens: Services, Appointments/Bookings, and page/form usage). This session has
-no WordPress admin credentials and no other read-only path to that data (the
-public site itself is unreachable per the I1 finding above).
+### Operator evidence (2026-09-27, Issue #19)
+Žaneta opened BookingPress in the live WordPress admin
+([5845610071](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5845610071)):
+- Total Appointments: **0**; Approved: **0**; Pending: **0**.
+- Revenue: **€0.00**; Customers: **0**; Upcoming Appointments: empty.
+- BookingPress menus are present (Calendar, Appointments, Payments, Customers,
+  Services, Notifications, Customize, Settings) but show no usage history.
 
-### Recommended next action
-A human with WordPress admin access (or a time-boxed, explicitly-approved
-read-only credential grant to a session) should check, inside `wp-admin`:
-1. BookingPress → Services: are any services currently configured/active?
-2. BookingPress → Appointments/Bookings: any bookings in the recent past or
-   scheduled in the future?
-3. Which pages/posts/forms embed the BookingPress shortcode or block?
+### Decision
+Per the `ZANETA_DECISION — D5 RESOLVED` comment
+([5853600785](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5853600785)):
+- BookingPress is **not used** for Bona Fide's scheduling workflow — the
+  business uses **Calendly** instead.
+- BookingPress is therefore **not a required migration dependency** and must
+  **not** be recreated in the static site.
+- **Calendly** must be preserved/reimplemented as the scheduling integration in
+  the later integrations stage.
+- BookingPress itself is **not removed now** — its current WordPress
+  installation must remain unchanged until forensic preservation is complete;
+  removal is deferred to the authorized WordPress cleanup/security-remediation
+  stage.
 
-Report the findings in this Issue (or a follow-up Block) so D5 can be resolved
-and the retire-vs-replace decision in §7.4/§11 can be finalized.
+No WordPress plugin, setting, or content was disabled, deleted, or modified by
+this Block or by the operator evidence capture.
 
 ---
 
 ## Consequence class and confirmation
 
 - **Consequence class:** read-only external investigation plus reversible
-  internal repository documentation, per Issue #19.
-- **Live site:** not modified. No request to `bonafidenitro.com` reached the live
-  domain — every attempt was rejected by this environment's own egress proxy
-  before leaving the sandbox.
-- **Repository scope:** this Block adds exactly one new file,
+  internal repository documentation, per Issue #19. The D1/I1/D5 evidence and
+  decisions applied in this correction were captured and posted by Žaneta
+  directly on Issue #19; this session did not perform any new live check
+  against `bonafidenitro.com` or WordPress admin and could not have (its
+  outbound egress to `bonafidenitro.com` remains blocked, and it has no
+  WordPress admin or cPanel/WHM credentials).
+- **Live site:** not modified. No request from this session to
+  `bonafidenitro.com` reached the live domain. No hosting configuration, SSH
+  key, WordPress plugin, setting, or content was created, imported, authorized,
+  enabled, disabled, deleted, or otherwise changed by this Block or by the
+  operator evidence capture it relies on.
+- **Repository scope:** this Block only edits
   `docs/migration/06-stage1-pre-build-blockers-resolved.md`. No other file was
   changed.
 - **Credentials/secrets/permissions/production/DNS/redirect/Search
   Console/WordPress/hosting actions:** none taken, none requested to be taken by
-  this Block.
+  this Block. Creating/authorizing the D1 SSH deploy key and any future D5
+  BookingPress removal each remain separate, explicitly-gated actions for a
+  later Block.
 
 ## Recommended next action (all open items, consolidated)
 
-1. **D1, D5:** a human operator with cPanel and WordPress-admin access answers
-   the specific checks listed above and posts the results on Issue #19.
-2. **I1:** a human operator (or a session/environment with egress allowed to
-   `bonafidenitro.com`) runs `curl -IL` (following every `Location` header and
-   repeating the request until a non-redirect status, not a single `curl -I`,
-   which shows only the first hop) against each of the 15 URLs and posts the
-   raw results on Issue #19.
-3. Once D1/I1/D5 are answered, a follow-up Block updates this report (or opens
-   Block 2) to record them as resolved, and only then does Stage 1 fully close
-   ahead of Stage 2 (forensic preservation).
+Stage 1 (D1, I1, D5, D11) is now resolved. What remains is deferred, gated
+follow-up work for later Blocks, not open Stage 1 items:
 
-No further action is authorized under this Block beyond producing this report.
+1. **D1:** a later Block creates and authorizes a dedicated SSH deploy key
+   (e.g. `bonafide-git-deploy`), subject to its own explicit Žaneta
+   credential/permission approval, before the static build is first deployed
+   into `/public_html` via SSH/SFTP (or File Manager, if SSH is not enabled by
+   then).
+2. **I1:** fold the confirmed redirect behavior — 17 legacy URL variants to the
+   HTTP homepage, and the confirmed external 301 for
+   `/collections-nitro-coffee/` — into the migration redirect manifest in
+   `04-wordpress-to-static-migration-master-plan.md` §7.7 during Stage 2+
+   planning, preserving the current behavior deliberately unless a separate,
+   explicitly-approved SEO/optimization decision changes it. Confirm the one
+   remaining checklist URL
+   (`/healthy-benefits-drinking-nitro-coffee-nitro-coffee-health-benefits/`)
+   individually before finalizing that manifest.
+3. **D5:** preserve/reimplement Calendly as the scheduling integration in the
+   later integrations stage; BookingPress is not recreated in the static site
+   and its removal from WordPress is deferred to the authorized forensic
+   preservation/security-remediation stage, not before.
+
+No further action is authorized under this Block beyond recording these
+resolutions. Stage 2 dispatch is a separate Block decision, not authorized here.
