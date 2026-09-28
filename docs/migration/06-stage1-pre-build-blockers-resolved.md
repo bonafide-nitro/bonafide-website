@@ -138,8 +138,9 @@ correction changes D1's or D5's resolved status or the underlying
 `ZANETA_DECISION` architecture/evidence; no credential, secret, or
 production action is authorized by either correction or by this PR.
 
-A further Codex review on this PR (review 5342561015, on this exact head)
-recorded two live P1 findings. The first
+A further Codex review on this PR (review 5342561015, on the prior head
+`15185fff6700ba93c4e28987e0bae9b465db8233`) recorded two live P1 findings.
+The first
 ([discussion_r4125302519](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4125302519))
 correctly noted that placing the clean WordPress copy in a sibling directory
 does not by itself satisfy §12.2 isolation: per
