@@ -8,6 +8,7 @@ This private repository is the GitHub source of truth for the rebuild of **bonaf
 - The domain is not changing.
 - The approved static framework is **Astro**.
 - No production deployment is connected yet.
+- An Astro static-site foundation (placeholders + data contracts) exists; see `docs/STATIC_SITE_STRUCTURE.md`.
 - No WordPress files, DNS, redirects, Search Console settings, or production content should be changed merely because this repository exists.
 - Migration evidence and preservation requirements live in `docs/migration/`.
 

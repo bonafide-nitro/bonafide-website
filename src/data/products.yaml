@@ -1,0 +1,23 @@
+# Product data structure — single source of truth for BOTH product views.
+# `views` decides which page renders a SKU: retail -> /products/, wholesale -> /products-2/.
+# The two pages are separate launch URLs and are never merged, aliased or substituted.
+# Source: 04-master-plan §10.3. The full dataset is Stage 6; only the two SKUs the
+# master plan itself shows are included here, to prove the structure and the view split.
+- id: hair-raiser-organic
+  name: "Hair Raiser® Organic"
+  category: coffee
+  line: core
+  brand: Bona Fide
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/products/hair-raiser®-organic-nitro-coffee"
+  image: /wp-content/uploads/2017/10/Hair-Raiser-Nitro-Coffee-for-website.png
+  alt: Hair Raiser Nitro Coffee by Bona Fide
+  views: [retail, wholesale]
+- id: caveman-coffee-nitro
+  name: Caveman Coffee Company Nitro
+  category: coffee
+  line: alliance
+  brand: Caveman Coffee Company
+  pricing: { retail: null, wholesale: 125.00 }
+  views: [wholesale]   # /products-2/ ONLY — preserves the Alliance exclusivity

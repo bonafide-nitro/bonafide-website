@@ -1,0 +1,12 @@
+# Site settings. Source: 04-master-plan §5, §6.2 (SEO-7, SEO-13), §10.4; 05-execution-plan Stage 4.
+name: Bona Fide Nitro Coffee and Tea
+url: https://bonafidenitro.com
+canonicalHost: bonafidenitro.com   # apex; www is never canonical (SEO-7)
+protocol: https
+trailingSlash: always              # SEO-13: every canonical URL ends in "/", slash-less variants 301
+buildFormat: directory             # emits /<path>/index.html
+sameDomainMigration: true
+# Deliberately empty: no deployment target, hosting connection, credential,
+# analytics ID or tracking is part of the Stage 4 foundation (Issue #21).
+deployment: null
+analytics: null

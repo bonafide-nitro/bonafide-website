@@ -1,0 +1,86 @@
+# Redirect register — DATA ONLY. Nothing here is applied to any live site; a later Block
+# generates .htaccess from it (04-master-plan §10.4). 301 only, single hop, no chains.
+# Sources: 04-master-plan §7.4/§7.5/§7.8, 06-stage1 report (I1, D5).
+#
+# state: defined            -> destination decided by the authoritative evidence
+# state: pending-decision   -> evidence does not decide the destination; destination is null
+#                              and MUST NOT be generated until decided (never invented here).
+rules:
+  # --- protocol/host canonicalisation, single hop (SEO-7, §7.5) ---
+  - { id: http-apex, type: canonicalisation, from: "http://bonafidenitro.com/*", to: "https://bonafidenitro.com/*", status: 301, state: defined }
+  - { id: http-www, type: canonicalisation, from: "http://www.bonafidenitro.com/*", to: "https://bonafidenitro.com/*", status: 301, state: defined }
+  - { id: https-www, type: canonicalisation, from: "https://www.bonafidenitro.com/*", to: "https://bonafidenitro.com/*", status: 301, state: defined }
+  # --- AMP (SEO-6, §7.5) ---
+  - { id: amp-pattern, type: pattern, from: "/<slug>/amp/", to: "/<slug>/", status: 301, state: defined, note: "every generated /<slug>/amp/ (29)" }
+  - { id: amp-root, type: exact, from: /amp/, to: /, status: 301, state: defined }
+  - { id: amp-bookingpress-params, type: pattern, from: "/amp/?bpa_page=bookingpress_download&*", to: /, status: 301, state: defined, note: "3 parameter variants" }
+  # --- sitemap transition (§7.8) ---
+  - { id: wp-sitemap, type: exact, from: /wp-sitemap.xml, to: /sitemap.xml, status: 301, state: defined }
+  # --- existing same-origin redirects (§7.5) ---
+  - { id: contact-slash, type: exact, from: /contact/, to: /contact-bona-fide-nitro-coffee-and-tea/, status: 301, state: defined }
+  - { id: contact-noslash, type: exact, from: /contact, to: /contact-bona-fide-nitro-coffee-and-tea/, status: 301, state: defined }
+  # --- 301 at initial migration (§7.4) ---
+  - { id: blog-old, type: exact, from: /blog-old/, to: /blog/, status: 301, state: defined }
+  - { id: on-tap-in-10-min, type: exact, from: /on-tap-in-10-min/, to: /coffee-on-tap-is-the-future/, status: 301, state: defined }
+  - { id: stability-kegs, type: exact, from: /stability-kegs-nitro-coffee/, to: /how-ambient-stable-coffee-kegs-help-you-save-more-money/, status: 301, state: defined }
+  - { id: gastro-hotel-2023, type: exact, from: /gastro-and-hotel-2023-paid-ticket/, to: /contact-bona-fide-nitro-coffee-and-tea/, status: 301, state: defined }
+  - { id: thank-you-page-usa, type: exact, from: /thank-you-page-usa/, to: /interested-in-selling-usa/, status: 301, state: defined }
+  - { id: category-our-facilities, type: exact, from: /category/our-facilities/, to: /about/, status: 301, state: defined }
+  - { id: category-products, type: exact, from: /category/products/, to: /products/, status: 301, state: defined }
+  - { id: category-tea, type: exact, from: /category/tea/, to: /products/, status: 301, state: defined, note: "at launch; slug is the naming precedent for a future /nitro-tea/ — re-point before reuse" }
+  - { id: healthy-benefits-near-miss, type: exact, from: /healthy-benefits-drinking-nitro-coffee-nitro-coffee-health-benefits/, to: /healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/, status: 301, state: defined }
+  - { id: thank-you-ticket-paid, type: exact, from: /thank-you-your-ticket-is-paid/, to: /contact-bona-fide-nitro-coffee-and-tea/, status: 301, state: defined }
+  # slash-less duplicates (§7.4 / SEO-13)
+  - { id: slashless-hot-nitro-coffee, type: exact, from: /hot-nitro-coffee, to: /hot-nitro-coffee/, status: 301, state: defined }
+  - { id: slashless-nitro-cold-brew, type: exact, from: /nitro-cold-brew, to: /nitro-cold-brew/, status: 301, state: defined }
+  - { id: slashless-vanilla, type: exact, from: /a-touch-of-vanilla-to-your-nitro-coffee, to: /a-touch-of-vanilla-to-your-nitro-coffee/, status: 301, state: defined }
+  - { id: slashless-3-cups, type: exact, from: /3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health, to: /3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/, status: 301, state: defined }
+  - id: slashless-coffee-trend
+    type: exact
+    from: /coffee-trend-dominate-2018
+    to: null
+    status: 301
+    state: pending-decision
+    note: "Evidence spelling (/coffee-trend-dominate-2018) differs from the Tier-2 launch slug /coffee-trends-dominate-2018/; the intended destination needs confirmation, not a guess."
+  # --- booking (D5 / 06-stage1: Calendly survives, BookingPress does not; §7.4 'booking survives') ---
+  # /book-appointment/ itself is a planned 200 page with an embedded scheduler (Stage 7).
+  - { id: booking-my-bookings, type: exact, from: /my-bookings/, to: /book-appointment/, status: 301, state: defined }
+  - { id: booking-cancel-appointment, type: exact, from: /cancel-appointment/, to: /book-appointment/, status: 301, state: defined }
+  - { id: booking-cancel-payment, type: exact, from: /cancel-payment/, to: /book-appointment/, status: 301, state: defined }
+  - { id: booking-cancellation-confirmation, type: exact, from: /appointment-cancellation-confirmation/, to: /book-appointment/, status: 301, state: defined }
+  - { id: booking-thank-you, type: exact, from: /thank-you/, to: /book-appointment/, status: 301, state: defined }
+  # --- existing plugin redirects to nitrocoffee.store (§7.5: reproduce all 11) ---
+  # Only two full destinations are recorded in the evidence; the rest are truncated in
+  # 03-forensic doc lines 278-288, so `to` stays null with the evidence fragment kept.
+  - { id: svc-hair-raiser, type: external, from: /services/hair-raiser-organic/, to: "https://www.nitrocoffee.store/products/hair-raiser®-organic-nitro-coffee", status: 301, state: defined }
+  - { id: collections-nitro-coffee, type: external, from: /collections-nitro-coffee/, to: "https://www.nitrocoffee.store/collections/nitro-coffee", status: 301, state: defined }
+  - { id: svc-peru, type: external, from: /services/peru-organic/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-peru-nitro-co…", status: 301, state: pending-decision }
+  - { id: svc-ethiopia, type: external, from: /services/ethiopia-yirgacheffe-organic/, to: null, evidenceFragment: "nitrocoffee.store/products/ethiopia-yirgacheffe-…", status: 301, state: pending-decision }
+  - { id: svc-guatemala, type: external, from: /services/guatemala-organic/, to: null, evidenceFragment: "nitrocoffee.store/products/guatemala-organic-nit…", status: 301, state: pending-decision }
+  - { id: svc-hibiscus, type: external, from: /services/organic-hibiscus-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-hibiscus-nitr…", status: 301, state: pending-decision }
+  - { id: svc-mango, type: external, from: /services/mango-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/mango-nitro-tea", status: 301, state: pending-decision, note: "fragment appears complete but is not confirmed as the full URL" }
+  - { id: svc-espresso, type: external, from: /services/espresso-organic-nitro-coffee/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-espresso-nitr…", status: 301, state: pending-decision }
+  - { id: svc-passion-fruit, type: external, from: /services/passion-fruit-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-passion-fruit…", status: 301, state: pending-decision }
+  - { id: svc-green-citrus, type: external, from: /services/green-citrus-nitro-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-citrus-green-…", status: 301, state: pending-decision }
+  - { id: svc-cascara, type: external, from: /services/cascara-coffee-cherry-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/nitro-cascara-tea-pet…", status: 301, state: pending-decision }
+  # --- 17 tested legacy URL variants that today land on the HTTP homepage via '404 to Start' ---
+  # 06-stage1 (I1): observed behaviour is NOT reproduced (SEO-12) and each path needs a deliberate
+  # destination reachable from apex HTTPS in one hop. That decision is Stage 2+; not made here.
+  # (www./http:// variants of /kegging-service/ and /where-to-refill-your- are covered by canonicalisation.)
+  - { id: legacy-to, type: exact, from: /To, to: null, status: 301, state: pending-decision }
+  - { id: legacy-roots, type: exact, from: /roots/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-where-to-refill, type: exact, from: /where-to-refill-your-, to: null, status: 301, state: pending-decision }
+  - { id: legacy-blog-new, type: exact, from: /blog-new/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-collections, type: exact, from: /collections/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-sustainability, type: exact, from: /sustainability/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-copyright-notice, type: exact, from: /copyright-notice/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-kegging-service, type: exact, from: /kegging-service/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-best-coffee-creamers, type: exact, from: /best-coffee-creamers/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-best-nitro-maker, type: exact, from: /best-nitro-cold-brew-coffee-maker/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-author-raul, type: exact, from: /author/raul/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-cold-brew-tap-future, type: exact, from: /cold-brew-coffee-tap-future-serve/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-contact-email, type: exact, from: /contact-email/, to: null, status: 301, state: pending-decision }
+  # --- raw post-ID URLs (§7.5 'current destinations' — not stated in the evidence used here) ---
+  - { id: post-id-1187, type: query, from: "/?p=1187", to: null, status: 301, state: pending-decision }
+  - { id: post-id-1202, type: query, from: "/?p=1202", to: null, status: 301, state: pending-decision }
+  - { id: post-id-1211, type: query, from: "/?p=1211", to: null, status: 301, state: pending-decision }

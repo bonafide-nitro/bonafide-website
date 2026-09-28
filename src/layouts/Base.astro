@@ -1,0 +1,24 @@
+---
+import { loadNavigation } from '../lib/data.mjs';
+const { title, canonicalPath } = Astro.props;
+const nav = loadNavigation();
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="robots" content="noindex" /> <!-- scaffold placeholder output only -->
+    {canonicalPath && <link rel="canonical" href={new URL(canonicalPath, Astro.site)} />}
+  </head>
+  <body>
+    <nav>
+      <ul>
+        {nav.launch.map((i) => <li><a href={i.path}>{i.label}</a></li>)}
+        {nav.external.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
+      </ul>
+    </nav>
+    <main><slot /></main>
+  </body>
+</html>

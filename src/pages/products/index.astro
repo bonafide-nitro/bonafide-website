@@ -1,0 +1,11 @@
+---
+import Base from '../../layouts/Base.astro';
+import { loadProducts } from '../../lib/data.mjs';
+import { productsForView } from '../../lib/products.mjs';
+const items = productsForView(loadProducts(), 'retail');
+---
+<Base title="Scaffold — Products (retail view)" canonicalPath="/products/">
+  <h1>Products — retail view (scaffold)</h1>
+  <p>Placeholder proving the retail view of the shared product data.</p>
+  <ul>{items.map((p) => <li>{p.name}</li>)}</ul>
+</Base>
