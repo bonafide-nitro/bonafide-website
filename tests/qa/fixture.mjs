@@ -6,7 +6,10 @@ import { runQa } from '../../qa/checks.mjs';
 
 const ORIGIN = 'https://bonafidenitro.com';
 
-export const page = ({ p, title, h1 = `Heading ${p}`, body = '', head = '', canonical = ORIGIN + p, robots, scaffold = false }) =>
+export const jsonLd = (types = ['Organization', 'WebSite', 'WebPage', 'BreadcrumbList']) =>
+  `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': types.map((t) => ({ '@type': t })) })}</script>`;
+
+export const page = ({ p, title, h1 = `Heading ${p}`, body = '', head = jsonLd(), canonical = ORIGIN + p, robots, scaffold = false }) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
   (robots ? `<meta name="robots" content="${robots}">` : '') +
   (scaffold ? '<meta name="bonafide-qa" content="scaffold-placeholder">' : '') +

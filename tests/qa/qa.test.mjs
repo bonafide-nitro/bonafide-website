@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { makeFixture, page, run, codes, rm, cleanup } from './fixture.mjs';
+import { makeFixture, page, jsonLd, run, codes, rm, cleanup } from './fixture.mjs';
 
 // Runs `mutate` on a fresh healthy fixture, then asserts the given check:code is detected
 // as blocking in strict mode. `invariant` additionally requires that foundation mode also fails.
@@ -133,7 +133,56 @@ test('allowlisted third-party script host is accepted', () => {
 
 // --- T6 schema ---
 detects('invalid JSON-LD', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<script type="application/ld+json">{oops</script>' })), 'T6:jsonld-invalid');
-detects('manifest-required JSON-LD type missing', (fx) => { fx.baseline.urls.find((u) => u.path === '/about/').schema = ['BreadcrumbList']; }, 'T6:schema-missing');
+detects('manifest-required JSON-LD type missing', (fx) => { fx.baseline.urls.find((u) => u.path === '/about/').schema = ['Article']; }, 'T6:schema-missing');
+
+const withTypes = (types) => page({ p: '/about/', title: 'About us', body: '', head: jsonLd(types) });
+detects('site-wide Organization missing on a page (not declared in manifest)', (fx) => fx.put('about/index.html', withTypes(['WebSite', 'BreadcrumbList'])), 'T6:schema-sitewide-missing');
+detects('site-wide WebSite missing on a page (not declared in manifest)', (fx) => fx.put('about/index.html', withTypes(['Organization', 'BreadcrumbList'])), 'T6:schema-sitewide-missing');
+detects('BreadcrumbList missing on a page (not declared in manifest)', (fx) => fx.put('about/index.html', withTypes(['Organization', 'WebSite'])), 'T6:schema-page-missing');
+detects('no JSON-LD at all on a page', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', head: '' })), 'T6:schema-page-missing');
+test('scaffold page without schema is migration-remaining, not an invariant', () => {
+  const fx = makeFixture();
+  try {
+    fx.put('about/index.html', page({ p: '/about/', title: 'About us', head: '', scaffold: true }));
+    const r = run(fx, 'foundation');
+    assert.ok(codes(r).includes('T6:schema-page-missing'));
+    assert.equal(r.findings.filter((f) => f.check === 'T6' && f.kind === 'invariant').length, 0);
+    assert.equal(run(fx, 'strict').passed, false);
+  } finally { cleanup(fx); }
+});
+
+// --- T9 well-formedness (parser, not regexp) ---
+const urls4 = ['/', '/products/', '/products-2/', '/about/'];
+const NS = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"';
+detects('sitemap omitting every </url> close tag', (fx) => fx.put('sitemap.xml', `<?xml version="1.0"?><urlset ${NS}>${urls4.map((u) => `<url><loc>https://bonafidenitro.com${u}</loc>`).join('')}</urlset>`), 'T9:sitemap-invalid');
+detects('sitemap with an unescaped ampersand', (fx) => fx.put('sitemap.xml', `<urlset ${NS}>${urls4.map((u) => `<url><loc>https://bonafidenitro.com${u}</loc></url>`).join('')}<url><loc>https://bonafidenitro.com/a?b=1&c=2</loc></url></urlset>`), 'T9:sitemap-invalid');
+detects('sitemap with mismatched tags', (fx) => fx.put('sitemap.xml', `<urlset ${NS}>${urls4.map((u) => `<url><loc>https://bonafidenitro.com${u}</url></loc>`).join('')}</urlset>`), 'T9:sitemap-invalid');
+detects('sitemap <url> without <loc>', (fx) => fx.put('sitemap.xml', `<urlset ${NS}>${urls4.map((u) => `<url><loc>https://bonafidenitro.com${u}</loc></url>`).join('')}<url></url></urlset>`), 'T9:sitemap-invalid');
+detects('sitemap with trailing junk after root', (fx) => fx.put('sitemap.xml', `<urlset ${NS}>${urls4.map((u) => `<url><loc>https://bonafidenitro.com${u}</loc></url>`).join('')}</urlset><x/>`), 'T9:sitemap-invalid');
+test('well-formed sitemap with lastmod, comment and escaped ampersand passes', () => {
+  const fx = makeFixture();
+  try {
+    fx.put('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<!-- generated --><urlset ${NS}>${urls4.map((u) => `<url><loc>https://bonafidenitro.com${u}</loc><lastmod>2026-01-01</lastmod></url>`).join('')}</urlset>\n`);
+    assert.deepEqual(codes(run(fx)), []);
+  } finally { cleanup(fx); }
+});
+
+// --- T2 protocol/host canonicalisation chains ---
+const canon = () => [
+  { id: 'http-apex', type: 'canonicalisation', from: 'http://bonafidenitro.com/*', to: 'https://bonafidenitro.com/*', status: 301, state: 'defined' },
+  { id: 'http-www', type: 'canonicalisation', from: 'http://www.bonafidenitro.com/*', to: 'https://bonafidenitro.com/*', status: 301, state: 'defined' },
+  { id: 'https-www', type: 'canonicalisation', from: 'https://www.bonafidenitro.com/*', to: 'https://bonafidenitro.com/*', status: 301, state: 'defined' },
+];
+test('canonicalisation rules as declared are one hop (no chain)', () => {
+  const fx = makeFixture();
+  try { fx.redirects.push(...canon()); assert.deepEqual(codes(run(fx)), []); } finally { cleanup(fx); }
+});
+detects('http apex redirected to www, then www to apex (two hops)', (fx) => {
+  const c = canon(); c[0].to = 'https://www.bonafidenitro.com/*'; fx.redirects.push(...c);
+}, 'T2:chain');
+detects('canonicalisation loop between http and https rules', (fx) => {
+  fx.redirects.push({ id: 'a', type: 'canonicalisation', from: 'https://www.bonafidenitro.com/*', to: 'http://www.bonafidenitro.com/*', status: 301, state: 'defined' }, { id: 'b', type: 'canonicalisation', from: 'http://www.bonafidenitro.com/*', to: 'https://www.bonafidenitro.com/*', status: 301, state: 'defined' });
+}, 'T2:loop');
 
 // --- T13 config ---
 test('detects: astro config drift (trailingSlash / format / output)', () => {

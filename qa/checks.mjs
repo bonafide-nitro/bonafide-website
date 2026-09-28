@@ -10,6 +10,7 @@ import path from 'node:path';
 import { scanDist } from './lib/scan.mjs';
 import { jsonLdTypes } from './lib/html.mjs';
 import { patternToRegExp, hasPlaceholder } from './lib/patterns.mjs';
+import { parseXml } from './lib/xml.mjs';
 
 export const INV = 'invariant';
 export const REM = 'migration-remaining';
@@ -19,6 +20,9 @@ const HOSTS = new Set(['bonafidenitro.com', 'www.bonafidenitro.com']);
 const hasExt = (p) => /\.[a-z0-9]+$/i.test(p);
 const isP1 = (p) => p === '/products/';
 const isP2 = (p) => p === '/products-2/';
+// Master plan §13.2 T6 contract (deployment blocker); the config may add to it, never remove from it.
+const SITE_WIDE_SCHEMA = ['Organization', 'WebSite'];
+const PER_PAGE_SCHEMA = ['BreadcrumbList'];
 
 class Findings {
   constructor() { this.map = new Map(); }
@@ -55,6 +59,21 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
   const pathRules = rules.filter((r) => typeof r.from === 'string' && r.from.startsWith('/'));
   const ruleMatchers = pathRules.map((r) => ({ r, re: patternToRegExp(r.from) }));
   const matchRule = (p) => ruleMatchers.find(({ re }) => re.test(p))?.r;
+  const urlRules = rules.filter((r) => typeof r.from === 'string' && /^https?:\/\//.test(r.from)).map((r) => ({ r, re: patternToRegExp(r.from) }));
+  // The rule a redirect destination would hit next (path, protocol/host canonicalisation or full-URL rule).
+  // A `*` in a full-URL destination passes the request path through, so it is probed with a sample path.
+  const nextHop = (to) => {
+    if (typeof to !== 'string' || !to) return null;
+    if (to.startsWith('/')) return hasPlaceholder(to) ? null : (matchRule(to) ?? urlRules.find(({ re }) => re.test(ORIGIN + to))?.r ?? null);
+    if (!/^https?:\/\//.test(to)) return null;
+    const wildcard = to.includes('*');
+    if (/[<{]/.test(to)) return null;
+    const probe = to.replace(/\*/g, 'qa-probe/');
+    const hit = urlRules.find(({ re }) => re.test(probe))?.r;
+    if (hit || wildcard) return hit ?? null;
+    let u; try { u = new URL(to); } catch { return null; }
+    return HOSTS.has(u.hostname) ? (matchRule(u.pathname + u.search) ?? null) : null;
+  };
   const uniq = (a) => [...new Set(a)];
 
   // ---------- manifest sanity (guards the product-separation contract itself) ----------
@@ -100,10 +119,10 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     if (r.to && r.to.startsWith('/') && !hasPlaceholder(r.to) && !r.to.endsWith('/') && !hasExt(r.to)) F.add('T13', 'redirect-destination-no-slash', INV, r.from, `redirect ${r.id} destination ${r.to} lacks trailing slash`);
     if (r.to && r.to.startsWith('/') && !hasPlaceholder(r.to) && !known.has(r.to) && r.to !== '/sitemap.xml') F.add('T2', 'unknown-destination', INV, r.from, `redirect ${r.id} destination ${r.to} is not a protected/planned URL`);
     // one hop / chain / loop, following through any register rule matching the destination
-    if (r.state === 'defined' && r.to && r.to.startsWith('/') && !hasPlaceholder(r.to)) {
+    if (r.state === 'defined' && r.to) {
       const visited = new Set([r.id]); let cur = r; let hops = 0; let loop = false;
       for (;;) {
-        const next = cur.to && cur.to.startsWith('/') && !hasPlaceholder(cur.to) ? matchRule(cur.to) : null;
+        const next = cur.state === 'defined' ? nextHop(cur.to) : null;
         if (!next) break;
         hops++;
         if (visited.has(next.id)) { loop = true; break; }
@@ -182,6 +201,9 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
       try { types.push(...jsonLdTypes(JSON.parse(block))); } catch { F.add('T6', 'jsonld-invalid', INV, page.path, 'JSON-LD block does not parse'); }
     }
     for (const t of e?.schema ?? []) if (!types.includes(t)) F.add('T6', 'schema-missing', ck, page.path, `JSON-LD @type ${t} required by manifest`);
+    // §13.2 T6: site-wide and per-page schema are required on every built page whether or not the manifest declares them.
+    for (const t of [...SITE_WIDE_SCHEMA, ...(config.requiredSiteWideSchema ?? [])]) if (!types.includes(t)) F.add('T6', 'schema-sitewide-missing', ck, page.path, `JSON-LD @type ${t} is required site-wide (master plan §13.2 T6)`);
+    for (const t of [...PER_PAGE_SCHEMA, ...(config.requiredPageSchema ?? [])]) if (!types.includes(t)) F.add('T6', 'schema-page-missing', ck, page.path, `JSON-LD @type ${t} is required on every page (master plan §13.2 T6)`);
   }
   for (const [title, group] of titleGroups) {
     if (group.length > 1 && !group.every((p) => (rules_.titleUniquenessException ?? []).includes(p)))
@@ -234,9 +256,20 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
   const sm = textFiles.get('sitemap.xml');
   if (sm == null) F.add('T9', 'sitemap-absent', REM, '/sitemap.xml', 'dist/sitemap.xml not generated yet');
   else {
-    const valid = /^\s*(<\?xml[^>]*\?>\s*)?<urlset\b[^>]*xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9"[^>]*>[\s\S]*<\/urlset>\s*$/.test(sm);
-    if (!valid) F.add('T9', 'sitemap-invalid', INV, '/sitemap.xml', 'sitemap.xml is not a valid sitemaps.org <urlset> document');
-    const locs = [...sm.matchAll(/<loc>\s*([^<]*?)\s*<\/loc>/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+    let locs = []; let invalid = null;
+    try {
+      const root = parseXml(sm);
+      if (root.name !== 'urlset' || root.attrs.xmlns !== 'http://www.sitemaps.org/schemas/sitemap/0.9') throw new Error('root must be <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+      for (const u of root.children) {
+        if (u.name !== 'url') throw new Error(`unexpected <${u.name}> inside <urlset>`);
+        const l = u.children.filter((c) => c.name === 'loc');
+        if (l.length !== 1 || !l[0].text.trim()) throw new Error('every <url> needs exactly one non-empty <loc>');
+        const bad = u.children.find((c) => !['loc', 'lastmod', 'changefreq', 'priority'].includes(c.name) && !c.name.includes(':'));
+        if (bad) throw new Error(`unexpected <${bad.name}> inside <url>`);
+        locs.push(l[0].text.trim());
+      }
+    } catch (err) { invalid = err.message; locs = []; }
+    if (invalid) F.add('T9', 'sitemap-invalid', INV, '/sitemap.xml', `sitemap.xml is not a well-formed sitemaps.org <urlset> document: ${invalid}`);
     const listed = new Set();
     for (const loc of locs) {
       if (!loc.startsWith(ORIGIN + '/')) { F.add('T9', 'sitemap-foreign-url', INV, loc, 'sitemap URL is not on https://bonafidenitro.com'); continue; }

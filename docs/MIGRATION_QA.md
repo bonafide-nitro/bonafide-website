@@ -38,14 +38,14 @@ canonical or two H1s still fails foundation mode. As Stage 6 replaces a placehol
 | Suite | Implemented (static/build-time) | Notes |
 | --- | --- | --- |
 | T1 URL matrix | every `expect: 200` URL built as `/<path>/index.html`; no unmanifested pages; real `404.html`; no do-not-generate paths in `dist/` | status codes themselves are host behaviour (deferred, see below) |
-| T2 Redirects | register validity (301 only, unique id/source, defined⇔destination, `pending-decision` has none), loops, chains/one-hop (incl. `*`/`<slug>` patterns), unknown destinations, protected URL never a source, pending entries never present in built redirect artifacts (`.htaccess`, `_redirects`, …), no HTML meta-refresh | executing 301s on a server is later (T2 live/staging) |
+| T2 Redirects | register validity (301 only, unique id/source, defined⇔destination, `pending-decision` has none), loops, chains/one-hop (incl. `*`/`<slug>` patterns and full-URL protocol/host canonicalisation rules), unknown destinations, protected URL never a source, pending entries never present in built redirect artifacts (`.htaccess`, `_redirects`, …), no HTML meta-refresh | executing 301s on a server is later (T2 live/staging) |
 | T3 Canonical/indexability | exactly one absolute self-canonical, no cross-canonical, not pointing at a redirect, trailing slash; `noindex` only where declared | |
 | T4 On-page | title present, exactly one `<h1>`, `titleMustContain`/`h1MustContain`, duplicate titles (only the declared `/products/`+`/products-2/` exception) | per-URL contracts for pages other than the two product pages are populated in Stage 6 (manifest note) |
 | T5 Content | `mustContainText`, `min/maxAmazonLinks`, `minStoreLinks`, `minPriceStrings`; **`/products/` ≠ `/products-2/`** output; no redirect/canonical collapse between them; manifest contract for `/products-2/` cannot be weakened | |
-| T6 Schema | all JSON-LD parses; manifest-declared `schema` types present | site-wide Organization/WebSite and BreadcrumbList-on-24-URLs are **not declared in the manifest**, so they are deferred rather than invented; Rich Results validation is external |
+| T6 Schema | all JSON-LD parses; manifest-declared `schema` types present; **`Organization` + `WebSite` site-wide and `BreadcrumbList` on every built page are enforced unconditionally** (master plan §13.2, independent of manifest declarations; scaffold pages report them as migration-remaining) | Rich Results validation is external |
 | T7 Images | every `/wp-content/uploads/…` path referenced from any text file in `dist/` (relative or absolute URL, `srcset`, CSS) exists at the same path | ranking-image list and the 6 alliance images are not in the manifest yet (Stage 6) |
 | T8 Internal links | **zero links to `/products-2/`**; `minInternalLinksIn`; no link to a redirecting, do-not-generate, or nonexistent URL | |
-| T9 Sitemap | `/sitemap.xml` is a valid `<urlset>`; contains `/products-2/`; only manifest `inSitemap` URLs; listed URLs exist and are self-canonical | |
+| T9 Sitemap | `/sitemap.xml` parses as well-formed XML (strict parser, not a regexp) with a sitemaps.org `<urlset>` root and one `<loc>` per `<url>`; contains `/products-2/`; only manifest `inSitemap` URLs; listed URLs exist and are self-canonical | |
 | T10 robots.txt | declares the sitemap; disallows nothing protected | |
 | T11 Security | `quickdelivr`, `coredelivr`, `mpackage` nowhere in `dist/` (contents or file names); third-party `<script src>` hosts must be in `qa/qa.config.json` `allowedScriptHosts` (empty today) | |
 | T13 Trailing slash | canonical/links/redirect destinations end in `/`; no non-directory `.html`; `site.yaml` and `astro.config.mjs` keep `trailingSlash: 'always'`, `format: 'directory'`, `output: 'static'` | slash-less → slash 301 on the server is deferred |
@@ -61,12 +61,12 @@ canonical or two H1s still fails foundation mode. As Stage 6 replaces a placehol
 1. Replace each placeholder with the migrated page (drop the scaffold marker, carry titles/H1/canonical over unchanged, keep `/wp-content/uploads/` paths). Its contracts are then enforced as invariants in foundation mode immediately.
 2. Populate `titleMustContain`/`h1MustContain`/`mustContainText` etc. in `seo-baseline.json` from the baseline evidence as each page lands (manifest note); the runner picks them up unchanged.
 3. Generate `/sitemap.xml` (must include `/products-2/`) and `/robots.txt`.
-4. Add real Organization/WebSite/BreadcrumbList JSON-LD and their manifest declarations when decided.
+4. Add real Organization/WebSite/BreadcrumbList JSON-LD to every page (required by strict QA).
 5. Build a real `404` page.
 6. Watch `npm run qa:strict` shrink; the `MIGRATION WORK REMAINING` list is the punch list. Stage 6 is done for QA when `qa:strict` exits 0, and the same must hold on the preview and pre-cutover builds.
 
 Pending-decision redirects stay unexecutable until a human decision fills their destination; the QA suite fails the build if one is ever emitted.
 
 ## Current results (this Block)
-- Foundation mode on the merged scaffold: **PASS** (0 invariant failures; 64 migration-remaining findings: 35 protected URLs unbuilt, `sitemap.xml`/`robots.txt` absent, placeholder pages/404, product-page content/title/schema/link contracts, 8 links to unbuilt launch URLs).
-- Strict mode: **FAIL** with the same 64 findings — expected until Stage 6.
+- Foundation mode on the merged scaffold: **PASS** (0 invariant failures; 73 migration-remaining findings: 35 protected URLs unbuilt, `sitemap.xml`/`robots.txt` absent, placeholder pages/404, product-page content/title/link contracts, site-wide/breadcrumb schema missing on the 4 scaffold pages, 8 links to unbuilt launch URLs).
+- Strict mode: **FAIL** with the same 73 findings — expected until Stage 6.
