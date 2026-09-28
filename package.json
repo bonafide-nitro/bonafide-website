@@ -4,14 +4,19 @@
   "private": true,
   "type": "module",
   "description": "Bona Fide Nitro Coffee and Tea static site (Astro, static output only).",
-  "engines": { "node": ">=22.18" },
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "check:dist": "node scripts/check-build-output.mjs",
-    "test": "node --test \"tests/foundation/*.test.mjs\"",
-    "test:build": "npm run build && npm run check:dist"
+    "test": "node --test \"tests/foundation/*.test.mjs\" \"tests/qa/*.test.mjs\"",
+    "test:build": "npm run build && npm run check:dist && npm run qa:foundation",
+    "qa": "node qa/cli.mjs --mode foundation",
+    "qa:foundation": "node qa/cli.mjs --mode foundation",
+    "qa:strict": "node qa/cli.mjs --mode strict"
   },
   "dependencies": {
     "astro": "^5.0.0",

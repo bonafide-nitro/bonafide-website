@@ -7,7 +7,8 @@ redirect, Search Console or WordPress action is part of this foundation.
 - `npm ci` — install
 - `npm run build` — static build to `dist/`
 - `npm run check:dist` — fail if `dist/` contains `quickdelivr`, `coredelivr` or `mpackage`
-- `npm test` — foundation tests (data contracts; also checks `dist/` if built)
+- `npm test` — foundation tests (data contracts; also checks `dist/` if built) and QA fixture tests
+- `npm run qa` / `npm run qa:strict` — migration QA framework, see `docs/MIGRATION_QA.md`
 
 ## Layout
 | Path | Purpose |
@@ -24,6 +25,7 @@ redirect, Search Console or WordPress action is part of this foundation.
 | `public/` | reserved for `wp-content/uploads/` at original paths (Stage 6) |
 | `scripts/check-build-output.mjs` | forbidden-string guard for `dist/` |
 | `tests/foundation/` | foundation tests (`node --test`) |
+| `qa/`, `tests/qa/` | Stage 5 migration QA runner (foundation vs strict mode) and its negative tests — `docs/MIGRATION_QA.md` |
 
 ## Preservation rules encoded
 - `/products/` and `/products-2/` are separate entries in baseline, data views and pages; neither is a redirect source and `/products-2/` is never a redirect destination.
@@ -33,4 +35,4 @@ redirect, Search Console or WordPress action is part of this foundation.
 ## Deferred (not decided by this Block)
 - Destinations for the 13 legacy paths that land on the homepage via "404 to Start", for the 3 `?p=` URLs, and for 9 of the 10 `/services/*` redirects (destinations truncated in evidence; `/services/hair-raiser-organic/` and `/collections-nitro-coffee/` are fully recorded, giving 11 existing plugin redirects in total) — left `pending-decision`.
 - `/coffee-trend-dominate-2018` slash-less mapping (evidence slug differs from the Tier-2 slug).
-- `.htaccess` generation, sitemap/robots generation, per-URL title/H1 contracts, CI workflow for the build — later Blocks (Stages 5–6).
+- `.htaccess` generation, sitemap/robots generation, per-URL title/H1 contracts. (Build/QA CI: `.github/workflows/build-qa.yml`, Stage 5.)

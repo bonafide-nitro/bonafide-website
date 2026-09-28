@@ -9,6 +9,7 @@ const nav = loadNavigation();
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <meta name="bonafide-qa" content="scaffold-placeholder" /> <!-- QA marker: strict migration QA fails on this -->
     <meta name="robots" content="noindex" /> <!-- scaffold placeholder output only -->
     {canonicalPath && <link rel="canonical" href={new URL(canonicalPath, Astro.site)} />}
   </head>
