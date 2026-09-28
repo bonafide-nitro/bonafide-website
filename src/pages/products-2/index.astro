@@ -1,0 +1,11 @@
+---
+import Base from '../../layouts/Base.astro';
+import { loadProducts } from '../../lib/data.mjs';
+import { productsForView } from '../../lib/products.mjs';
+const items = productsForView(loadProducts(), 'wholesale');
+---
+<Base title="Scaffold — Products (wholesale view)" canonicalPath="/products-2/">
+  <h1>Products — wholesale view (scaffold)</h1>
+  <p>Placeholder proving the wholesale view of the shared product data.</p>
+  <ul>{items.map((p) => <li>{p.name}: ${p.pricing.wholesale}</li>)}</ul>
+</Base>

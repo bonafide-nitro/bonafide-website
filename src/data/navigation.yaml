@@ -1,0 +1,16 @@
+# Launch navigation = today's global nav, reproduced not redesigned.
+# Source: 04-master-plan §8.1. /products-2/ is ABSENT BY DESIGN (SEO-2, T8: 0 internal links).
+# Labels are scaffold placeholders; final label text is carried across in Stage 6.
+launch:
+  - { path: /, label: Home }
+  - { path: /nitro-cold-brew/, label: Nitro Cold Brew }
+  - { path: /howtobuy/, label: How to Buy }
+  - { path: /products/, label: Products }
+  - { path: /cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/, label: Bag-in-Box vs Kegs }
+  - { path: /kegerators/, label: Kegerators }
+  - { path: /about/, label: About }
+  - { path: /contact-bona-fide-nitro-coffee-and-tea/, label: Contact }
+  - { path: /nitro-coffee-questions/, label: Nitro Coffee Questions }
+  - { path: /blog/, label: Blog }
+external:
+  - { href: "https://www.nitrocoffee.store/", label: Store }

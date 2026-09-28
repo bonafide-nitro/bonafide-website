@@ -1,0 +1,398 @@
+{
+  "generated": "2026-09-28",
+  "source": "docs/migration/04-wordpress-to-static-migration-master-plan.md §6.1, §7.2-7.3, §13.1; 01/02/03 evidence. Preservation contract only — no new SEO decisions.",
+  "note": "Per-URL titleMustContain/h1MustContain/mustContainText beyond the two product pages are populated from the baseline evidence in Stage 5/6; titles/H1s must be carried across unchanged (SEO-9).",
+  "urls": [
+    {
+      "path": "/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/products/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true,
+      "titleMustContain": [
+        "Cold Brew",
+        "Nitro Coffee",
+        "Kegs"
+      ],
+      "h1MustContain": [
+        "Nitro Cold Brew Coffee Kegs"
+      ],
+      "mustContainText": [
+        "Nitro Style",
+        "Still (Flat) Style",
+        "Bag In Box"
+      ],
+      "minAmazonLinks": 13,
+      "minStoreLinks": 16,
+      "schema": [
+        "WebPage",
+        "BreadcrumbList"
+      ],
+      "minInternalLinksIn": 40,
+      "view": "retail"
+    },
+    {
+      "path": "/products-2/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true,
+      "mustContainText": [
+        "Caveman Coffee Company Nitro",
+        "Our Gorongosa Coffee Company",
+        "Jittery John's",
+        "Thai Treasures",
+        "CULT Artisan",
+        "Thanksgiving Coffee Company",
+        "Direct Distribution Program",
+        "PET Keg"
+      ],
+      "minPriceStrings": 19,
+      "maxAmazonLinks": 0,
+      "maxInternalLinksIn": 0,
+      "mustNotRedirectTo": "/products/",
+      "view": "wholesale",
+      "note": "Sitemap membership is load-bearing (sole discovery path). Outside launch navigation by design."
+    },
+    {
+      "path": "/howtobuy/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/kegerators/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-cold-brew/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/hot-nitro-coffee/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/about/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/contact-bona-fide-nitro-coffee-and-tea/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/coffee-on-tap-is-the-future/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-coffee-kegs/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/blog/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-coffee-questions/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/hot-nitro-equipment-rental/",
+      "tier": 1,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-cold-brew-old/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-coffee-health-benefits/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/what-is-nitro-cold-brew-coffee/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-cold-brew-coffee-made-easy-2/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/a-touch-of-vanilla-to-your-nitro-coffee/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/coffee-trends-dominate-2018/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/how-ambient-stable-coffee-kegs-help-you-save-more-money/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/is-coffee-healthy/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/coffee-doesnt-produce-cancer-says-leading-american-scientist/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/nitro-coffee-future/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/interested-in-selling-usa/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/interested-in-selling-eu-and-usa/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/interested-in-selling-eu-qr-2/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/blog/page/2/",
+      "tier": 3,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true,
+      "note": "reproduce pagination"
+    },
+    {
+      "path": "/category/news-nitro-coffee-and-nitro-tea/",
+      "tier": 3,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/category/news-nitro-coffee-and-nitro-tea/page/2/",
+      "tier": 3,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/author/admin/",
+      "tier": 3,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true,
+      "note": "24 clicks; keep at launch (I6)"
+    },
+    {
+      "path": "/author/admin/page/2/",
+      "tier": 3,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true
+    },
+    {
+      "path": "/privacy-policies/",
+      "tier": 3,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": false,
+      "robots": "noindex",
+      "inSitemap": false,
+      "note": "keep 200 + noindex, add self-canonical (§7.3)"
+    },
+    {
+      "path": "/terms-of-service/",
+      "tier": 3,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": false,
+      "robots": "noindex",
+      "inSitemap": false,
+      "note": "keep 200 + noindex, add self-canonical (§7.3)"
+    }
+  ],
+  "plannedPages": [
+    {
+      "path": "/book-appointment/",
+      "expect": "200",
+      "note": "Booking function survives via Calendly (06-stage1 D5); page + embed built in Stage 7."
+    }
+  ],
+  "redirectsSource": "src/data/redirects.yaml",
+  "doNotGenerate": [
+    "/wp-admin/*",
+    "/wp-login.php*",
+    "/wp-json/*",
+    "/xmlrpc.php",
+    "/?s={search_term_string}",
+    "/comments/feed/",
+    "/?bpa_page=bookingpress_download&*"
+  ],
+  "preservationRules": {
+    "trailingSlash": "always",
+    "productsAndProducts2Separate": true,
+    "products2": {
+      "noRedirect": true,
+      "noCrossCanonical": true,
+      "noNoindex": true,
+      "inNavigation": false,
+      "inSitemap": true,
+      "maxInternalLinksIn": 0
+    },
+    "products": {
+      "inNavigation": true,
+      "minInternalLinksIn": 40
+    },
+    "titleUniquenessException": [
+      "/products/",
+      "/products-2/"
+    ],
+    "realNotFound": true,
+    "forbiddenBuildStrings": [
+      "quickdelivr",
+      "coredelivr",
+      "mpackage"
+    ],
+    "imagePathsPreserved": "/wp-content/uploads/"
+  }
+}
