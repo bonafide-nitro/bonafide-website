@@ -21,7 +21,7 @@ const entry = (p, extra = {}) => ({ path: p, tier: 1, expect: '200', canonical: 
 export const baselineFixture = () => ({
   urls: [
     entry('/'),
-    entry('/products/', { titleMustContain: ['Kegs'], h1MustContain: ['Nitro Kegs'], mustContainText: ['Nitro Style'], minAmazonLinks: 1, view: 'retail' }),
+    entry('/products/', { titleMustContain: ['Kegs'], h1MustContain: ['Nitro Kegs'], mustContainText: ['Nitro Style'], minAmazonLinks: 1, minStoreLinks: 1, view: 'retail' }),
     entry('/products-2/', { mustContainText: ["Jittery John's"], minPriceStrings: 2, maxAmazonLinks: 0, maxInternalLinksIn: 0, mustNotRedirectTo: '/products/', view: 'wholesale' }),
     entry('/about/'),
     entry('/privacy-policies/', { tier: 3, indexable: false, robots: 'noindex', inSitemap: false }),
@@ -48,7 +48,7 @@ export const makeFixture = () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qa-fx-'));
   const put = (rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), text); };
   put('index.html', page({ p: '/', title: 'Home Nitro', body: `${nav}<img src="/wp-content/uploads/2020/01/hero.jpg">` }));
-  put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `${nav}<p>Nitro Style</p><a href="https://www.amazon.com/dp/1">buy</a>` }));
+  put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `${nav}<p>Nitro Style</p><a href="https://www.amazon.com/dp/1">buy</a><a href="https://www.nitrocoffee.store/products/x">shop</a>` }));
   put('products-2/index.html', page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>` }));
   put('about/index.html', page({ p: '/about/', title: 'About us', body: nav }));
   put('privacy-policies/index.html', page({ p: '/privacy-policies/', title: 'Privacy', robots: 'noindex' }));

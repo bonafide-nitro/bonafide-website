@@ -45,6 +45,14 @@ const normalizeHref = (href, fromPath) => {
   return { external: false, path: decodeURI(u.pathname), search: u.search, url: u };
 };
 
+// T5 commerce links are counted by parsed hostname, never by substring (a query string or path may mention a domain).
+const isAmazonHost = (h) => /(^|\.)amazon\.[a-z.]+$/.test(h) || /(^|\.)amzn\.(to|com|eu|asia)$/.test(h);
+const isStoreHost = (h) => h === 'nitrocoffee.store' || h.endsWith('.nitrocoffee.store');
+const hostOf = (href, fromPath, test) => {
+  let u; try { u = new URL(href.trim(), ORIGIN + fromPath); } catch { return false; }
+  return /^https?:$/.test(u.protocol) && test(u.hostname.toLowerCase());
+};
+
 export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site, astroConfig, config = {}, mode = 'foundation' }) => {
   if (!['foundation', 'strict'].includes(mode)) throw new Error(`unknown QA mode: ${mode}`);
   const { files, pages, strayHtml, notFound, textFiles } = scanDist(distDir);
@@ -187,8 +195,8 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     const lc = (s) => s.replace(/\s+/g, ' ');
     const missing = (e?.mustContainText ?? []).filter((s) => !page.text.includes(lc(s.replace(/[\u2018\u2019]/g, "'"))));
     if (missing.length) F.add('T5', 'content-missing', ck, page.path, `mustContainText missing: ${missing.join(' | ')}`);
-    const amazon = page.hrefs.filter((h) => /amazon\.|amzn\./i.test(h)).length;
-    const store = page.hrefs.filter((h) => /nitrocoffee\.store/i.test(h)).length;
+    const amazon = page.hrefs.filter((h) => hostOf(h, page.path, isAmazonHost)).length;
+    const store = page.hrefs.filter((h) => hostOf(h, page.path, isStoreHost)).length;
     const prices = (page.text.match(/\$\s?\d[\d,]*(?:\.\d+)?/g) ?? []).length;
     if (e?.minAmazonLinks != null && amazon < e.minAmazonLinks) F.add('T5', 'amazon-links-min', ck, page.path, `expected >= ${e.minAmazonLinks} Amazon links, found ${amazon}`);
     if (e?.maxAmazonLinks != null && amazon > e.maxAmazonLinks) F.add('T5', 'amazon-links-max', INV, page.path, `expected <= ${e.maxAmazonLinks} Amazon links, found ${amazon}`);
@@ -225,7 +233,7 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
       const hit = dngQuery.find(({ re }) => re.test(n.path + n.search));
       if (hit) { F.add('T8', 'link-to-do-not-generate', INV, n.path + n.search, `internal link matches do-not-generate ${hit.g}`, page.path); continue; }
       if (isP2(target)) continue;
-      if (matchRule(n.path) || matchRule(n.path + n.search)) { F.add('T8', 'link-to-redirect', INV, n.path, 'internal link points at a redirecting URL', page.path); continue; }
+      if (matchRule(n.path) || matchRule(n.path + n.search) || urlRules.some(({ re }) => re.test(n.url.href))) { F.add('T8', 'link-to-redirect', INV, n.path, 'internal link points at a redirecting URL', page.path); continue; }
       if (!hasExt(n.path) && !n.path.endsWith('/')) { F.add('T13', 'link-missing-trailing-slash', INV, n.path, 'internal link lacks trailing slash', page.path); continue; }
       if (n.path.startsWith('/wp-content/uploads/')) continue; // T7
       const exists = hasExt(n.path) ? files.has(n.path.slice(1)) : pages.has(n.path);

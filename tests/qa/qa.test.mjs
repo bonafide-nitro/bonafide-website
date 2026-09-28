@@ -57,6 +57,8 @@ detects('H1 contract violated (h1MustContain)', (fx) => fx.put('products/index.h
 // --- T5 content + /products/ vs /products-2/ separation ---
 detects('mustContainText missing', (fx) => fx.put('products-2/index.html', page({ p: '/products-2/', title: 'Kegs 2', body: '$1 $2' })), 'T5:content-missing');
 detects('/products-2/ carries Amazon links (maxAmazonLinks)', (fx) => fx.put('products-2/index.html', page({ p: '/products-2/', title: 'K2', body: `<p>Jittery John's $1 $2</p><a href="https://amazon.com/x">a</a>` })), 'T5:amazon-links-max');
+detects('lookalike Amazon link (domain only in a query string) is not counted', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://example.com/?next=amazon.com">a</a>`, canonical: 'https://bonafidenitro.com/products/' })), 'T5:amazon-links-min');
+detects('lookalike store link (domain only in a query string) is not counted', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://www.amazon.com/dp/1">a</a><a href="https://example.com/?next=nitrocoffee.store">s</a>`, canonical: 'https://bonafidenitro.com/products/' })), 'T5:store-links-min');
 detects('/products/ and /products-2/ rendered identically', (fx) => {
   const html = page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://amazon.com/x">a</a>`, canonical: 'https://bonafidenitro.com/products/' });
   fx.put('products/index.html', html);
@@ -97,6 +99,8 @@ detects('absolute-URL upload reference missing', (fx) => fx.put('about/index.htm
 
 // --- T8 / T13 links ---
 detects('internal link to a redirecting URL', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/contact/">c</a>' })), 'T8:link-to-redirect');
+detects('absolute http:// apex link hits the protocol canonicalisation redirect', (fx) => { fx.redirects.push(...canon()); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="http://bonafidenitro.com/pricing/">c</a>' })); }, 'T8:link-to-redirect');
+detects('absolute https://www link hits the host canonicalisation redirect', (fx) => { fx.redirects.push(...canon()); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="https://www.bonafidenitro.com/pricing/">c</a>' })); }, 'T8:link-to-redirect');
 detects('internal link without trailing slash', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/pricing">c</a>' })), 'T13:link-missing-trailing-slash');
 detects('broken internal link', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/nope/">c</a>' })), 'T8:broken-internal-link');
 detects('internal link to do-not-generate search URL', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/?s=abc">c</a>' })), 'T8:link-to-do-not-generate');
