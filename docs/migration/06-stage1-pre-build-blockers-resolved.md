@@ -17,7 +17,7 @@ operational-blocker findings (D1, I1, D5, D11) layered on top of that evidence.
 | D11 — static form approach | **RESOLVED** (already-approved decision, recorded) | No live check needed |
 | D1 — hosting/deployment capability | **RESOLVED** (architecture decision recorded for all six `05-execution-plan.md:63-70` sub-items; two explicitly deferred by Žaneta) | Symlink, custom-primary-docroot, and cPanel Terminal are determined **not available/not assumed**; SSH/SFTP is determined **available**; rsync is **not assumed**. Static production deploys into existing `/public_html` via SSH/SFTP-or-File-Manager, with every deployment (initial and later redeploys) required to be deletion-aware, not just overlay-copy. Clean WordPress rollback copy kept isolated in a sibling, non-public location per master-plan §12.2. Sibling-directory creation and PHP version/post-cutover availability are the two remaining sub-items, **not yet operator-verified**; per Žaneta's decision, confirming both on this account is an explicit, gated prerequisite for the later deployment Block — a deliberate, recorded deferral of those two sub-items, not a Stage 1 blocker and not an unverified assumption presented as settled fact |
 | I1 — 15 unknown redirect destinations | **RESOLVED** (operator curl evidence) | 17 tested legacy URL variants currently land on the HTTP homepage via the "404 to Start" behaviour (recorded as observed fact, not reproduced); `/collections-nitro-coffee/` is a confirmed external 301; no redirect loop; erroneous §7.4 URL removed from the I1 list |
-| D5 — BookingPress usage | **RESOLVED** (operator dashboard evidence + decision) | BookingPress is unused (0 appointments/customers/revenue); Calendly is the actual scheduling integration |
+| D5 — BookingPress usage | **RESOLVED** — migration dependency decision (operator dashboard evidence + decision); dormant plugin-artifact inventory (configured services, page/shortcode usage) **not yet performed**, deferred to forensic preservation | BookingPress is unused for scheduling (0 appointments/customers/revenue); Calendly is the actual scheduling integration; BookingPress is not recreated |
 
 Stage 1 is therefore **complete**: D11, D1, I1, and D5 are all resolved, using the
 operator-supplied evidence recorded on Issue #19 on 2026-09-27, the deployment
@@ -107,6 +107,37 @@ attributes the classification to elimination from that combined evidence,
 not to curl alone. Neither correction changes D1's or I1's resolved status
 or the underlying architecture/evidence.
 
+A further `ZANETA_DECISION — CLOSE CURRENT HEAD FINDINGS` on this PR
+([5875315223](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5875315223))
+recorded two live Codex findings from review 5338943513 on the current head.
+The first
+([discussion_r4122397130](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4122397130))
+correctly noted that the D1 deploy-key steps authorized creating the SSH
+deploy key subject only to its own Žaneta credential/permission approval,
+without stating the master plan's own sequencing rule
+(`04-wordpress-to-static-migration-master-plan.md:719`): deploy credentials
+are new, created only after the security-remediation stage completes, and
+are never reused or pre-staged from the compromised era. The detailed D1
+step 1, "What remains for a later Block," and the consolidated D1 action now
+state this sequencing explicitly — the key is not created/authorized until
+forensic preservation and remediation complete and credentials are rotated.
+The second
+([discussion_r4122397139](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4122397139))
+correctly noted that D5's operator evidence (dashboard transaction counts
+and the visible BookingPress admin menu list) does not establish whether any
+BookingPress services are configured or whether WordPress pages contain
+BookingPress shortcodes/blocks — explicit, separate D5 checks per
+`docs/migration/05-execution-plan.md:86-90` that were not performed in Stage
+1. The D5 section, its evidence, decision, and the consolidated D5 action now
+state plainly that this dormant technical-artifact inventory was not
+performed, distinguish it from the settled migration/business-dependency
+decision (which it does not reopen, since BookingPress is not a surviving
+dependency), and require that inventory before BookingPress is removed in
+the later forensic-preservation/security-remediation stage. Neither
+correction changes D1's or D5's resolved status or the underlying
+`ZANETA_DECISION` architecture/evidence; no credential, secret, or
+production action is authorized by either correction or by this PR.
+
 ---
 
 ## D11 — Static form approach (RESOLVED)
@@ -185,9 +216,17 @@ unverified symlink/`rsync`/Terminal capabilities:
    key (e.g. `bonafide-git-deploy`, following the proven pattern above) has
    been created — creating/authorizing that key is a credential/permission
    action requiring its own separate, explicit Žaneta approval per
-   `AGENTS.md` and is **not** authorized by this Block. If SSH is not
-   enabled/authorized by the time of deployment, fall back to the cPanel File
-   Manager for the static-file upload. **Every static deployment — the
+   `AGENTS.md` and is **not** authorized by this Block. That key must **not**
+   be created or authorized while the current WordPress/hosting environment
+   is still treated as compromised: per
+   `04-wordpress-to-static-migration-master-plan.md:719`, deploy credentials
+   are **new**, created only *after* the authorized security-remediation
+   stage completes, and are never reused or pre-staged from the compromised
+   era. Forensic preservation and remediation must complete, and credentials
+   must be rotated, before the later, explicitly-gated deployment Block may
+   create/authorize this key or store its corresponding GitHub Secret. If SSH
+   is not enabled/authorized by the time of deployment, fall back to the
+   cPanel File Manager for the static-file upload. **Every static deployment — the
    initial one and every later redeploy — must clear/delete any
    destination-only file in `/public_html` that is not part of the new build
    (e.g. `rsync --delete`, or an equivalent explicit delete-then-copy step for
@@ -256,7 +295,11 @@ unverified symlink/`rsync`/Terminal capabilities:
    Block, not an assumed fact of this decision.
 
 ### What remains for a later Block (not a Stage 1 blocker)
-Creating and authorizing the actual SSH deploy key; **confirming the sibling
+Creating and authorizing the actual SSH deploy key — **only after forensic
+preservation and the authorized security-remediation stage complete and
+credentials are rotated**, per
+`04-wordpress-to-static-migration-master-plan.md:719`, never while the
+account is still treated as compromised; **confirming the sibling
 clean-WordPress rollback location can be created and is inaccessible from the
 public web**; **confirming the current PHP version and its continued
 availability after cutover**; preparing the sibling clean-WordPress rollback
@@ -369,7 +412,7 @@ path.
 
 ---
 
-## D5 — BookingPress usage (RESOLVED)
+## D5 — BookingPress usage (RESOLVED — migration dependency decision; dormant plugin-artifact inventory deferred to forensic preservation)
 
 ### Already documented (not a live check, cited for context only)
 - `04-wordpress-to-static-migration-master-plan.md` line 228: "BookingPress
@@ -404,6 +447,18 @@ path.
 - BookingPress menus are present (Calendar, Appointments, Payments, Customers,
   Services, Notifications, Customize, Settings) but show no usage history.
 
+**What this evidence does and does not establish:** this is the live
+BookingPress dashboard's transaction-count summary plus the list of menu
+items visible in its admin sidebar — it is not an inspection of BookingPress
+itself. `docs/migration/05-execution-plan.md:86-90` lists "configured
+services" and "pages/forms using BookingPress" as explicit D5 checks
+distinct from appointment/booking counts. Neither was performed in Stage 1:
+this session did not open the BookingPress Services screen to see whether
+any services are configured, and did not search WordPress pages/posts for
+BookingPress shortcodes or blocks. Zero recorded appointments/revenue/
+customers does not by itself rule out a configured-but-unused service list
+or a dormant shortcode/block left in page content.
+
 ### Decision
 Per the `ZANETA_DECISION — D5 RESOLVED` comment
 ([5853600785](https://github.com/bonafide-nitro/bonafide-website/issues/19#issuecomment-5853600785)):
@@ -417,6 +472,24 @@ Per the `ZANETA_DECISION — D5 RESOLVED` comment
   installation must remain unchanged until forensic preservation is complete;
   removal is deferred to the authorized WordPress cleanup/security-remediation
   stage.
+
+**Distinguishing the two D5 questions:** the *migration/business dependency*
+decision — whether BookingPress must be reimplemented in the static site —
+is resolved above: it is not used for scheduling, is not recreated, and
+Calendly is the surviving integration. The *dormant technical-artifact
+inventory* — whether any BookingPress services are still configured and
+whether any WordPress page, post, or template still contains a BookingPress
+shortcode or block — was not performed in Stage 1 and is a separate,
+still-open item. Because BookingPress is not a surviving migration
+dependency, that unperformed inventory does not reopen the business decision
+above. But before BookingPress is removed during the later authorized
+forensic-preservation/security-remediation/cleanup work, that work must
+first inventory/export any configured BookingPress services and locate any
+remaining shortcode/block occurrences, so no evidentiary configuration is
+destroyed and the six known booking URLs (`/book-appointment/`,
+`/my-bookings/`, `/cancel-appointment/`, `/cancel-payment/`,
+`/appointment-cancellation-confirmation/`, `/thank-you/`) can be mapped
+correctly. BookingPress is not deleted, disabled, or changed by this Block.
 
 No WordPress plugin, setting, or content was disabled, deleted, or modified by
 this Block or by the operator evidence capture.
@@ -451,9 +524,12 @@ this Block or by the operator evidence capture.
 Stage 1 (D1, I1, D5, D11) is now resolved. What remains is deferred, gated
 follow-up work for later Blocks, not open Stage 1 items:
 
-1. **D1:** a later Block (a) creates and authorizes a dedicated SSH deploy key
-   (e.g. `bonafide-git-deploy`), subject to its own explicit Žaneta
-   credential/permission approval, (b) prepares the clean WordPress rollback
+1. **D1:** a later Block (a) — **only after forensic preservation and the
+   authorized security-remediation stage have completed and credentials have
+   been rotated, per `04-wordpress-to-static-migration-master-plan.md:719`,
+   never while the account is still treated as compromised** — creates and
+   authorizes a dedicated SSH deploy key (e.g. `bonafide-git-deploy`), subject
+   to its own explicit Žaneta credential/permission approval, (b) prepares the clean WordPress rollback
    copy in its sibling, non-public location and, **on a non-public staging
    or disposable test target — never against the live production
    `/public_html`** — rehearses and times the clear-then-copy
@@ -494,7 +570,13 @@ follow-up work for later Blocks, not open Stage 1 items:
    scheduler, and the other five (`/my-bookings/`, `/cancel-appointment/`,
    `/cancel-payment/`, `/appointment-cancellation-confirmation/`,
    `/thank-you/`) 301 to it — **not** the "retire; 301 all six to the contact
-   page" branch, which applies only if booking itself were retired.
+   page" branch, which applies only if booking itself were retired. Before
+   BookingPress is removed in that later forensic-preservation/
+   security-remediation stage, that stage must first inventory/export any
+   configured BookingPress services and locate any remaining shortcode/block
+   occurrences on WordPress pages — neither was inspected in Stage 1 — so no
+   evidentiary configuration is lost and the six booking URLs above are
+   mapped correctly.
 
 No further action is authorized under this Block beyond recording these
 resolutions. Stage 2 dispatch is a separate Block decision, not authorized here.
