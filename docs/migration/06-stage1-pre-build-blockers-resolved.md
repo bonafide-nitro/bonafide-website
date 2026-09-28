@@ -167,6 +167,42 @@ clear-then-copy step. Neither correction changes D1's resolved status,
 reopens any other item, or authorizes any credential, secret, or production
 action.
 
+A further Codex review on this PR (review 5342719283, on the prior head
+`bf62027d93d293b609f61d6c998f1d9443389d7d`) recorded three live findings. The
+first, P1
+([discussion_r4125441099](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4125441099)),
+correctly noted that the round-14 "or disposable test target" alternative for
+the D1 rollback rehearsal is not equivalent to a rehearsal on the production
+hosting account itself: PHP configuration, permissions, `.htaccess`
+processing, MIME handling, and routing differ by host, so a rehearsal
+elsewhere can pass while the real GoDaddy restore fails. The detailed D1 step
+4 and the consolidated D1 action now require the rehearsal to run on a locked
+staging target on the production hosting account itself — never a disposable
+or off-host target — citing the master plan's own "locked staging host"
+(line 753) and "served from the production host" (lines 873, 895) language.
+The second, P1
+([discussion_r4125441104](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4125441104)),
+correctly noted that the D1 architecture only prescribed the same-account
+sibling copy of the clean WordPress rollback asset, when the master plan's
+own rollback-copy inventory (`04-wordpress-to-static-migration-master-plan.md:753`)
+requires that copy **plus** a second, off-server copy — without it, renewed
+account compromise or hosting-account loss could destroy production and its
+sole rollback asset together. The D1 sibling-directory step, its
+unverified-facts list, "What remains for a later Block," and the
+consolidated D1 action now require and cite that off-server copy explicitly.
+The third, P2
+([discussion_r4125441116](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4125441116)),
+correctly noted that the deletion-aware redeploy step did not require
+archiving the outgoing release artifact or retaining the previous five static
+builds the master plan requires
+(`04-wordpress-to-static-migration-master-plan.md:754,792,890`); without
+that, a bad redeploy could delete the last known-good static files with no
+retained fallback short of the WordPress rollback. Detailed D1 step 1, "What
+remains for a later Block," and the consolidated D1 action now require that
+archiving/retention on every deletion-aware redeploy. None of these three
+corrections changes D1's resolved status, reopens any other item, or
+authorizes any credential, secret, or production action.
+
 ---
 
 ## D11 — Static form approach (RESOLVED)
@@ -263,15 +299,32 @@ unverified symlink/`rsync`/Terminal capabilities:
    or renamed in a later build can remain reachable at its old URL and defeat
    the redirect or 404 the migration intends for it — the same risk step 4
    below addresses for the WordPress rollback restore, applied here to
-   routine static deployments.
+   routine static deployments. **Each deletion-aware redeploy must also
+   archive the outgoing release artifact and retain the previous five static
+   builds**, per `04-wordpress-to-static-migration-master-plan.md:754`
+   (`/home/<user>/sites/static-<timestamp>/`, with the previous 5 builds
+   retained), `:792` ("every static build in the retained window" is on the
+   list of what must not be deleted), and `:890` (the cutover runbook tags
+   and archives the release build artifact at each deploy) — the
+   deletion-aware clearing step removes only destination-only files that are
+   not part of the new build, and must never remove a retained prior build's
+   own timestamped directory. This session has not independently verified
+   how build retention (e.g. timestamped release directories with a
+   `current` symlink) would be implemented on this account; that is an
+   additional, explicit, gated prerequisite for the later deployment Block.
 2. The clean WordPress rollback copy is prepared and preserved **outside**
    `/public_html`, in a sibling/non-public location (e.g. the pattern in
    `04-wordpress-to-static-migration-master-plan.md:753`,
    `/home/<user>/sites/wp-clean/`, or the closest equivalent structure the
-   account allows) — **not** co-located under the public static docroot. This
-   satisfies the §12.2 isolation requirement without depending on symlink or
-   `rsync` availability, because the rollback copy itself is what moves, not
-   a live symlink target. Per
+   account allows) — **not** co-located under the public static docroot. Per
+   `04-wordpress-to-static-migration-master-plan.md:753`, the rollback-copy
+   inventory requires **both** this same-account sibling copy **and a
+   second, off-server copy** — the same-account copy alone does not satisfy
+   that inventory and would leave the sole rollback asset exposed to the
+   same hosting-account compromise or loss that could take out production
+   alongside it. This satisfies the §12.2 isolation requirement without
+   depending on symlink or `rsync` availability, because the rollback copy
+   itself is what moves, not a live symlink target. Per
    `04-wordpress-to-static-migration-master-plan.md:766`, §12.2 isolation
    means more than a separate directory path: **"WordPress has no write
    access to the static docroot and vice versa. Different file ownership
@@ -290,7 +343,10 @@ unverified symlink/`rsync`/Terminal capabilities:
      the deployment connection/key cannot write into the sibling WordPress
      copy (separate file ownership, or equivalent permission restriction,
      where the host permits it; if the host cannot separate ownership, an
-     explicit compensating control must be recorded instead).
+     explicit compensating control must be recorded instead);
+   - that a second, off-server copy of the same clean WordPress rollback
+     copy can be created and stored, per
+     `04-wordpress-to-static-migration-master-plan.md:753`.
 
    This report does **not** claim write isolation is satisfied — only that
    the sibling-directory layout is the correct starting shape for it. Both
@@ -325,9 +381,17 @@ unverified symlink/`rsync`/Terminal capabilities:
    altering live production is reserved for an explicitly approved real
    cutover/rollback action, not a rehearsal. Before cutover, the exact
    procedure — including this clearing step — must instead be rehearsed and
-   timed against a non-public staging or disposable test target, per
-   `04-wordpress-to-static-migration-master-plan.md:786` ("Must be rehearsed
-   and timed on staging before cutover"). The later cutover/rollback Block
+   timed against **a locked staging target on the production hosting
+   account itself — never a disposable or off-host test environment**,
+   because server-level behavior (PHP configuration, file/directory
+   permissions, `.htaccess` processing, MIME handling, routing) differs by
+   host and a rehearsal elsewhere can pass while the real restore on this
+   account fails. Per `04-wordpress-to-static-migration-master-plan.md:753`
+   (the rollback copy is served only via a **locked staging host**) and
+   `:873,895` (pre-cutover QA is run "against a staging copy served from the
+   production host" specifically because that "catches server-level
+   differences ... that a local build cannot"), and per `:786` ("Must be
+   rehearsed and timed on staging before cutover"). The later cutover/rollback Block
    must name that staging target, rehearse and record the result/timing
    there, and only then separately seek gated approval before ever
    executing the clear-then-copy step against production. **Clearing and
@@ -367,9 +431,18 @@ WordPress copy (separate file ownership or an equivalent compensating
 control), per `04-wordpress-to-static-migration-master-plan.md:766`**;
 **confirming the current PHP version and its continued
 availability after cutover**; preparing the sibling clean-WordPress rollback
-copy; retiring the live WordPress installation from `/public_html`; and
-executing/rehearsing the first deployment and rollback — are all separate,
-explicitly-gated actions for a future Block. They do not block recording this
+copy **and a second, off-server copy of it, per
+`04-wordpress-to-static-migration-master-plan.md:753`**; **confirming a
+locked staging target exists on the production hosting account itself for
+rehearsal (never a disposable/off-host target), per
+`04-wordpress-to-static-migration-master-plan.md:753,873,895`**; **confirming
+how static-build retention/archival (the previous five builds and the
+outgoing release artifact, per
+`04-wordpress-to-static-migration-master-plan.md:754,792,890`) would be
+implemented on this account**; retiring the live WordPress installation from
+`/public_html`; and executing/rehearsing the first deployment and rollback —
+are all separate, explicitly-gated actions for a future Block. They do not
+block recording this
 architecture decision now, the same way the D11 hosted-form decision is
 recorded as resolved without yet purchasing a provider. No hosting
 configuration, SSH key, WordPress file, or `.htaccess` setting was created,
@@ -599,15 +672,21 @@ follow-up work for later Blocks, not open Stage 1 items:
    copy — separate file ownership or an equivalent compensating control,
    per `04-wordpress-to-static-migration-master-plan.md:766` — before relying
    on the sibling-directory layout as satisfying §12.2 isolation, (c) prepares the clean WordPress rollback
-   copy in its sibling, non-public location and, **on a non-public staging
-   or disposable test target — never against the live production
-   `/public_html`** — rehearses and times the clear-then-copy
+   copy in its sibling, non-public location **and a second, off-server copy
+   of it, per `04-wordpress-to-static-migration-master-plan.md:753`**, and,
+   **on a locked staging target on the production hosting account itself —
+   never a disposable or off-host test environment, and never against the
+   live production `/public_html`** — rehearses and times the clear-then-copy
    SSH/SFTP-or-File-Manager restore procedure (first clearing the target of
    the static production's files, delete-then-copy, not overlay-copy,
    before copying the clean WordPress files in — the same effect
    `rsync --delete` gives Model A′), per
-   `04-wordpress-to-static-migration-master-plan.md` §12.2/§12.3 (line 786:
-   "Must be rehearsed and timed on staging before cutover"), **and then, on
+   `04-wordpress-to-static-migration-master-plan.md` §12.2/§12.3 (line 753:
+   the rollback copy is served only via a **locked staging host**; lines
+   873,895: pre-cutover QA and rehearsal run "against a staging copy served
+   from the production host" specifically, since that "catches server-level
+   differences ... that a local build cannot"; line 786: "Must be rehearsed
+   and timed on staging before cutover"), **and then, on
    that same staging target, restores the WordPress `.htaccess`, confirms
    the database connection, confirms the homepage renders, confirms the
    `Simple 301 Redirects` rules are live again, and confirms no injected
@@ -624,7 +703,10 @@ follow-up work for later Blocks, not open Stage 1 items:
    `/public_html` via SSH/SFTP (or File Manager, if SSH is not enabled by
    then), clearing/deleting any destination-only file left over from the
    previous build (not just overlay-copy) — and repeats that same
-   deletion-aware step on every later redeploy, not only at rollback.
+   deletion-aware step on every later redeploy, not only at rollback,
+   **archiving the outgoing release artifact and retaining the previous five
+   static builds each time, per
+   `04-wordpress-to-static-migration-master-plan.md:754,792,890`.**
 2. **I1:** the final redirect register (Stage 2+ planning) must assign each of
    the 17 tested legacy URL variants a deliberate final destination reachable
    from apex HTTPS in a single hop, per §7.5/SEO-12 — not the observed
