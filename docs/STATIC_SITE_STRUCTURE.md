@@ -31,6 +31,6 @@ redirect, Search Console or WordPress action is part of this foundation.
 - Redirects: 301 only, single hop (tested).
 
 ## Deferred (not decided by this Block)
-- Destinations for the 13 legacy paths that land on the homepage via "404 to Start", for the 3 `?p=` URLs, and for 10 of 11 `/services/*` externals (evidence truncated) — left `pending-decision`.
+- Destinations for the 13 legacy paths that land on the homepage via "404 to Start", for the 3 `?p=` URLs, and for 9 of the 10 `/services/*` redirects (destinations truncated in evidence; `/services/hair-raiser-organic/` and `/collections-nitro-coffee/` are fully recorded, giving 11 existing plugin redirects in total) — left `pending-decision`.
 - `/coffee-trend-dominate-2018` slash-less mapping (evidence slug differs from the Tier-2 slug).
 - `.htaccess` generation, sitemap/robots generation, per-URL title/H1 contracts, CI workflow for the build — later Blocks (Stages 5–6).
