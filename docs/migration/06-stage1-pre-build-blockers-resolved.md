@@ -81,6 +81,32 @@ and defeat its intended redirect/404. Step 1 and the consolidated recommended
 next action below now require every static deployment, not only the
 rollback restore, to be deletion-aware.
 
+A further `CHANGES_REQUESTED` review on this PR
+([5870170625](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5870170625))
+recorded two live Codex findings on the current head. P1
+([discussion_r4121817204](https://github.com/bonafide-nitro/bonafide-website/pull/20#discussion_r4121817204))
+correctly noted that the consolidated D1 rehearsal instruction, if followed
+literally before cutover, would clear the live production `/public_html`
+(still running WordPress at that point) rather than rehearsing safely on
+staging, as the master plan's own procedure requires
+(`04-wordpress-to-static-migration-master-plan.md:786`, "Must be rehearsed
+and timed on staging before cutover"). The detailed D1 step 4 and the
+consolidated D1 action now state explicitly that rehearsal happens only
+against a non-public staging or disposable test target, never against live
+production, and that clearing/altering production is reserved for an
+explicitly approved real cutover/rollback action. P2
+([discussion_r4121817208](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5870170625))
+correctly noted that the curl evidence alone cannot distinguish the "404 to
+Start" plugin from an explicit `.htaccess` or redirect-plugin rule, so
+classifying all 17 homepage-landing URLs as that plugin's behavior needed
+support beyond the curl hops. The I1 classification below now cites the
+combined existing read-only evidence — the verified `Simple 301 Redirects`
+and `Yoast SEO Redirects` configurations and the operator's `.htaccess`
+inspection, alongside the master plan's own I1/SEO-12 entries — and
+attributes the classification to elimination from that combined evidence,
+not to curl alone. Neither correction changes D1's or I1's resolved status
+or the underlying architecture/evidence.
+
 ---
 
 ## D11 — Static form approach (RESOLVED)
@@ -207,9 +233,17 @@ unverified symlink/`rsync`/Terminal capabilities:
    time must therefore **first clear `/public_html` of the static
    production's files** (delete-then-copy, not overlay-copy) before copying
    the clean WordPress files in — an equivalent to `--delete` is required
-   even when `rsync` itself is not. The exact procedure, including this
-   clearing step, must be rehearsed and timed in the later cutover/rollback
-   Block, per `04-wordpress-to-static-migration-master-plan.md:786`.
+   even when `rsync` itself is not. **This clearing step must never be
+   rehearsed against the live production `/public_html`** — clearing or
+   altering live production is reserved for an explicitly approved real
+   cutover/rollback action, not a rehearsal. Before cutover, the exact
+   procedure — including this clearing step — must instead be rehearsed and
+   timed against a non-public staging or disposable test target, per
+   `04-wordpress-to-static-migration-master-plan.md:786` ("Must be rehearsed
+   and timed on staging before cutover"). The later cutover/rollback Block
+   must name that staging target, rehearse and record the result/timing
+   there, and only then separately seek gated approval before ever
+   executing the clear-then-copy step against production.
 5. PHP must remain available on the hosting account after cutover, per
    `04-wordpress-to-static-migration-master-plan.md:764` — static production
    itself has no PHP dependency; PHP is retained only because the sibling
@@ -292,15 +326,32 @@ path.
 - `/collections-nitro-coffee/` is a confirmed intentional external redirect and
   must be represented explicitly in the migration redirect manifest.
 - The remaining 17 tested legacy URL variants currently land on
-  `http://bonafidenitro.com/` (200). This behavior is consistent,
-  reproducible, and not a redirect loop, but per the master plan's own I1
-  entry (§7.7 line 449: *"Several may be going to the homepage via the '404
-  to Start' plugin — if so, they are not real redirects and each needs a
-  deliberate destination"*) and SEO-12 (§6.2 line 329: *"The '404 to Start'
-  homepage-redirect behaviour is not reproduced"*), this is exactly that
-  plugin behavior, not a set of intentional redirects. **Record it here as
-  observed current behavior only — it is not the target migration
-  architecture and must not be reproduced as-is.**
+  `http://bonafidenitro.com/` (200), consistently and reproducibly, with no
+  redirect loop. The curl evidence alone establishes only that destination
+  and hop count — it cannot by itself distinguish the `404 to Start` plugin
+  from an explicit `.htaccess` rule or another redirect plugin. The source
+  classification instead rests on the combined existing read-only evidence:
+  the verified `Simple 301 Redirects` configuration, which contains only 11
+  clean rules, all `/services/*` plus `/collections-nitro-coffee/` →
+  `nitrocoffee.store` (`04-wordpress-to-static-migration-master-plan.md`
+  line 95); `Yoast SEO Redirects`, documented empty (line 96); operator
+  inspection of the live root `.htaccess`, which found only the normal
+  WordPress rewrite sections plus WP-Optimize gzip rules, with no explicit
+  legacy-path redirect rule for any of these 17 URLs (recorded in the
+  `CHANGES_REQUESTED` review,
+  [5870170625](https://github.com/bonafide-nitro/bonafide-website/pull/20#issuecomment-5870170625));
+  and the master plan's own I1 entry (§7.7 line 449: *"Several may be going
+  to the homepage via the '404 to Start' plugin — if so, they are not real
+  redirects and each needs a deliberate destination"*) and SEO-12 (§6.2 line
+  329: *"The '404 to Start' homepage-redirect behaviour is not
+  reproduced"*). None of the other documented redirect sources
+  (`Simple 301 Redirects`, Yoast, `.htaccess`) accounts for these 17 paths,
+  so by elimination from that combined evidence the `404 to Start` plugin is
+  the only remaining documented mechanism that explains the observed
+  homepage landings — not a set of intentional redirects. **Record it here
+  as observed current behavior, classified by elimination from the recorded
+  redirect sources rather than from the curl evidence alone — it is not the
+  target migration architecture and must not be reproduced as-is.**
 - Per §7.5 (line 425-426), the migration's actual protocol/host
   canonicalisation rule is: `http://` → apex `https://` in a single hop, and
   `www.` → apex `https://` in a single hop. For these 17 legacy paths, the
@@ -403,13 +454,20 @@ follow-up work for later Blocks, not open Stage 1 items:
 1. **D1:** a later Block (a) creates and authorizes a dedicated SSH deploy key
    (e.g. `bonafide-git-deploy`), subject to its own explicit Žaneta
    credential/permission approval, (b) prepares the clean WordPress rollback
-   copy in its sibling, non-public location and rehearses/times the
-   SSH/SFTP-or-File-Manager restore-to-`/public_html` procedure before
-   cutover — first clearing `/public_html` of the static production's files
-   (delete-then-copy, not overlay-copy) before copying the clean WordPress
-   files in, the same effect `rsync --delete` gives Model A′ — per
-   `04-wordpress-to-static-migration-master-plan.md`
-   §12.2/§12.3, (c) once that sibling copy exists, retires the live
+   copy in its sibling, non-public location and, **on a non-public staging
+   or disposable test target — never against the live production
+   `/public_html`** — rehearses and times the clear-then-copy
+   SSH/SFTP-or-File-Manager restore procedure (first clearing the target of
+   the static production's files, delete-then-copy, not overlay-copy,
+   before copying the clean WordPress files in — the same effect
+   `rsync --delete` gives Model A′), per
+   `04-wordpress-to-static-migration-master-plan.md` §12.2/§12.3 (line 786:
+   "Must be rehearsed and timed on staging before cutover"); clearing or
+   altering live production `/public_html` is reserved for an explicitly
+   approved real cutover/rollback action, and that later Block must name the
+   staging target, record the rehearsal result/timing there, then
+   separately gate any production execution, (c) once that sibling copy
+   exists, retires the live
    WordPress installation's executable, plugin, and theme files from
    `/public_html` so they are no longer publicly reachable, per the detailed
    D1 architecture above, and only then (d) deploys the static build into
