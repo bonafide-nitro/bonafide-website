@@ -295,3 +295,34 @@ test('real manifests: redirect register passes the QA register checks (pending-d
     assert.deepEqual(r.findings.filter((f) => f.check === 'T2'), []);
   } finally { cleanup(fx); }
 });
+
+// --- T2 templated AMP chains (ZANETA_DECISION on PR #24) ---
+const ampGeneric = { id: 'amp-pattern', type: 'pattern', from: '/<slug>/amp/', to: '/<slug>/', status: 301, state: 'defined' };
+const ampBooking = { id: 'thank-you', type: 'exact', from: '/thank-you/', to: '/about/', status: 301, state: 'defined' };
+const ampOverride = { id: 'amp-thank-you', type: 'exact', from: '/thank-you/amp/', to: '/about/', status: 301, state: 'defined' };
+detects('templated AMP destination that lands on another redirect source', (fx) => { fx.redirects.push(ampGeneric, ampBooking); fx.config.templateSlugs = ['thank-you']; }, 'T2:chain');
+test('exact AMP override takes precedence over the generic pattern (no chain), in either register order', () => {
+  for (const order of [[ampOverride, ampGeneric, ampBooking], [ampGeneric, ampBooking, ampOverride]]) {
+    const fx = makeFixture();
+    try { fx.redirects.push(...order); fx.config.templateSlugs = ['thank-you']; assert.deepEqual(codes(run(fx)), []); } finally { cleanup(fx); }
+  }
+});
+test('real register: the three booking AMP URLs are exact one-hop 301s to /book-appointment/ with no chain', async () => {
+  const { loadInputs } = await import('../../qa/cli.mjs');
+  const { redirects, config } = loadInputs();
+  assert.deepEqual([...config.templateSlugs].sort(), ['appointment-cancellation-confirmation', 'kegerators', 'my-bookings', 'thank-you']);
+  for (const from of ['/thank-you/amp/', '/my-bookings/amp/', '/appointment-cancellation-confirmation/amp/']) {
+    const rule = redirects.find((r) => r.from === from);
+    assert.ok(rule, from);
+    assert.deepEqual([rule.to, rule.status, rule.state], ['/book-appointment/', 301, 'defined']);
+  }
+  const fx = makeFixture();
+  try {
+    const r = run(fx, 'foundation', { baseline: loadInputs().baseline, redirects, config });
+    assert.deepEqual(r.findings.filter((f) => f.code === 'chain'), []);
+    // without the exact overrides the generic rule would chain through the booking redirects
+    const stripped = redirects.filter((x) => !x.id.startsWith('amp-booking-'));
+    const r2 = run(fx, 'foundation', { baseline: loadInputs().baseline, redirects: stripped, config });
+    assert.equal(r2.findings.filter((f) => f.code === 'chain').length, 3); // kegerators has no redirect source, so is not a chain
+  } finally { cleanup(fx); }
+});

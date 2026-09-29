@@ -1,1 +1,4 @@
-{ "allowedScriptHosts": [] }
+{
+  "allowedScriptHosts": [],
+  "templateSlugs": ["thank-you", "my-bookings", "appointment-cancellation-confirmation", "kegerators"]
+}

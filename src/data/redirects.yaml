@@ -12,6 +12,11 @@ rules:
   - { id: https-www, type: canonicalisation, from: "https://www.bonafidenitro.com/*", to: "https://bonafidenitro.com/*", status: 301, state: defined }
   # --- AMP (SEO-6, §7.5) ---
   - { id: amp-pattern, type: pattern, from: "/<slug>/amp/", to: "/<slug>/", status: 301, state: defined, note: "every generated /<slug>/amp/ (29)" }
+  # Exact one-hop overrides of amp-pattern (exact sources win over patterns): the generic rule would chain through
+  # the booking redirects below (ZANETA_DECISION on PR #24, D5). Only these three AMP URLs are evidenced (master plan line 428).
+  - { id: amp-booking-thank-you, type: exact, from: /thank-you/amp/, to: /book-appointment/, status: 301, state: defined }
+  - { id: amp-booking-my-bookings, type: exact, from: /my-bookings/amp/, to: /book-appointment/, status: 301, state: defined }
+  - { id: amp-booking-cancellation-confirmation, type: exact, from: /appointment-cancellation-confirmation/amp/, to: /book-appointment/, status: 301, state: defined }
   - { id: amp-root, type: exact, from: /amp/, to: /, status: 301, state: defined }
   - { id: amp-bookingpress-params, type: pattern, from: "/amp/?bpa_page=bookingpress_download&*", to: /, status: 301, state: defined, note: "3 parameter variants" }
   # --- sitemap transition (§7.8) ---

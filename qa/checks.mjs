@@ -66,7 +66,8 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
   const contractKind = (page) => (page?.scaffold ? REM : INV);
   const pathRules = rules.filter((r) => typeof r.from === 'string' && r.from.startsWith('/'));
   const ruleMatchers = pathRules.map((r) => ({ r, re: patternToRegExp(r.from) }));
-  const matchRule = (p) => ruleMatchers.find(({ re }) => re.test(p))?.r;
+  // Exact (placeholder-free) sources take precedence over pattern sources, whatever their register order.
+  const matchRule = (p) => (ruleMatchers.find(({ r, re }) => !hasPlaceholder(r.from) && re.test(p)) ?? ruleMatchers.find(({ re }) => re.test(p)))?.r;
   const urlRules = rules.filter((r) => typeof r.from === 'string' && /^https?:\/\//.test(r.from)).map((r) => ({ r, re: patternToRegExp(r.from) }));
   // The rule a redirect destination would hit next (path, protocol/host canonicalisation or full-URL rule).
   // A `*` in a full-URL destination passes the request path through, so it is probed with a sample path.
@@ -83,6 +84,20 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     return HOSTS.has(u.hostname) ? (matchRule(u.pathname + u.search) ?? null) : null;
   };
   const uniq = (a) => [...new Set(a)];
+  // A templated path redirect (`/<slug>/amp/` -> `/<slug>/`) is expanded for each slug the evidence names as a real
+  // generated URL (config.templateSlugs; never invented) and the expanded destination is followed. The slug counts only
+  // if this rule wins precedence for the expanded request (an exact one-hop override removes the chain).
+  const slugChains = (r) => {
+    if (typeof r.to !== 'string' || !r.to.includes('<slug>') || !r.from.startsWith('/') || !r.from.includes('<slug>')) return [];
+    const out = [];
+    for (const slug of config.templateSlugs ?? []) {
+      const request = r.from.replace(/<slug>/g, slug);
+      const dest = r.to.replace(/<slug>/g, slug);
+      const via = matchRule(request) === r ? nextHop(dest) : null;
+      if (via) out.push({ request, dest, via });
+    }
+    return out;
+  };
 
   // ---------- manifest sanity (guards the product-separation contract itself) ----------
   {
@@ -139,6 +154,7 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
       if (loop) F.add('T2', 'loop', INV, r.from, `redirect ${r.id} is part of a redirect loop`);
       else if (hops > 0) F.add('T2', 'chain', INV, r.from, `redirect ${r.id} -> ${r.to} chains through ${hops} more redirect(s); must be one hop`);
     }
+    if (r.state === 'defined') for (const { request, dest, via } of slugChains(r)) F.add('T2', 'chain', INV, request, `redirect ${r.id}: ${request} -> ${dest} chains through ${via.id}; must be one hop (add an exact one-hop override)`);
     // product separation
     for (const { r: rr, re } of ruleMatchers.filter((m) => m.r === r)) {
       if (re.test('/products/') || re.test('/products-2/')) F.add('T5', 'products-redirect-source', INV, r.from, `redirect ${r.id} would redirect /products/ or /products-2/ (they must stay separate 200 pages)`);
