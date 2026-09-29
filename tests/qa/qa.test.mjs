@@ -58,6 +58,8 @@ detects('H1 contract violated (h1MustContain)', (fx) => fx.put('products/index.h
 detects('mustContainText missing', (fx) => fx.put('products-2/index.html', page({ p: '/products-2/', title: 'Kegs 2', body: '$1 $2' })), 'T5:content-missing');
 detects('/products-2/ carries Amazon links (maxAmazonLinks)', (fx) => fx.put('products-2/index.html', page({ p: '/products-2/', title: 'K2', body: `<p>Jittery John's $1 $2</p><a href="https://amazon.com/x">a</a>` })), 'T5:amazon-links-max');
 detects('lookalike Amazon link (domain only in a query string) is not counted', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://example.com/?next=amazon.com">a</a>`, canonical: 'https://bonafidenitro.com/products/' })), 'T5:amazon-links-min');
+detects('lookalike Amazon host (amazon.attacker.com) is not counted', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://amazon.attacker.com/fake">a</a>`, canonical: 'https://bonafidenitro.com/products/' })), 'T5:amazon-links-min');
+detects('lookalike Amazon host (notamazon.com) is not counted', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://notamazon.com/dp/1">a</a>`, canonical: 'https://bonafidenitro.com/products/' })), 'T5:amazon-links-min');
 detects('lookalike store link (domain only in a query string) is not counted', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://www.amazon.com/dp/1">a</a><a href="https://example.com/?next=nitrocoffee.store">s</a>`, canonical: 'https://bonafidenitro.com/products/' })), 'T5:store-links-min');
 detects('/products/ and /products-2/ rendered identically', (fx) => {
   const html = page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `<p>Nitro Style Jittery John's $1 $2</p><a href="https://amazon.com/x">a</a>`, canonical: 'https://bonafidenitro.com/products/' });
@@ -103,6 +105,7 @@ detects('absolute http:// apex link hits the protocol canonicalisation redirect'
 detects('absolute https://www link hits the host canonicalisation redirect', (fx) => { fx.redirects.push(...canon()); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="https://www.bonafidenitro.com/pricing/">c</a>' })); }, 'T8:link-to-redirect');
 detects('internal link without trailing slash', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/pricing">c</a>' })), 'T13:link-missing-trailing-slash');
 detects('broken internal link', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/nope/">c</a>' })), 'T8:broken-internal-link');
+detects('internal ?p=<post-id> link is do-not-generate (master plan §7.6)', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/?p=9999">c</a>' })), 'T8:link-to-do-not-generate');
 detects('internal link to do-not-generate search URL', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/?s=abc">c</a>' })), 'T8:link-to-do-not-generate');
 detects('link to protected page that is not built (migration-remaining)', (fx) => { fx.baseline.urls.push({ path: '/later/', tier: 1, expect: '200', canonical: 'self', indexable: true, inSitemap: false }); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/later/">c</a>' })); }, 'T8:link-to-unbuilt-page', { invariant: false });
 detects('minInternalLinksIn not met', (fx) => { fx.baseline.urls.find((u) => u.path === '/products/').minInternalLinksIn = 5; }, 'T8:inbound-links-min');
@@ -134,6 +137,9 @@ test('allowlisted third-party script host is accepted', () => {
     assert.deepEqual(codes(run(fx)), []);
   } finally { cleanup(fx); }
 });
+
+detects('script URL assigned in inline JS to a non-allowlisted host', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: `<script>var s=document.createElement('script');s.src = 'https://evil.example/payload.js';document.head.appendChild(s)</script>` })), 'T11:unexpected-script-host');
+detects('script URL assigned in bundled JS to a non-allowlisted host', (fx) => fx.put('_astro/app.js', `var s=document.createElement("script");s.setAttribute("src","//evil.example/p.js")`), 'T11:unexpected-script-host');
 
 // --- T6 schema ---
 detects('invalid JSON-LD', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<script type="application/ld+json">{oops</script>' })), 'T6:jsonld-invalid');

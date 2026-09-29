@@ -46,7 +46,9 @@ const normalizeHref = (href, fromPath) => {
 };
 
 // T5 commerce links are counted by parsed hostname, never by substring (a query string or path may mention a domain).
-const isAmazonHost = (h) => /(^|\.)amazon\.[a-z.]+$/.test(h) || /(^|\.)amzn\.(to|com|eu|asia)$/.test(h);
+// Only an explicit set of Amazon-controlled registrable domains counts (lookalikes such as amazon.attacker.com do not).
+const AMAZON_DOMAINS = ['amazon.com', 'amzn.to', 'amzn.com'];
+const isAmazonHost = (h) => AMAZON_DOMAINS.some((d) => h === d || h.endsWith('.' + d));
 const isStoreHost = (h) => h === 'nitrocoffee.store' || h.endsWith('.nitrocoffee.store');
 const hostOf = (href, fromPath, test) => {
   let u; try { u = new URL(href.trim(), ORIGIN + fromPath); } catch { return false; }
@@ -246,7 +248,8 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
       const target = n.path === '/products-2' ? '/products-2/' : n.path;
       if (isP2(target) && page.path !== '/products-2/') F.add('T8', 'products2-linked', INV, '/products-2/', 'internal link to /products-2/ (it must have zero inbound internal links)', page.path);
       if (!hasExt(n.path)) { const s = inbound.get(target) ?? new Set(); s.add(page.path); inbound.set(target, s); }
-      const hit = dngQuery.find(({ re }) => re.test(n.path + n.search));
+      // Master plan §7.6: any `?p=` post-ID URL not already listed in the manifest is DO-NOT-GENERATE.
+      const hit = dngQuery.find(({ re }) => re.test(n.path + n.search)) ?? (n.url.searchParams.has('p') && !known.has(n.path + n.search) ? { g: '?p=<post-id> (master plan §7.6)' } : null);
       if (hit) { F.add('T8', 'link-to-do-not-generate', INV, n.path + n.search, `internal link matches do-not-generate ${hit.g}`, page.path); continue; }
       if (isP2(target)) continue;
       if (matchRule(n.path) || matchRule(n.path + n.search) || urlRules.some(({ re }) => re.test(n.url.href))) { F.add('T8', 'link-to-redirect', INV, n.path, 'internal link points at a redirecting URL', page.path); continue; }
@@ -336,11 +339,21 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     }
   }
   const allowed = new Set((config.allowedScriptHosts ?? []).map((h) => h.toLowerCase()));
+  // Statically assigned external script URLs (`el.src = '…'`, `setAttribute('src', '…')`, `importScripts('…')`) in inline and bundled JS.
+  const DYNAMIC_SRC = /(?:\.src\s*=|setAttribute\(\s*['"]src['"]\s*,|importScripts\(|import\(|\.(?:appendChild|write)\([^)]*?src\s*=\s*)\s*['"`]((?:https?:)?\/\/[^'"`\s]+)['"`]/gi;
+  const checkDynamicScripts = (code, where) => {
+    for (const m of code.matchAll(DYNAMIC_SRC)) {
+      let u; try { u = new URL(m[1], 'https://' + [...HOSTS][0]); } catch { continue; }
+      if (!HOSTS.has(u.hostname) && !allowed.has(u.hostname.toLowerCase())) F.add('T11', 'unexpected-script-host', INV, where, `dynamically loaded third-party script host ${u.hostname} is not in the allowlist`);
+    }
+  };
+  for (const [rel, abs] of files) if (/\.(m?js)$/i.test(rel)) checkDynamicScripts(fs.readFileSync(abs, 'utf8'), '/' + rel);
   for (const page of [...pages.values(), ...(notFound ? [{ ...notFound, path: '/404.html' }] : [])]) {
     for (const src of page.scriptSrcs) {
       let u; try { u = new URL(src, ORIGIN + page.path); } catch { F.add('T11', 'unparseable-script-src', INV, page.path, `script src ${src}`); continue; }
       if (!HOSTS.has(u.hostname) && !allowed.has(u.hostname.toLowerCase())) F.add('T11', 'unexpected-script-host', INV, page.path, `third-party script host ${u.hostname} is not in the allowlist`);
     }
+    for (const body of page.inlineScripts ?? []) checkDynamicScripts(body, page.path);
   }
 
   // ---------- T13 config-level trailing-slash rules ----------

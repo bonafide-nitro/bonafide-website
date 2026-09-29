@@ -46,6 +46,7 @@ export const parseHtml = (rawHtml) => {
     metaRefresh: metas.some((m) => (m['http-equiv'] ?? '').toLowerCase() === 'refresh'),
     hrefs: tags(html, 'a').map((a) => a.href).filter((h) => h !== undefined),
     scriptSrcs: scripts.map((s) => s.attrs.src).filter(Boolean),
+    inlineScripts: scripts.filter((s) => !s.attrs.src && (s.attrs.type ?? '').toLowerCase() !== 'application/ld+json').map((s) => s.body),
     jsonLd: scripts.filter((s) => (s.attrs.type ?? '').toLowerCase() === 'application/ld+json').map((s) => s.body),
     text: normText(body),
   };
