@@ -27,4 +27,4 @@ Not downloaded (no network). All evidenced same-path URLs (17 retail/equipment/b
 - 404 keeps marker + noindex (out of scope).
 
 ## Results
-Foundation QA: PASS, 0 invariants; 53 migration-remaining (was 73). Strict: FAIL (expected). `npm test` 153/153, Python isolation 303/303, build + `check:dist` OK.
+Foundation QA: PASS, 0 invariants; 54 migration-remaining (was 73). Strict: FAIL (expected). `npm test` 153/153, Python isolation 303/303, build + `check:dist` OK.
