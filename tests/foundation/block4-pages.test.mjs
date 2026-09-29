@@ -32,8 +32,8 @@ for (const [p, [ti, h1]] of Object.entries(CONTRACT)) {
   });
 }
 
-t('scaffold marker: removed on / and /howtobuy/, kept on the two product pages', () => {
-  assert.ok(!page('/').includes('bonafide-qa'));
+t('scaffold marker: removed on /howtobuy/, kept on / and the two product pages', () => {
+  assert.ok(page('/').includes('scaffold-placeholder'));
   assert.ok(!page('/howtobuy/').includes('bonafide-qa'));
   assert.ok(page('/products/').includes('scaffold-placeholder'));
   assert.ok(page('/products-2/').includes('scaffold-placeholder'));
