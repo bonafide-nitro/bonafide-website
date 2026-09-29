@@ -24,6 +24,7 @@
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/hair-raiser%C2%AE-organic-nitro-coffee"
   amazonCta: true
   image: /wp-content/uploads/2017/10/Hair-Raiser-Nitro-Coffee-for-website.png
+  alt: Hair Raiser Nitro Coffee by Bona Fide
   views: [retail, wholesale]
 
 - id: espresso-nitro-organic
