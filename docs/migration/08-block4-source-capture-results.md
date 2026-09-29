@@ -18,11 +18,13 @@ The baseline records 13 external links / 6 domains for `/howtobuy/` and requires
 Not downloaded (no network). Evidenced same-path URLs are tracked as follows; **no page references any of them**, because QA T7 (invariant) requires every referenced `/wp-content/uploads/` file to exist.
 - Recorded in `src/data/products.yaml` (`image`): product images only (retail and Alliance SKUs).
 - **Not** in `products.yaml` (page-level assets, doc 07 §2; tracked here only, no data file yet): 2 banners (`/wp-content/uploads/2022/05/Bona-Fide-Banner-Product-Page-1.jpg`, `/wp-content/uploads/2022/10/Bona-Fide-Banner-New-Home-Page-Gold-Three-Kegs.jpg`) and 3 equipment images (`/wp-content/uploads/2019/08/Bona-Fide-Cold-doble-tap-nitro-machine-compressed.png`, `/wp-content/uploads/2019/05/NEW-Hot-Tap-Bona-Fide-Nitro-Coffee-and-tea-for-website-compressed.png`, `/wp-content/uploads/2022/10/Bona-Fide-Keg-BIK-Set-Hot-Cold-Machine-New.png`). All five are outstanding preservation work.
+- Full inventory is **not** reconciled here. Doc 03 requires preserving filenames/paths for all 35 `/products/` images (25 on `/products-2/`), including two shared product-page images not listed above and not in `products.yaml`: `Banner-Product-Page-Bona-Fide-Product-Page-Bullets.jpg` and `Banner-Product-Page-Bona-Fide-Product-Page-Bullets2.jpg` (upload paths not in the capture; not invented). Reconciling the complete 35/25-image inventory is outstanding and must precede removing the scaffold marker on the product pages.
 - Binaries and alt text (only Hair Raiser's alt, kept in `products.yaml`, was already recorded) must be supplied, then `<img>` rendering added.
 
 ## Copy provenance / gaps
 - Titles, H1s, product names, nutrition, prices, tasting notes, shelf-life, Alliance details, distributor lists and metrics are transcribed from doc 07. Where doc 07 gives *meaning* rather than verbatim text (homepage sections, several product-page paragraphs, howtobuy prose) the copy is a faithful paraphrase — flag for Santiago's review against the live page.
 - The 212-character `/products/` meta description is **not reproduced**: only its first words are in the repo. Not invented; migration-remaining.
+- `/products-2/` also has a meta description that must survive unchanged at launch (doc 03 / Tier-1 map); `Base` has no description prop and none is emitted. Not captured, not invented; migration-remaining, gating the scaffold marker on `/products-2/` as well.
 - Homepage testimonial body text is not in the capture; the section is omitted.
 - Product-page og/twitter tags are not emitted (not part of this Block's evidence set beyond noted values).
 
