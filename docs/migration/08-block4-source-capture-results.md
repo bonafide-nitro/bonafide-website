@@ -5,11 +5,14 @@ Source: `07-block4-public-source-capture.md` (sanitized public rendered-page cap
 ## Observed commerce destinations (rendered page counts, deduplicated, approved hosts)
 | Page | Required | Amazon rendered | Store rendered |
 | --- | --- | --- | --- |
-| `/products/` | 13 Amazon + 16 store | **0** (labels only; hrefs not exposed by the reader, not invented) | **13** (12 evidenced product/collection hrefs + store root) |
+| `/products/` | 13 Amazon + 16 store | **0** (labels only; hrefs not exposed by the reader, not invented) | **13** distinct hrefs rendered = the 12 capture-enumerated destinations (store root, 1 collection, 10 products) + 1 extra `https://nitrocoffee.store/` (apex root) prose link; the capture's own count is 12 |
 | `/products-2/` | 22 store, 0 Amazon | 0 (correct) | **12** (shared products only; Alliance CTAs timed out in the reader, not invented) |
 
 `qa/qa.config.json > commerceInventory` is intentionally still empty: the exact 13 Amazon / 16 store / 22 store sets are unresolved and remain a **pre-launch gate** before strict QA/cutover. Strict QA still reports `T5:amazon-links-min`, `T5:store-links-min`, `T5:commerce-inventory-missing`.
 The retail Organic Nitro Vanilla store CTA is unlinked on `/products/` (capture: href not resolved); the wholesale pages use the capture's resolved Vanilla href.
+
+## /howtobuy/ outbound links (migration-remaining)
+The baseline records 13 external links / 6 domains for `/howtobuy/` and requires all outbound links to survive. Only 3 anchors are rendered, all to the store root (`nitrocoffee.store`); the distributor and Alliance partner names are plain text because their hrefs are not in the capture and are not invented. This gap is migration-remaining and is covered by the scaffold marker: it must be closed together with the images before the marker is removed.
 
 ## Images
 Not downloaded (no network). All evidenced same-path URLs (17 retail/equipment/banner + 6 Alliance) are recorded in `src/data/products.yaml` (`image`) but **no page references them**, because QA T7 (invariant) requires every referenced `/wp-content/uploads/` file to exist. Binaries and alt text (only Hair Raiser's alt was already recorded) must be supplied, then `<img>` rendering added. Equipment/banner images (`Bona-Fide-Banner-Product-Page-1.jpg`, `…Gold-Three-Kegs.jpg`, machine images) are listed in doc 07 §2 and are likewise not yet in the repo.
@@ -21,7 +24,7 @@ Not downloaded (no network). All evidenced same-path URLs (17 retail/equipment/b
 - Product-page og/twitter tags are not emitted (not part of this Block's evidence set beyond noted values).
 
 ## Scaffold marker
-- Kept on `/howtobuy/` (Codex P2): title/H1/canonical/schema/copy/legitimate targets are in place, but image preservation is outstanding — see Images.
+- Kept on `/howtobuy/` (Codex P2): title/H1/canonical/schema/copy/legitimate targets are in place, but image preservation and the outbound-link inventory (13 baseline links) are outstanding — see Images and /howtobuy/ outbound links.
 - Kept on `/` (Codex P1): the customer-testimonial section and Review/rating schema are not yet preserved, pending decision I7.
 - Kept on `/products/` and `/products-2/` until their commerce contracts can truly pass.
 - 404 keeps marker + noindex (out of scope).
