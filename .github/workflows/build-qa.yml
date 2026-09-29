@@ -1,0 +1,42 @@
+name: Build and migration QA
+
+# Repository-only checks. No deployment credentials, no secrets, no production write
+# capability: read-only token, no environment, no publish/deploy steps.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies (deterministic)
+        run: npm ci
+      - name: Build static site
+        run: npm run build
+      - name: Forbidden-string guard on dist/
+        run: npm run check:dist
+      - name: Migration QA — foundation/development mode
+        run: npm run qa:foundation
+      - name: QA fixture tests and foundation tests
+        run: npm test
+      - name: Python harness/isolation tests
+        run: python3 -m unittest discover -s tests/isolation -t . -v
