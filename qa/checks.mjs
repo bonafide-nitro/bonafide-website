@@ -71,6 +71,16 @@ const hostOf = (href, fromPath, test) => {
   let u; try { u = new URL(href.trim(), ORIGIN + fromPath); } catch { return false; }
   return /^https?:$/.test(u.protocol) && test(u.hostname.toLowerCase());
 };
+// Commerce destinations are compared as a deduplicated set of normalised URLs (lowercase host, no fragment, no trailing
+// slash), never as raw anchor counts: repeating one URL N times must not satisfy an N-link contract.
+export const normalizeDestination = (href, fromPath) => {
+  let u; try { u = new URL(href.trim(), ORIGIN + fromPath); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol)) return null;
+  u.hash = '';
+  return `${u.protocol}//${u.host.toLowerCase()}${u.pathname.replace(/\/+$/, '') || '/'}${u.search}`;
+};
+const uniqueDestinations = (hrefs, fromPath, test) =>
+  new Set(hrefs.filter((h) => hostOf(h, fromPath, test)).map((h) => normalizeDestination(h, fromPath)).filter(Boolean));
 
 export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site, astroConfig, config = {}, mode = 'foundation' }) => {
   if (!['foundation', 'strict'].includes(mode)) throw new Error(`unknown QA mode: ${mode}`);
@@ -198,6 +208,22 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
   }
   for (const p of pages.values()) if (p.metaRefresh) F.add('T2', 'meta-refresh-redirect', INV, p.path, 'page uses <meta http-equiv="refresh">; redirects must be server-side 301s, never emitted as HTML');
 
+  // ---------- T5 commerce-destination inventory contract (ZANETA_DECISION 2026-09-29) ----------
+  // The exact historical Amazon/store destination sets are not in the repository yet. Until a Stage 6 approved source
+  // populates config.commerceInventory.pages, this is migration-remaining: foundation reports it, strict blocks.
+  {
+    const invPages = config.commerceInventory?.pages ?? {};
+    const need = [['/products/', 'amazon'], ['/products/', 'store'], ['/products-2/', 'store']];
+    const minFor = (p, k) => (k === 'store' ? (isP2(p) ? Math.max(entryByPath.get(p)?.minStoreLinks ?? 0, PRODUCTS2_MIN_STORE_LINKS) : entryByPath.get(p)?.minStoreLinks ?? 0) : entryByPath.get(p)?.minAmazonLinks ?? 0);
+    for (const [p, kind] of need) {
+      const list = invPages[p]?.[kind] ?? [];
+      const norm = new Set(list.map((u) => normalizeDestination(String(u), p)).filter(Boolean));
+      const test = kind === 'amazon' ? isAmazonHost : isStoreHost;
+      if (list.length === 0) F.add('T5', 'commerce-inventory-missing', REM, p, `exact ${kind} destination inventory for ${p} is not populated (Stage 6 must supply it from an approved source)`);
+      else if (norm.size < minFor(p, kind) || [...norm].some((u) => !hostOf(u, p, test))) F.add('T5', 'commerce-inventory-invalid', INV, p, `${kind} inventory for ${p} must hold >= ${minFor(p, kind)} unique destinations on the approved host set`);
+    }
+  }
+
   // ---------- T3 / T4 / T5 / T6: per built page ----------
   const titleGroups = new Map();
   for (const page of pages.values()) {
@@ -236,13 +262,22 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     const lc = (s) => s.replace(/\s+/g, ' ');
     const missing = (e?.mustContainText ?? []).filter((s) => !page.text.includes(lc(s.replace(/[\u2018\u2019]/g, "'"))));
     if (missing.length) F.add('T5', 'content-missing', ck, page.path, `mustContainText missing: ${missing.join(' | ')}`);
-    const amazon = page.hrefs.filter((h) => hostOf(h, page.path, isAmazonHost)).length;
-    const store = page.hrefs.filter((h) => hostOf(h, page.path, isStoreHost)).length;
+    const amazonSet = uniqueDestinations(page.hrefs, page.path, isAmazonHost);
+    const storeSet = uniqueDestinations(page.hrefs, page.path, isStoreHost);
+    const amazon = amazonSet.size;
+    const store = storeSet.size;
     const prices = (page.text.match(/\$\s?\d[\d,]*(?:\.\d+)?/g) ?? []).length;
-    if (e?.minAmazonLinks != null && amazon < e.minAmazonLinks) F.add('T5', 'amazon-links-min', ck, page.path, `expected >= ${e.minAmazonLinks} Amazon links, found ${amazon}`);
-    if (e?.maxAmazonLinks != null && amazon > e.maxAmazonLinks) F.add('T5', 'amazon-links-max', INV, page.path, `expected <= ${e.maxAmazonLinks} Amazon links, found ${amazon}`);
+    if (e?.minAmazonLinks != null && amazon < e.minAmazonLinks) F.add('T5', 'amazon-links-min', ck, page.path, `expected >= ${e.minAmazonLinks} unique Amazon destinations, found ${amazon}`);
+    if (e?.maxAmazonLinks != null && amazon > e.maxAmazonLinks) F.add('T5', 'amazon-links-max', INV, page.path, `expected <= ${e.maxAmazonLinks} unique Amazon destinations, found ${amazon}`);
     const minStore = isP2(page.path) ? Math.max(e?.minStoreLinks ?? 0, PRODUCTS2_MIN_STORE_LINKS) : e?.minStoreLinks;
-    if (minStore != null && store < minStore) F.add('T5', 'store-links-min', ck, page.path, `expected >= ${minStore} store links, found ${store}`);
+    if (minStore != null && store < minStore) F.add('T5', 'store-links-min', ck, page.path, `expected >= ${minStore} unique store destinations, found ${store}`);
+    // Exact-destination preservation: the rendered deduplicated set must equal-or-contain the authoritative inventory.
+    const inv = config.commerceInventory?.pages?.[page.path];
+    if (inv) {
+      const rendered = new Set([...amazonSet, ...storeSet]);
+      const lost = [...(inv.amazon ?? []), ...(inv.store ?? [])].map((u) => normalizeDestination(u, page.path)).filter((u) => u && !rendered.has(u));
+      if (lost.length) F.add('T5', 'commerce-destination-missing', ck, page.path, `${lost.length} preserved commerce destination(s) missing, e.g. ${lost.slice(0, 3).join(' | ')}`);
+    }
     if (e?.minPriceStrings != null && prices < e.minPriceStrings) F.add('T5', 'price-strings-min', ck, page.path, `expected >= ${e.minPriceStrings} price strings, found ${prices}`);
 
     // T6 schema

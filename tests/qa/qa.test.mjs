@@ -362,3 +362,26 @@ test('same-origin static imports and import maps are not flagged', () => {
     assert.deepEqual(codes(run(fx)), []);
   } finally { cleanup(fx); }
 });
+
+// ---- T5 deduplicated destinations + exact-inventory contract (ZANETA_DECISION 2026-09-29) ----
+const p2page = (body) => page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>${body}` });
+const repeated = (n) => Array.from({ length: n }, () => '<a href="https://www.nitrocoffee.store/products/p0">s</a>').join('');
+detects('/products-2/ 22 copies of one store URL do not satisfy the 22-link contract', (fx) => fx.put('products-2/index.html', p2page(repeated(22))), 'T5:store-links-min');
+detects('/products-2/ duplicates differing only by fragment/trailing slash/host case do not count', (fx) => fx.put('products-2/index.html', p2page(Array.from({ length: 22 }, (_, i) => `<a href="https://WWW.nitrocoffee.store/products/p0${i % 2 ? '/' : ''}#x${i}">s</a>`).join(''))), 'T5:store-links-min');
+detects('/products/ repeated Amazon URL cannot satisfy a multi-link minimum', (fx) => {
+  fx.baseline.urls.find((u) => u.path === '/products/').minAmazonLinks = 3;
+  fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: '<p>Nitro Style</p>' + '<a href="https://www.amazon.com/dp/1">a</a>'.repeat(5) + '<a href="https://www.nitrocoffee.store/products/x">s</a>' }));
+}, 'T5:amazon-links-min');
+detects('/products/ repeated store URL cannot satisfy a multi-link minimum', (fx) => {
+  fx.baseline.urls.find((u) => u.path === '/products/').minStoreLinks = 3;
+  fx.put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: '<p>Nitro Style</p><a href="https://www.amazon.com/dp/1">a</a>' + '<a href="https://www.nitrocoffee.store/products/x">s</a>'.repeat(5) }));
+}, 'T5:store-links-min');
+detects('exact commerce inventory absent: strict blocked, foundation reports only (migration-remaining)', (fx) => { fx.config.commerceInventory = { pages: { '/products/': { amazon: [], store: [] }, '/products-2/': { store: [] } } }; }, 'T5:commerce-inventory-missing', { invariant: false });
+detects('exact commerce inventory section removed entirely is still migration-remaining', (fx) => { delete fx.config.commerceInventory; }, 'T5:commerce-inventory-missing', { invariant: false });
+detects('populated inventory but a preserved destination is not rendered', (fx) => { fx.config.commerceInventory.pages['/products-2/'].store[0] = 'https://www.nitrocoffee.store/products/never-rendered'; }, 'T5:commerce-destination-missing');
+detects('populated inventory smaller than the /products-2/ 22-URL contract is invalid', (fx) => { fx.config.commerceInventory.pages['/products-2/'].store.length = 5; }, 'T5:commerce-inventory-invalid');
+detects('populated inventory with a lookalike host is invalid', (fx) => { fx.config.commerceInventory.pages['/products/'].amazon = ['https://amazon.attacker.com/dp/1']; }, 'T5:commerce-inventory-invalid');
+test('populated exact inventory that matches the rendered set passes strict', () => {
+  const fx = makeFixture();
+  try { const r = run(fx, 'strict'); assert.deepEqual(codes(r).filter((c) => c.startsWith('T5:commerce')), []); } finally { cleanup(fx); }
+});

@@ -62,7 +62,7 @@ export const makeFixture = () => {
   put('wp-content/uploads/2020/01/hero.jpg', 'jpg');
   put('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', '/products/', '/products-2/', '/about/'].map((u) => `<url><loc>${ORIGIN}${u}</loc></url>`).join('')}</urlset>`);
   put('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
-  return { dir, put, baseline: baselineFixture(), redirects: redirectsFixture(), site: { trailingSlash: 'always', buildFormat: 'directory' }, config: { allowedScriptHosts: [] } };
+  return { dir, put, baseline: baselineFixture(), redirects: redirectsFixture(), site: { trailingSlash: 'always', buildFormat: 'directory' }, config: { allowedScriptHosts: [], commerceInventory: { pages: { '/products/': { amazon: ['https://www.amazon.com/dp/1'], store: ['https://www.nitrocoffee.store/products/x'] }, '/products-2/': { store: Array.from({ length: 22 }, (_, i) => `https://www.nitrocoffee.store/products/p${i}`) } } } } };
 };
 
 export const run = (fx, mode = 'strict', extra = {}) => runQa({ distDir: fx.dir, baseline: fx.baseline, redirects: fx.redirects, site: fx.site, config: fx.config, mode, ...extra });

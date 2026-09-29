@@ -1,4 +1,21 @@
 {
   "allowedScriptHosts": [],
-  "templateSlugs": ["thank-you", "my-bookings", "appointment-cancellation-confirmation", "kegerators"]
+  "templateSlugs": [
+    "thank-you",
+    "my-bookings",
+    "appointment-cancellation-confirmation",
+    "kegerators"
+  ],
+  "commerceInventory": {
+    "_note": "Exact Amazon/store destination URL sets for /products/ (13 Amazon, 16 store) and /products-2/ (22 store). NOT yet available: Stage 6 must populate from an approved source. Empty = migration-remaining (blocks strict).",
+    "pages": {
+      "/products/": {
+        "amazon": [],
+        "store": []
+      },
+      "/products-2/": {
+        "store": []
+      }
+    }
+  }
 }
