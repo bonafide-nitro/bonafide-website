@@ -23,6 +23,21 @@ const isP2 = (p) => p === '/products-2/';
 // Master plan §13.2 T6 contract (deployment blocker); the config may add to it, never remove from it.
 const SITE_WIDE_SCHEMA = ['Organization', 'WebSite'];
 const PER_PAGE_SCHEMA = ['BreadcrumbList'];
+// Master plan §13.2 T2 inventory (deployment blocker): protocol/host canonicalisation, AMP, the 11 legacy plugin rules and
+// slash normalisation. A rule is matched by its source, so a deleted rule cannot pass by leaving the survivors valid.
+// `defined` rules must also have a decided destination. Config/manifest may add to this list, never remove from it.
+const HOST_DEST = 'https://bonafidenitro.com/*';
+export const REQUIRED_REDIRECTS = [
+  ...['http://bonafidenitro.com/*', 'http://www.bonafidenitro.com/*', 'https://www.bonafidenitro.com/*'].map((from) => ({ from, group: 'protocol/host canonicalisation', defined: true, to: HOST_DEST })),
+  ...['/<slug>/amp/', '/amp/', '/amp/?bpa_page=bookingpress_download&*'].map((from) => ({ from, group: 'AMP', defined: true, to: from === '/<slug>/amp/' ? '/<slug>/' : '/' })),
+  ...['/services/hair-raiser-organic/', '/collections-nitro-coffee/', '/services/peru-organic/', '/services/ethiopia-yirgacheffe-organic/', '/services/guatemala-organic/',
+    '/services/organic-hibiscus-tea/', '/services/mango-tea/', '/services/espresso-organic-nitro-coffee/', '/services/passion-fruit-tea/',
+    '/services/green-citrus-nitro-tea/', '/services/cascara-coffee-cherry-tea/'].map((from) => ({ from, group: 'legacy plugin', defined: false, to: 'https://www.nitrocoffee.store/x' })),
+  ...['/contact', '/hot-nitro-coffee', '/nitro-cold-brew', '/a-touch-of-vanilla-to-your-nitro-coffee', '/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health', '/coffee-trend-dominate-2018']
+    .map((from) => ({ from, group: 'slash normalisation', defined: false, to: '/about/' })),
+];
+// Preservation evidence (03-forensic doc: "All 22 nitrocoffee.store links" must survive on /products-2/); immutable minimum.
+const PRODUCTS2_MIN_STORE_LINKS = 22;
 
 class Findings {
   constructor() { this.map = new Map(); }
@@ -131,6 +146,11 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
 
   // ---------- T2: redirect register ----------
   if (redirectSchemaError) F.add('T2', 'register-schema-invalid', INV, null, `redirect register failed schema validation: ${redirectSchemaError}`);
+  for (const req of REQUIRED_REDIRECTS) {
+    const have = rules.find((r) => r.from === req.from);
+    if (!have) F.add('T2', 'required-redirect-missing', INV, req.from, `required ${req.group} redirect from ${req.from} is not in the register`);
+    else if (req.defined && have.state !== 'defined') F.add('T2', 'required-redirect-undecided', INV, req.from, `required ${req.group} redirect ${have.id} must be state "defined"`);
+  }
   const seenId = new Set(); const seenFrom = new Set();
   for (const r of rules) {
     if (seenId.has(r.id)) F.add('T2', 'duplicate-id', INV, r.from, `duplicate redirect id ${r.id}`); seenId.add(r.id);
@@ -218,7 +238,8 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     const prices = (page.text.match(/\$\s?\d[\d,]*(?:\.\d+)?/g) ?? []).length;
     if (e?.minAmazonLinks != null && amazon < e.minAmazonLinks) F.add('T5', 'amazon-links-min', ck, page.path, `expected >= ${e.minAmazonLinks} Amazon links, found ${amazon}`);
     if (e?.maxAmazonLinks != null && amazon > e.maxAmazonLinks) F.add('T5', 'amazon-links-max', INV, page.path, `expected <= ${e.maxAmazonLinks} Amazon links, found ${amazon}`);
-    if (e?.minStoreLinks != null && store < e.minStoreLinks) F.add('T5', 'store-links-min', ck, page.path, `expected >= ${e.minStoreLinks} store links, found ${store}`);
+    const minStore = isP2(page.path) ? Math.max(e?.minStoreLinks ?? 0, PRODUCTS2_MIN_STORE_LINKS) : e?.minStoreLinks;
+    if (minStore != null && store < minStore) F.add('T5', 'store-links-min', ck, page.path, `expected >= ${minStore} store links, found ${store}`);
     if (e?.minPriceStrings != null && prices < e.minPriceStrings) F.add('T5', 'price-strings-min', ck, page.path, `expected >= ${e.minPriceStrings} price strings, found ${prices}`);
 
     // T6 schema
@@ -339,13 +360,23 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     }
   }
   const allowed = new Set((config.allowedScriptHosts ?? []).map((h) => h.toLowerCase()));
-  // Statically assigned external script URLs (`el.src = '…'`, `setAttribute('src', '…')`, `importScripts('…')`) in inline and bundled JS.
-  const DYNAMIC_SRC = /(?:\.src\s*=|setAttribute\(\s*['"]src['"]\s*,|importScripts\(|import\(|\.(?:appendChild|write)\([^)]*?src\s*=\s*)\s*['"`]((?:https?:)?\/\/[^'"`\s]+)['"`]/gi;
+  // Statically assigned external script URLs (`el.src = '…'`, `setAttribute('src', '…')`, `importScripts('…')`, `import '…'`, `… from '…'`, import maps) in inline and bundled JS.
+  const DYNAMIC_SRC = /(?:\.src\s*=|setAttribute\(\s*['"]src['"]\s*,|importScripts\(|import\(|\b(?:import|from)\s*|\.(?:appendChild|write)\([^)]*?src\s*=\s*)\s*['"`]((?:https?:)?\/\/[^'"`\s]+)['"`]/gi;
+  const flagHost = (url, where) => {
+    let u; try { u = new URL(url, 'https://' + [...HOSTS][0]); } catch { return; }
+    if (!HOSTS.has(u.hostname) && !allowed.has(u.hostname.toLowerCase())) F.add('T11', 'unexpected-script-host', INV, where, `dynamically loaded third-party script host ${u.hostname} is not in the allowlist`);
+  };
+  // Import maps (JSON body): every mapped specifier target is a module URL.
+  const importMapUrls = (code) => {
+    if (!code.trim().startsWith('{')) return [];
+    let j; try { j = JSON.parse(code); } catch { return []; }
+    const out = []; const walk = (v) => { if (typeof v === 'string') out.push(v); else if (v && typeof v === 'object') Object.values(v).forEach(walk); };
+    walk(j.imports); walk(j.scopes);
+    return out.filter((v) => /^(?:https?:)?\/\//.test(v));
+  };
   const checkDynamicScripts = (code, where) => {
-    for (const m of code.matchAll(DYNAMIC_SRC)) {
-      let u; try { u = new URL(m[1], 'https://' + [...HOSTS][0]); } catch { continue; }
-      if (!HOSTS.has(u.hostname) && !allowed.has(u.hostname.toLowerCase())) F.add('T11', 'unexpected-script-host', INV, where, `dynamically loaded third-party script host ${u.hostname} is not in the allowlist`);
-    }
+    for (const url of importMapUrls(code)) flagHost(url, where);
+    for (const m of code.matchAll(DYNAMIC_SRC)) flagHost(m[1], where);
   };
   for (const [rel, abs] of files) if (/\.(m?js)$/i.test(rel)) checkDynamicScripts(fs.readFileSync(abs, 'utf8'), '/' + rel);
   for (const page of [...pages.values(), ...(notFound ? [{ ...notFound, path: '/404.html' }] : [])]) {

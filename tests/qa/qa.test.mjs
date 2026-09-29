@@ -4,7 +4,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { makeFixture, page, jsonLd, run, codes, rm, cleanup } from './fixture.mjs';
+import { makeFixture, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
+
+// Adds rules to the healthy register, replacing any inventory rule with the same source (sources must stay unique).
+const putRules = (fx, ...rs) => { fx.redirects = fx.redirects.filter((x) => !rs.some((r) => r.from === x.from)); fx.redirects.push(...rs); };
 
 // Runs `mutate` on a fresh healthy fixture, then asserts the given check:code is detected
 // as blocking in strict mode. `invariant` additionally requires that foundation mode also fails.
@@ -101,8 +104,8 @@ detects('absolute-URL upload reference missing', (fx) => fx.put('about/index.htm
 
 // --- T8 / T13 links ---
 detects('internal link to a redirecting URL', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/contact/">c</a>' })), 'T8:link-to-redirect');
-detects('absolute http:// apex link hits the protocol canonicalisation redirect', (fx) => { fx.redirects.push(...canon()); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="http://bonafidenitro.com/pricing/">c</a>' })); }, 'T8:link-to-redirect');
-detects('absolute https://www link hits the host canonicalisation redirect', (fx) => { fx.redirects.push(...canon()); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="https://www.bonafidenitro.com/pricing/">c</a>' })); }, 'T8:link-to-redirect');
+detects('absolute http:// apex link hits the protocol canonicalisation redirect', (fx) => { putRules(fx, ...canon()); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="http://bonafidenitro.com/pricing/">c</a>' })); }, 'T8:link-to-redirect');
+detects('absolute https://www link hits the host canonicalisation redirect', (fx) => { putRules(fx, ...canon()); fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="https://www.bonafidenitro.com/pricing/">c</a>' })); }, 'T8:link-to-redirect');
 detects('internal link without trailing slash', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/pricing">c</a>' })), 'T13:link-missing-trailing-slash');
 detects('broken internal link', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/nope/">c</a>' })), 'T8:broken-internal-link');
 detects('internal ?p=<post-id> link is do-not-generate (master plan §7.6)', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/?p=9999">c</a>' })), 'T8:link-to-do-not-generate');
@@ -185,13 +188,13 @@ const canon = () => [
 ];
 test('canonicalisation rules as declared are one hop (no chain)', () => {
   const fx = makeFixture();
-  try { fx.redirects.push(...canon()); assert.deepEqual(codes(run(fx)), []); } finally { cleanup(fx); }
+  try { putRules(fx, ...canon()); assert.deepEqual(codes(run(fx)), []); } finally { cleanup(fx); }
 });
 detects('http apex redirected to www, then www to apex (two hops)', (fx) => {
-  const c = canon(); c[0].to = 'https://www.bonafidenitro.com/*'; fx.redirects.push(...c);
+  const c = canon(); c[0].to = 'https://www.bonafidenitro.com/*'; putRules(fx, ...c);
 }, 'T2:chain');
 detects('canonicalisation loop between http and https rules', (fx) => {
-  fx.redirects.push({ id: 'a', type: 'canonicalisation', from: 'https://www.bonafidenitro.com/*', to: 'http://www.bonafidenitro.com/*', status: 301, state: 'defined' }, { id: 'b', type: 'canonicalisation', from: 'http://www.bonafidenitro.com/*', to: 'https://www.bonafidenitro.com/*', status: 301, state: 'defined' });
+  putRules(fx, { id: 'a', type: 'canonicalisation', from: 'https://www.bonafidenitro.com/*', to: 'http://www.bonafidenitro.com/*', status: 301, state: 'defined' }, { id: 'b', type: 'canonicalisation', from: 'http://www.bonafidenitro.com/*', to: 'https://www.bonafidenitro.com/*', status: 301, state: 'defined' });
 }, 'T2:loop');
 
 // --- T13 config ---
@@ -306,11 +309,11 @@ test('real manifests: redirect register passes the QA register checks (pending-d
 const ampGeneric = { id: 'amp-pattern', type: 'pattern', from: '/<slug>/amp/', to: '/<slug>/', status: 301, state: 'defined' };
 const ampBooking = { id: 'thank-you', type: 'exact', from: '/thank-you/', to: '/about/', status: 301, state: 'defined' };
 const ampOverride = { id: 'amp-thank-you', type: 'exact', from: '/thank-you/amp/', to: '/about/', status: 301, state: 'defined' };
-detects('templated AMP destination that lands on another redirect source', (fx) => { fx.redirects.push(ampGeneric, ampBooking); fx.config.templateSlugs = ['thank-you']; }, 'T2:chain');
+detects('templated AMP destination that lands on another redirect source', (fx) => { putRules(fx, ampGeneric, ampBooking); fx.config.templateSlugs = ['thank-you']; }, 'T2:chain');
 test('exact AMP override takes precedence over the generic pattern (no chain), in either register order', () => {
   for (const order of [[ampOverride, ampGeneric, ampBooking], [ampGeneric, ampBooking, ampOverride]]) {
     const fx = makeFixture();
-    try { fx.redirects.push(...order); fx.config.templateSlugs = ['thank-you']; assert.deepEqual(codes(run(fx)), []); } finally { cleanup(fx); }
+    try { putRules(fx, ...order); fx.config.templateSlugs = ['thank-you']; assert.deepEqual(codes(run(fx)), []); } finally { cleanup(fx); }
   }
 });
 test('real register: the three booking AMP URLs are exact one-hop 301s to /book-appointment/ with no chain', async () => {
@@ -330,5 +333,29 @@ test('real register: the three booking AMP URLs are exact one-hop 301s to /book-
     const stripped = redirects.filter((x) => !x.id.startsWith('amp-booking-'));
     const r2 = run(fx, 'foundation', { baseline: loadInputs().baseline, redirects: stripped, config });
     assert.equal(r2.findings.filter((f) => f.code === 'chain').length, 3); // kegerators has no redirect source, so is not a chain
+  } finally { cleanup(fx); }
+});
+
+// --- T2 required redirect inventory / T5 wholesale store links / T11 static module imports (Codex round on a9e1896) ---
+detects('empty redirect register (required inventory absent)', (fx) => { fx.redirects = []; }, 'T2:required-redirect-missing');
+detects('required AMP pattern rule deleted', (fx) => { fx.redirects = fx.redirects.filter((r) => r.from !== '/<slug>/amp/'); }, 'T2:required-redirect-missing');
+detects('required host canonicalisation rule deleted', (fx) => { fx.redirects = fx.redirects.filter((r) => r.from !== 'http://www.bonafidenitro.com/*'); }, 'T2:required-redirect-missing');
+detects('required legacy plugin rule deleted', (fx) => { fx.redirects = fx.redirects.filter((r) => r.from !== '/services/mango-tea/'); }, 'T2:required-redirect-missing');
+detects('required slash-normalisation rule deleted', (fx) => { fx.redirects = fx.redirects.filter((r) => r.from !== '/nitro-cold-brew'); }, 'T2:required-redirect-missing');
+detects('required host rule left undecided', (fx) => { const r = fx.redirects.find((x) => x.from === 'https://www.bonafidenitro.com/*'); r.state = 'pending-decision'; r.to = null; }, 'T2:required-redirect-undecided');
+
+detects('/products-2/ with no store links (manifest has no minStoreLinks)', (fx) => fx.put('products-2/index.html', page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>` })), 'T5:store-links-min');
+detects('/products-2/ with 21 of the 22 store links', (fx) => fx.put('products-2/index.html', page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>${storeLinks(21)}` })), 'T5:store-links-min');
+detects('/products-2/ store minimum cannot be lowered by the manifest', (fx) => { fx.baseline.urls.find((u) => u.path === '/products-2/').minStoreLinks = 1; fx.put('products-2/index.html', page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>${storeLinks(1)}` })); }, 'T5:store-links-min');
+
+detects('inline module with a static side-effect import from a non-allowlisted host', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: `<script type="module">import "https://evil.example/payload.js"</script>` })), 'T11:unexpected-script-host');
+detects('inline module with a static named import from a non-allowlisted host', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: `<script type="module">import { x } from 'https://evil.example/m.js'; x()</script>` })), 'T11:unexpected-script-host');
+detects('bundled JS re-export from a non-allowlisted host', (fx) => fx.put('_astro/app.js', `export * from "//evil.example/m.js";`), 'T11:unexpected-script-host');
+detects('import map pointing at a non-allowlisted host', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: `<script type="importmap">{"imports":{"lib":"https://evil.example/lib.js"},"scopes":{"/a/":{"x":"//evil.example/x.js"}}}</script>` })), 'T11:unexpected-script-host');
+test('same-origin static imports and import maps are not flagged', () => {
+  const fx = makeFixture();
+  try {
+    fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: `<script type="module">import "/_astro/a.js"; import { y } from "https://bonafidenitro.com/_astro/b.js"</script><script type="importmap">{"imports":{"lib":"/_astro/lib.js"}}</script>` }));
+    assert.deepEqual(codes(run(fx)), []);
   } finally { cleanup(fx); }
 });

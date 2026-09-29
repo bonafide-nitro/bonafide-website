@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { runQa } from '../../qa/checks.mjs';
+import { runQa, REQUIRED_REDIRECTS } from '../../qa/checks.mjs';
 
 const ORIGIN = 'https://bonafidenitro.com';
 
@@ -35,11 +35,17 @@ export const baselineFixture = () => ({
   },
 });
 
-export const redirectsFixture = () => [
-  { id: 'contact', type: 'exact', from: '/contact/', to: '/about/', status: 301, state: 'defined' },
-  { id: 'slashless-about', type: 'exact', from: '/about', to: '/about/', status: 301, state: 'defined' },
-  { id: 'pending', type: 'external', from: '/services/x/', to: null, status: 301, state: 'pending-decision' },
-];
+// Healthy register: three base rules plus the full required T2 inventory (one rule per required source).
+export const redirectsFixture = () => {
+  const base = [
+    { id: 'contact', type: 'exact', from: '/contact/', to: '/about/', status: 301, state: 'defined' },
+    { id: 'slashless-about', type: 'exact', from: '/about', to: '/about/', status: 301, state: 'defined' },
+    { id: 'pending', type: 'external', from: '/services/x/', to: null, status: 301, state: 'pending-decision' },
+  ];
+  const inventory = REQUIRED_REDIRECTS.map((q, i) => ({ id: `req-${i}`, type: 'exact', from: q.from, to: q.to, status: 301, state: 'defined' }));
+  return [...base, ...inventory];
+};
+export const storeLinks = (n) => Array.from({ length: n }, (_, i) => `<a href="https://www.nitrocoffee.store/products/p${i}">s${i}</a>`).join('');
 
 const nav = '<a href="/">Home</a><a href="/products/">Products</a><a href="/about/">About</a>';
 
@@ -49,7 +55,7 @@ export const makeFixture = () => {
   const put = (rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), text); };
   put('index.html', page({ p: '/', title: 'Home Nitro', body: `${nav}<img src="/wp-content/uploads/2020/01/hero.jpg">` }));
   put('products/index.html', page({ p: '/products/', title: 'Cold Brew Kegs', h1: 'Nitro Kegs', body: `${nav}<p>Nitro Style</p><a href="https://www.amazon.com/dp/1">buy</a><a href="https://www.nitrocoffee.store/products/x">shop</a>` }));
-  put('products-2/index.html', page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>` }));
+  put('products-2/index.html', page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>${storeLinks(22)}` }));
   put('about/index.html', page({ p: '/about/', title: 'About us', body: nav }));
   put('privacy-policies/index.html', page({ p: '/privacy-policies/', title: 'Privacy', robots: 'noindex' }));
   put('404.html', page({ p: '/404.html', title: 'Not found', canonical: null }));
