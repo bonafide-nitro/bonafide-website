@@ -7,7 +7,7 @@
     "kegerators"
   ],
   "commerceInventory": {
-    "_note": "Exact Amazon/store destination URL sets for /products/ (13 Amazon, 16 store) and /products-2/ (22 store). NOT yet available: Stage 6 must populate from an approved source. Empty = migration-remaining (blocks strict).",
+    "_note": "Exact Amazon/store destination URL sets for /products/ (13 Amazon, 16 store) and /products-2/ (22 store). Block 4 (Issue #25, ZANETA_DECISION): the exact Amazon hrefs and the remaining store/Alliance hrefs could NOT be safely captured and are not invented. Populate ONLY from an approved source before strict QA/cutover. Empty = migration-remaining (blocks strict). Safely observed store hrefs are listed in docs/migration/08-block4-source-capture-results.md.",
     "pages": {
       "/products/": {
         "amazon": [],

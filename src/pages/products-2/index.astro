@@ -1,11 +1,54 @@
 ---
 import Base from '../../layouts/Base.astro';
+import ProductCard from '../../components/ProductCard.astro';
 import { loadProducts } from '../../lib/data.mjs';
 import { productsForView } from '../../lib/products.mjs';
 const items = productsForView(loadProducts(), 'wholesale');
+const main = items.filter((p) => p.line === 'core' && p.category === 'coffee');
+const tea = items.filter((p) => p.category === 'tea');
+const specialty = items.filter((p) => p.line === 'specialty');
+const alliance = items.filter((p) => p.line === 'alliance');
 ---
-<Base title="Scaffold — Products (wholesale view)" canonicalPath="/products-2/">
-  <h1>Products — wholesale view (scaffold)</h1>
-  <p>Placeholder proving the wholesale view of the shared product data.</p>
-  <ul>{items.map((p) => <li>{p.name}: ${p.pricing.wholesale}</li>)}</ul>
+<!-- scaffold: 22 nitrocoffee.store hrefs required; the exact set (incl. Alliance CTAs) is not yet
+     captured. The marker is NOT removable on commerce completion alone: it also stays until product
+     image binaries, <img> rendering + alt text, the page-level assets and the /products-2/ meta
+     description (required unchanged at launch; not yet captured or emitted) are preserved
+     (docs/migration/08-block4-source-capture-results.md).
+     Wholesale view: NOT in navigation, NO inbound internal links, NO Amazon. -->
+<Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" canonicalPath="/products-2/" breadcrumbs={[{ name: 'Products', path: '/products-2/' }]} scaffold>
+  <h1>Best Nitro Cold Brew Coffee Kegs on the Market</h1>
+  <ul>
+    <li>180+ Day Shelf Stable</li>
+    <li>No Refrigerated Storage Needed</li>
+    <li>Patented Brewing Technology</li>
+    <li>Brand Collaboration Toll-Brewing Available</li>
+    <li>SCA Golden Cup Standards</li>
+    <li>Innovative Hardware and Countertop Flash Chillers</li>
+    <li>Distributor Inquiries Welcome!</li>
+  </ul>
+
+  <h2>Direct Distribution Program</h2>
+  <p>The Bona Fide Direct Distribution Program serves recurring routes with direct-service delivery and direct-store-delivery (DSD).</p>
+  <h3>Coffee &amp; Tea for Office</h3>
+  <p>Recurring direct-service delivery routes to offices.</p>
+  <h3>Coffee Shop Supply</h3>
+  <p>Wholesale PET Keg supply for coffee shops via direct-store-delivery (DSD).</p>
+  <h3>Nitro Coffee for Home</h3>
+  <p>Nitro coffee for the home, from the same 5 Gal PET Keg range.</p>
+
+  <h2>Wholesale price list: nitro coffee</h2>
+  <ul class="grid">{main.map((p) => <ProductCard product={p} view="wholesale" />)}</ul>
+
+  <h2>Wholesale price list: nitro tea</h2>
+  <ul class="grid">{tea.map((p) => <ProductCard product={p} view="wholesale" />)}</ul>
+
+  <h2>Wholesale price list: specialty flavors</h2>
+  <ul class="grid">{specialty.map((p) => <ProductCard product={p} view="wholesale" />)}</ul>
+
+  <h2>Alliance Brand Nitro Coffee</h2>
+  <p>Bona Fide Craft Draft in collaboration with master roasters, in 5-gallon food-safe Sankey D kegs. Alliance brands are wholesale-only.</p>
+  <ul class="grid">{alliance.map((p) => <ProductCard product={p} view="wholesale" />)}</ul>
+
+  <h2>Craft Draft: cold brew vs. cold-brewed</h2>
+  <p>Our process embeds stability for at least 120 days, with no artificial preservatives or stabilizers. Craft Draft is cold coffee done correctly, nitrogen infused and on tap. It also explains the difference between "cold brew" and "cold-brewed" coffee.</p>
 </Base>

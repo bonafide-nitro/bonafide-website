@@ -1,7 +1,24 @@
 ---
-import { loadNavigation } from '../lib/data.mjs';
-const { title, canonicalPath } = Astro.props;
+import { loadNavigation, loadSite } from '../lib/data.mjs';
+// `scaffold` emits the QA marker: strict migration QA fails on it. Only pages that are
+// NOT yet genuinely complete against their preservation contract may set it.
+const { title, canonicalPath, breadcrumbs = [], scaffold = false, noindex = false } = Astro.props;
 const nav = loadNavigation();
+const site = loadSite();
+const abs = (p) => new URL(p, Astro.site).href;
+const graph = [
+  { '@type': 'Organization', '@id': `${site.url}/#organization`, name: site.name, url: `${site.url}/` },
+  { '@type': 'WebSite', '@id': `${site.url}/#website`, url: `${site.url}/`, name: site.name, publisher: { '@id': `${site.url}/#organization` } },
+];
+if (canonicalPath) {
+  graph.push({ '@type': 'WebPage', '@id': `${abs(canonicalPath)}#webpage`, url: abs(canonicalPath), name: title, isPartOf: { '@id': `${site.url}/#website` } });
+  const crumbs = [{ name: 'Home', path: '/' }, ...breadcrumbs];
+  graph.push({
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: abs(c.path) })),
+  });
+}
+const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': canonicalPath ? graph : graph.slice(0, 2) });
 ---
 <!doctype html>
 <html lang="en">
@@ -9,17 +26,45 @@ const nav = loadNavigation();
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
-    <meta name="bonafide-qa" content="scaffold-placeholder" /> <!-- QA marker: strict migration QA fails on this -->
-    <meta name="robots" content="noindex" /> <!-- scaffold placeholder output only -->
-    {canonicalPath && <link rel="canonical" href={new URL(canonicalPath, Astro.site)} />}
+    {scaffold && <meta name="bonafide-qa" content="scaffold-placeholder" />} <!-- QA marker: strict migration QA fails on this -->
+    {noindex && <meta name="robots" content="noindex" />}
+    {canonicalPath && <link rel="canonical" href={abs(canonicalPath)} />}
+    <script type="application/ld+json" set:html={jsonLd} />
+    <style>
+      :root { --ink: #1c1712; --muted: #5b5147; --accent: #8a5a1f; --bg: #fffdf9; --card: #f6efe4; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font: 16px/1.6 system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+      nav.site ul { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; margin: 0; padding: .75rem 1rem; background: var(--card); }
+      a { color: var(--accent); }
+      main { max-width: 64rem; margin: 0 auto; padding: 1rem; }
+      .crumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; color: var(--muted); }
+      .crumbs li + li::before { content: "/"; margin-right: .5rem; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1rem; padding: 0; list-style: none; }
+      .card { background: var(--card); border-radius: .5rem; padding: 1rem; }
+      .card h3 { margin-top: 0; }
+      .cta { display: inline-block; margin: .25rem .5rem .25rem 0; padding: .4rem .8rem; border: 1px solid var(--accent); border-radius: .3rem; text-decoration: none; }
+      .cta-label { color: var(--muted); border-style: dashed; }
+      .price { font-weight: 700; }
+      .muted { color: var(--muted); }
+    </style>
   </head>
   <body>
-    <nav>
+    <nav class="site" aria-label="Main">
       <ul>
         {nav.launch.map((i) => <li><a href={i.path}>{i.label}</a></li>)}
         {nav.external.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
       </ul>
     </nav>
-    <main><slot /></main>
+    <main>
+      {canonicalPath && breadcrumbs.length > 0 && (
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Home</a></li>
+            {breadcrumbs.map((c, i) => <li>{i === breadcrumbs.length - 1 ? c.name : <a href={c.path}>{c.name}</a>}</li>)}
+          </ol>
+        </nav>
+      )}
+      <slot />
+    </main>
   </body>
 </html>

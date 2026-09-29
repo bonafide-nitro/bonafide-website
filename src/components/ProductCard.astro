@@ -1,0 +1,22 @@
+---
+// One product card. `view` decides which facts render: retail shows Nitro/Still styles, the
+// retail-only Amazon CTA label and retail price; wholesale shows the wholesale price only.
+const { product: p, view } = Astro.props;
+const name = view === 'wholesale' && p.wholesaleName ? p.wholesaleName : p.name;
+const price = view === 'wholesale' ? p.pricing.wholesale : p.pricing.retail;
+const store = p.links?.store && (p.links.storeViews ?? ['retail', 'wholesale']).includes(view) ? p.links.store : null;
+const fmt = (n) => `$${n.toFixed(2)}`;
+---
+<li class="card">
+  <h3>{name}</h3>
+  <p class="muted">{p.nutrition}</p>
+  <p>{p.description}</p>
+  {p.specialRequest && <p><em>Special request</em></p>}
+  {price != null && <p class="price">{fmt(price)} / {p.format}</p>}
+  {price == null && p.format && <p>{p.format}</p>}
+  {view === 'retail' && p.styles && <p>Nitro Style + Still (Flat) Style</p>}
+  <p>
+    {store && <a class="cta" href={store}>Buy on the Bona Fide webstore</a>}
+    {view === 'retail' && p.amazonCta && (p.styles ?? [null]).map(() => <span class="cta cta-label">Buy Securely On Amazon.com</span>)}
+  </p>
+</li>
