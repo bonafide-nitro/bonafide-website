@@ -21,10 +21,10 @@ Not downloaded (no network). All evidenced same-path URLs (17 retail/equipment/b
 - Product-page og/twitter tags are not emitted (not part of this Block's evidence set beyond noted values).
 
 ## Scaffold marker
-- Dropped on `/howtobuy/` (title/H1/canonical/schema/copy/legitimate targets in place; **image preservation is outstanding — see Images**).
+- Kept on `/howtobuy/` (Codex P2): title/H1/canonical/schema/copy/legitimate targets are in place, but image preservation is outstanding — see Images.
 - Kept on `/` (Codex P1): the customer-testimonial section and Review/rating schema are not yet preserved, pending decision I7.
 - Kept on `/products/` and `/products-2/` until their commerce contracts can truly pass.
 - 404 keeps marker + noindex (out of scope).
 
 ## Results
-Foundation QA: PASS, 0 invariants; 54 migration-remaining (was 73). Strict: FAIL (expected). `npm test` 153/153, Python isolation 303/303, build + `check:dist` OK.
+Foundation QA: PASS, 0 invariants; 55 migration-remaining (was 73). Strict: FAIL (expected). `npm test` 153/153, Python isolation 303/303, build + `check:dist` OK.
