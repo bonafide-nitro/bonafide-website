@@ -30,6 +30,7 @@ const navigationSchema = z.object({
 const productSchema = z.object({
   id: z.string(),
   name: z.string(),
+  wholesaleName: z.string().optional(),
   category: z.enum(['coffee', 'tea']),
   line: z.enum(['core', 'specialty', 'alliance']),
   brand: z.string(),
@@ -38,7 +39,9 @@ const productSchema = z.object({
   description: z.string().optional(),
   styles: z.array(z.enum(['nitro', 'still'])).optional(),
   pricing: z.object({ retail: z.number().nullable(), wholesale: z.number().nullable() }),
-  links: z.object({ store: z.string().url().optional(), amazon: z.string().url().optional() }).optional(),
+  links: z.object({ store: z.string().url().optional(), storeViews: z.array(z.enum(['retail', 'wholesale'])).optional(), amazon: z.string().url().optional() }).optional(),
+  amazonCta: z.boolean().optional(),
+  specialRequest: z.boolean().optional(),
   image: urlPath.optional(),
   alt: z.string().optional(),
   views: z.array(z.enum(['retail', 'wholesale'])).min(1),

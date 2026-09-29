@@ -1,23 +1,287 @@
 # Product data structure — single source of truth for BOTH product views.
 # `views` decides which page renders a SKU: retail -> /products/, wholesale -> /products-2/.
 # The two pages are separate launch URLs and are never merged, aliased or substituted.
-# Source: 04-master-plan §10.3. The full dataset is Stage 6; only the two SKUs the
-# master plan itself shows are included here, to prove the structure and the view split.
+# Source: docs/migration/07-block4-public-source-capture.md (sanitized public rendered-page capture).
+# Deliberately NOT here (not evidenced, never invented): Amazon hrefs, unresolved store hrefs,
+# the retail Vanilla store href, Alliance store hrefs, Decaf Mexico store href, image alt text
+# other than where already recorded. `amazonCta: true` records only that a retail Amazon CTA
+# label exists on the launch page; the href is migration-remaining.
+# `links.storeViews` limits a store link to the views where it is evidenced.
+# `image` paths are the same-path launch URLs; binaries are not in the repo yet (migration-remaining),
+# so pages do not reference them (QA T7 requires referenced uploads to exist).
+
 - id: hair-raiser-organic
   name: "Hair Raiser® Organic"
   category: coffee
   line: core
-  brand: Bona Fide
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 100mg"
+  description: "Dark French-roast blend with a rich, complex profile and big mouthfeel; semi-sweet dark-chocolate finish with a pineapple note. Sourced from Africa & Indonesia."
+  styles: [nitro, still]
   pricing: { retail: null, wholesale: 195.00 }
   links:
-    store: "https://www.nitrocoffee.store/products/hair-raiser®-organic-nitro-coffee"
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/hair-raiser%C2%AE-organic-nitro-coffee"
+  amazonCta: true
   image: /wp-content/uploads/2017/10/Hair-Raiser-Nitro-Coffee-for-website.png
-  alt: Hair Raiser Nitro Coffee by Bona Fide
   views: [retail, wholesale]
+
+- id: espresso-nitro-organic
+  name: "Espresso Nitro Organic"
+  wholesaleName: "Espresso Organic"
+  category: coffee
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Italian-style espresso profile with \"Crema Magnifica\" on tap; pairs with flash chillers and hot nitro machines."
+  styles: [nitro, still]
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/organic-espresso-nitro-pet-5-gal-1"
+  amazonCta: true
+  image: /wp-content/uploads/2019/05/Esspreso-Nitro-Coffee-for-website.png
+  views: [retail, wholesale]
+
+- id: ethiopia-yirgacheffe-organic
+  name: "Ethiopia Yirgacheffe Organic"
+  category: coffee
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 100mg"
+  description: "Floral and smooth, with bright citrus and sweet lemon, toasted coconut and a delicate sweet finish."
+  styles: [nitro, still]
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/organic-ethiopia-yirgacheffe-nitro-coffee-5-gal-pet-keg"
+  amazonCta: true
+  image: /wp-content/uploads/2017/10/Ethiopia-Nitro-Coffeemfor-website.png
+  views: [retail, wholesale]
+
+- id: peru-organic
+  name: "Peru Organic"
+  category: coffee
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 120mg"
+  description: "Smooth caramel and whipped-cream start, cookies and pecan-pie notes, a classic medium-roast finish; fruity and elegant."
+  styles: [nitro, still]
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/organic-peru-nitro-coffee-5-gal-pet-keg"
+  amazonCta: true
+  image: /wp-content/uploads/2022/05/Peru-Nitro-Coffee-for-website.png
+  views: [retail, wholesale]
+
+- id: guatemala-organic
+  name: "Guatemala Organic"
+  category: coffee
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Smoky, sweet caramel finish; creamy, with cilantro and lime, medium body, honey and a fruity finish."
+  styles: [nitro, still]
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/guatemala-organic-nitro-coffee"
+  amazonCta: true
+  image: /wp-content/uploads/2022/05/Guatemala-Nitro-Coffee-for-website.png
+  views: [retail, wholesale]
+
+- id: decaf-mexico
+  name: "Decaf Mexico"
+  category: coffee
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 0mg"
+  description: "Pungent, floral, earthy aroma; mild acidity and robust body with tropical nuts, dried fruits and chocolate. Special request."
+  pricing: { retail: null, wholesale: 195.00 }
+  specialRequest: true
+  image: /wp-content/uploads/2022/05/Decaf-Mexico-Nitro-Coffee-for-website.png
+  views: [retail, wholesale]
+
+- id: vanilla-nitro-main
+  name: "Organic Vanilla Nitro Coffee"
+  category: coffee
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Natural vanilla with light-roasted Organic Guatemala; smooth floral start, honey and fruity finish."
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/products/peoples-organic-nitro-vanilla-pet-5-gal"
+    storeViews: [wholesale]
+  # wholesale main-range entry only (Organic Vanilla in main range, /products-2/)
+  image: /wp-content/uploads/2022/05/Vanilla-Nitro-by-Bona-Fide.png
+  views: [wholesale]
+
+- id: hibiscus-tea
+  name: "Organic Hibiscus Tea"
+  category: tea
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 1, Protein: 0g, Fat: 0g, Zero Sugar, Zero Caffeine: 0mg"
+  description: "Tangy floral profile with a deep ruby color and a vitamin C reputation; modestly sweetened with organic stevia."
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-tea/products/organic-hibiscus-nitro-tea"
+  image: /wp-content/uploads/2022/05/Hibiscuis-Nitro-Tea-for-website.png
+  views: [retail, wholesale]
+
+- id: mango-tea
+  name: "Mango Tea"
+  wholesaleName: "Organic Mango Tea"
+  category: tea
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 1, Protein: 0g, Fat: 0g, Sugar: 0, Caffeine: 45mg"
+  description: "Orange pekoe, calendula flowers and mango essence; refreshing, pairs with lunch and bistro fare."
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-tea/products/mango-nitro-tea"
+  image: /wp-content/uploads/2022/05/Mango-Nitro-Tea-for-website-organic.png
+  views: [retail, wholesale]
+
+- id: passion-fruit-tea
+  name: "Passion Fruit Tea"
+  wholesaleName: "Organic Passion Fruit Tea"
+  category: tea
+  line: core
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 1, Protein: 0g, Fat: 0g, Sugar: 0, Caffeine: 45mg"
+  description: "Orange pekoe with calendula and rose flowers and passion-fruit flavoring; positioned as a refreshing summer drink."
+  pricing: { retail: null, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-tea/products/organic-passion-fruit-nitro-tea-pet-5-gal"
+  image: /wp-content/uploads/2026/07/Pasion-Fruit-Nitro-tea-for-website-new.png
+  views: [retail, wholesale]
+
+- id: hazelnut-creme-coffee
+  name: "Organic Nitro Hazelnut Creme Coffee"
+  category: coffee
+  line: specialty
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Toasted-hazelnut notes with Organic Guatemala coffee; light creamy flavor."
+  pricing: { retail: 149.00, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/products/orgainc-nitro-hazelnut-creme-coffee-pet-5-gal-keg"
+  image: /wp-content/uploads/2022/05/Hazelnut-Nitro-by-Bona-Fide.png
+  views: [retail, wholesale]
+
+- id: vanilla-coffee
+  name: "Organic Nitro Vanilla Coffee"
+  category: coffee
+  line: specialty
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Natural vanilla with light-roasted Organic Guatemala; smooth floral start, honey and fruity finish."
+  pricing: { retail: 149.00, wholesale: 195.00 }
+  links:
+    store: "https://www.nitrocoffee.store/products/peoples-organic-nitro-vanilla-pet-5-gal"
+    storeViews: [wholesale]
+  image: /wp-content/uploads/2022/05/Vanilla-Nitro-by-Bona-Fide.png
+  views: [retail, wholesale]
+
+- id: caramel-coffee
+  name: "Organic Nitro Caramel Coffee"
+  category: coffee
+  line: specialty
+  brand: "Bona Fide"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "100% Organic Guatemala coffee, light roast, caramel flavor; light creamy profile."
+  styles: [nitro, still]
+  pricing: { retail: 149.00, wholesale: 120.00 }
+  links:
+    store: "https://www.nitrocoffee.store/collections/pet-nitro-coffee-keg/products/organic-nitro-caramel-coffee-pet-5-gal-keg"
+  image: /wp-content/uploads/2022/05/Caramel-Coffee-Nitro-by-Bona-Fide.png
+  views: [retail, wholesale]
+
 - id: caveman-coffee-nitro
-  name: Caveman Coffee Company Nitro
+  name: "Caveman Coffee Company Nitro"
   category: coffee
   line: alliance
-  brand: Caveman Coffee Company
+  brand: "Caveman Coffee Company"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Single-origin Guatemala Organic; creamy, cilantro and lime, medium body, honey and fruit finish. Vegan / Paleo."
   pricing: { retail: null, wholesale: 125.00 }
-  views: [wholesale]   # /products-2/ ONLY — preserves the Alliance exclusivity
+  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  image: /wp-content/uploads/2022/05/Caveman-Coffee-Comapany-Nitro-by-Bona-Fide.png
+  views: [wholesale]
+
+- id: gorongosa-coffee-nitro
+  name: "Our Gorongosa Coffee Company"
+  category: coffee
+  line: alliance
+  brand: "Our Gorongosa Coffee Company"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Medium roast with pink grapefruit and toasted almond; Gorongosa Green from Gorongosa National Park plus sustainably sourced Arabica."
+  pricing: { retail: null, wholesale: 125.00 }
+  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  image: /wp-content/uploads/2022/05/ourGorongosa-Coffee-Nitro-by-Bona-Fide.png
+  views: [wholesale]
+
+- id: jittery-johns-nitro
+  name: "Jittery John's New Orleans Style - Nitro"
+  category: coffee
+  line: alliance
+  brand: "Jittery John's"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 120mg"
+  description: "Hair Raiser Organic dark French roast with French chicory; earthy and nutty, in the Café au Lait / New Orleans tradition."
+  pricing: { retail: null, wholesale: 135.00 }
+  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  image: /wp-content/uploads/2022/05/Jittery-Johns-Coffee-Comapany-Nitro-by-Bona-Fide.png
+  views: [wholesale]
+
+- id: thai-treasures-espresso-nitro
+  name: "Thai Treasures Ang Kang Espresso Nitro"
+  category: coffee
+  line: alliance
+  brand: "Thai Treasures"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Sweet crema with honey, nut and citrus hints; Thai coffee from Northern Thailand high-mountain farmland."
+  pricing: { retail: null, wholesale: 125.00 }
+  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  image: /wp-content/uploads/2022/05/Thai-Treasures-Coffee-Nitro-by-Bona-Fide.png
+  views: [wholesale]
+
+- id: cult-uganda-white-nile-nitro
+  name: "Organic CULT Artisan Beverage Co. Uganda White Nile Nitro"
+  category: coffee
+  line: alliance
+  brand: "CULT Artisan Beverage Co."
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
+  description: "Semi-sweet chocolate, pear, prune and white grape; medium roast."
+  pricing: { retail: null, wholesale: 125.00 }
+  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  image: /wp-content/uploads/2022/05/CULT-Coffee-Comapany-Nitro-by-Bona-Fide.png
+  views: [wholesale]
+
+- id: thanksgiving-coffee-nitro
+  name: "Organic Thanksgiving Coffee Company Nitro"
+  category: coffee
+  line: alliance
+  brand: "Thanksgiving Coffee Company"
+  format: 5 Gal PET Keg
+  nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 120mg"
+  description: "Fair Trade / Organic blend of Nicaraguan, Guatemalan and Ethiopian coffees; buttery mouthfeel, plum and a long finish."
+  pricing: { retail: null, wholesale: 125.00 }
+  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  image: /wp-content/uploads/2022/05/Thanksgiving-Coffee-Company-Nitro-by-Bona-Fide.png
+  views: [wholesale]

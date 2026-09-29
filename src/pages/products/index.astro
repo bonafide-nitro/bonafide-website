@@ -1,11 +1,61 @@
 ---
 import Base from '../../layouts/Base.astro';
+import ProductCard from '../../components/ProductCard.astro';
 import { loadProducts } from '../../lib/data.mjs';
 import { productsForView } from '../../lib/products.mjs';
 const items = productsForView(loadProducts(), 'retail');
+const core = items.filter((p) => p.line === 'core' && p.category === 'coffee');
+const tea = items.filter((p) => p.category === 'tea');
+const specialty = items.filter((p) => p.line === 'specialty');
 ---
-<Base title="Scaffold — Products (retail view)" canonicalPath="/products/">
-  <h1>Products — retail view (scaffold)</h1>
-  <p>Placeholder proving the retail view of the shared product data.</p>
-  <ul>{items.map((p) => <li>{p.name}</li>)}</ul>
+<!-- scaffold: the exact Amazon hrefs (13) and remaining store hrefs (16 required) are not yet
+     captured; the QA marker stays until the commerce contract can truly pass (Issue #25). -->
+<Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" canonicalPath="/products/" breadcrumbs={[{ name: 'Products', path: '/products/' }]} scaffold>
+  <h1>Best Nitro Cold Brew Coffee Kegs On The Market</h1>
+  <p><strong>Try The Best Cold Brew On The Market</strong></p>
+  <h2>Nitro Coffee And Tea Kegs That Last For Months</h2>
+  <ul>
+    <li>180+ Days Shelf Stable Kegs</li>
+    <li>No Refrigerated Storage Needed</li>
+    <li>Patented Brewing Technology Ends Cold Brew Waste</li>
+    <li>Brand Collaboration Toll-Brewing Available</li>
+    <li>SCA Golden Cup Standards</li>
+    <li>Innovative Hardware</li>
+    <li>Countertop Flash Chillers</li>
+    <li>Distributor Inquiries Welcome!</li>
+  </ul>
+  <p>Bona Fide nitro coffee and tea kegs are a creamy, nitrogen-infused alternative for coffee shops, offices and homes, available through our <a href="https://nitrocoffee.store/">web store</a> and distributors. See <a href="/howtobuy/">How to Buy</a>.</p>
+
+  <h2>Our Cold Brew Nitro Coffee In Keg Products</h2>
+  <p>Some varieties may not be available through every distributor. <a href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a> for variety and keg-style information.</p>
+  <p>Each coffee is offered in Nitro Style or Still (Flat) Style.</p>
+  <ul class="grid">{core.map((p) => <ProductCard product={p} view="retail" />)}</ul>
+
+  <h2>Nitro Tea</h2>
+  <p>Craft Draft also applies to nitro tea: nitrogen infusion, preserved aromatics, 180+ day shelf-stable 5-gallon PET kegs and no preservatives.</p>
+  <ul class="grid">{tea.map((p) => <ProductCard product={p} view="retail" />)}</ul>
+
+  <h2>Bag In Box</h2>
+  <p>Prefer a smaller format? See the <a href="https://www.nitrocoffee.store/collections/better-than-cold-brew-bag-in-box-coffee-and-tea-collection">Bag In Box coffee and tea collection</a> and <a href="/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/">Bag-in-Box versus kegs</a>.</p>
+
+  <h2>Are You Looking For Dispensing Equipment?</h2>
+  <p>Countertop dispensers, with hot or cold machine options.</p>
+  <p><a class="cta" href="/kegerators/">See dispensing equipment</a></p>
+
+  <h2>Specialty Flavors PET Nitro Coffee</h2>
+  <p>Craft Draft flavored nitro coffee: organic certified, beyond fairly traded, nitrogen infused, in 180+ day shelf-stable 5-gallon kegs.</p>
+  <ul class="grid">{specialty.map((p) => <ProductCard product={p} view="retail" />)}</ul>
+
+  <h2>Craft Draft: cold brew vs. cold-brewed</h2>
+  <p>Our process provides at least 180 days of flavor stability with no artificial preservatives or stabilizers. It also explains the difference between "cold brew" and "cold-brewed" coffee, and Craft Draft.</p>
+
+  <h2>Bag In Box: Baby in Box</h2>
+  <p>A second Bag In Box section for smaller-format coffee and tea (see the <a href="https://www.nitrocoffee.store/collections/better-than-cold-brew-bag-in-box-coffee-and-tea-collection">collection</a>).</p>
+
+  <h2>Coffee &amp; Tea For Office</h2>
+  <p>Nitro coffee and tea for workplaces.</p>
+  <h2>Coffee Shop Supply</h2>
+  <p>Kegs and equipment for coffee shops.</p>
+  <h2>Nitro Coffee For Home</h2>
+  <p>Kegs and Bag In Box options for the home.</p>
 </Base>
