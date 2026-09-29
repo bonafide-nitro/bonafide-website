@@ -10,7 +10,9 @@ const specialty = items.filter((p) => p.line === 'specialty');
 const alliance = items.filter((p) => p.line === 'alliance');
 ---
 <!-- scaffold: 22 nitrocoffee.store hrefs required; the exact set (incl. Alliance CTAs) is not yet
-     captured, so the QA marker stays until the commerce contract can truly pass (Issue #25).
+     captured. The marker is NOT removable on commerce completion alone: it also stays until product
+     image binaries, <img> rendering + alt text and the page-level assets are preserved
+     (docs/migration/08-block4-source-capture-results.md).
      Wholesale view: NOT in navigation, NO inbound internal links, NO Amazon. -->
 <Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" canonicalPath="/products-2/" breadcrumbs={[{ name: 'Products', path: '/products-2/' }]} scaffold>
   <h1>Best Nitro Cold Brew Coffee Kegs on the Market</h1>
