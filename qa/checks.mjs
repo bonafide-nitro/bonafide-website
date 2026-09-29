@@ -30,6 +30,8 @@ const HOST_DEST = 'https://bonafidenitro.com/*';
 export const REQUIRED_REDIRECTS = [
   ...['http://bonafidenitro.com/*', 'http://www.bonafidenitro.com/*', 'https://www.bonafidenitro.com/*'].map((from) => ({ from, group: 'protocol/host canonicalisation', defined: true, to: HOST_DEST })),
   ...['/<slug>/amp/', '/amp/', '/amp/?bpa_page=bookingpress_download&*'].map((from) => ({ from, group: 'AMP', defined: true, to: from === '/<slug>/amp/' ? '/<slug>/' : '/' })),
+  // ZANETA_DECISION (2026-09-29): the three evidenced BookingPress AMP URLs resolve in one hop to the surviving booking page.
+  ...['/thank-you/amp/', '/my-bookings/amp/', '/appointment-cancellation-confirmation/amp/'].map((from) => ({ from, group: 'AMP booking', defined: true, to: '/book-appointment/' })),
   ...['/services/hair-raiser-organic/', '/collections-nitro-coffee/', '/services/peru-organic/', '/services/ethiopia-yirgacheffe-organic/', '/services/guatemala-organic/',
     '/services/organic-hibiscus-tea/', '/services/mango-tea/', '/services/espresso-organic-nitro-coffee/', '/services/passion-fruit-tea/',
     '/services/green-citrus-nitro-tea/', '/services/cascara-coffee-cherry-tea/'].map((from) => ({ from, group: 'legacy plugin', defined: false, to: 'https://www.nitrocoffee.store/x' })),
@@ -150,6 +152,7 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     const have = rules.find((r) => r.from === req.from);
     if (!have) F.add('T2', 'required-redirect-missing', INV, req.from, `required ${req.group} redirect from ${req.from} is not in the register`);
     else if (req.defined && have.state !== 'defined') F.add('T2', 'required-redirect-undecided', INV, req.from, `required ${req.group} redirect ${have.id} must be state "defined"`);
+    else if (req.defined && have.to !== req.to) F.add('T2', 'required-redirect-destination', INV, req.from, `required ${req.group} redirect ${have.id} must go to ${req.to}, register has ${have.to}`);
   }
   const seenId = new Set(); const seenFrom = new Set();
   for (const r of rules) {

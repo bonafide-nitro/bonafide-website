@@ -308,8 +308,8 @@ test('real manifests: redirect register passes the QA register checks (pending-d
 // --- T2 templated AMP chains (ZANETA_DECISION on PR #24) ---
 const ampGeneric = { id: 'amp-pattern', type: 'pattern', from: '/<slug>/amp/', to: '/<slug>/', status: 301, state: 'defined' };
 const ampBooking = { id: 'thank-you', type: 'exact', from: '/thank-you/', to: '/about/', status: 301, state: 'defined' };
-const ampOverride = { id: 'amp-thank-you', type: 'exact', from: '/thank-you/amp/', to: '/about/', status: 301, state: 'defined' };
-detects('templated AMP destination that lands on another redirect source', (fx) => { putRules(fx, ampGeneric, ampBooking); fx.config.templateSlugs = ['thank-you']; }, 'T2:chain');
+const ampOverride = { id: 'amp-thank-you', type: 'exact', from: '/thank-you/amp/', to: '/book-appointment/', status: 301, state: 'defined' };
+detects('templated AMP destination that lands on another redirect source', (fx) => { putRules(fx, ampGeneric, ampBooking); fx.redirects = fx.redirects.filter((x) => x.from !== '/thank-you/amp/'); fx.config.templateSlugs = ['thank-you']; }, 'T2:chain');
 test('exact AMP override takes precedence over the generic pattern (no chain), in either register order', () => {
   for (const order of [[ampOverride, ampGeneric, ampBooking], [ampGeneric, ampBooking, ampOverride]]) {
     const fx = makeFixture();
@@ -342,6 +342,9 @@ detects('required AMP pattern rule deleted', (fx) => { fx.redirects = fx.redirec
 detects('required host canonicalisation rule deleted', (fx) => { fx.redirects = fx.redirects.filter((r) => r.from !== 'http://www.bonafidenitro.com/*'); }, 'T2:required-redirect-missing');
 detects('required legacy plugin rule deleted', (fx) => { fx.redirects = fx.redirects.filter((r) => r.from !== '/services/mango-tea/'); }, 'T2:required-redirect-missing');
 detects('required slash-normalisation rule deleted', (fx) => { fx.redirects = fx.redirects.filter((r) => r.from !== '/nitro-cold-brew'); }, 'T2:required-redirect-missing');
+detects('required AMP root destination drifted', (fx) => { fx.redirects.find((x) => x.from === '/amp/').to = '/about/'; }, 'T2:required-redirect-destination');
+detects('required host canonicalisation destination drifted', (fx) => { fx.redirects.find((x) => x.from === 'http://bonafidenitro.com/*').to = 'https://example.org/*'; }, 'T2:required-redirect-destination');
+detects('booking AMP destination drifted', (fx) => { fx.redirects.find((x) => x.from === '/my-bookings/amp/').to = '/'; }, 'T2:required-redirect-destination');
 detects('required host rule left undecided', (fx) => { const r = fx.redirects.find((x) => x.from === 'https://www.bonafidenitro.com/*'); r.state = 'pending-decision'; r.to = null; }, 'T2:required-redirect-undecided');
 
 detects('/products-2/ with no store links (manifest has no minStoreLinks)', (fx) => fx.put('products-2/index.html', page({ p: '/products-2/', title: 'Cold Brew Kegs', h1: 'Wholesale', body: `<p>Jittery John's $10 $12</p>` })), 'T5:store-links-min');
