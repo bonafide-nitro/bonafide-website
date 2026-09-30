@@ -267,7 +267,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Nitro Cold Brew - Bona Fide Brewing Company"
+      ],
+      "h1MustContain": [
+        "ALL ABOUT NITRO COLD BREW COFFEE"
+      ]
     },
     {
       "path": "/nitro-coffee-health-benefits/",
@@ -303,7 +309,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Simple Explain Nitro Cold Brew Coffee"
+      ],
+      "h1MustContain": [
+        "Simple Explain Nitro Cold Brew Coffee"
+      ]
     },
     {
       "path": "/a-touch-of-vanilla-to-your-nitro-coffee/",
@@ -325,7 +337,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Coffee trends that will dominate in 2018"
+      ],
+      "h1MustContain": [
+        "COFFEE TRENDS THAT WILL DOMINATE IN 2018"
+      ]
     },
     {
       "path": "/how-ambient-stable-coffee-kegs-help-you-save-more-money/",
@@ -375,7 +393,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Coffee doesn't produce cancer"
+      ],
+      "h1MustContain": [
+        "says leading American Scientist"
+      ]
     },
     {
       "path": "/nitro-coffee-future/",
@@ -397,7 +421,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Interested In Selling In The USA"
+      ],
+      "h1MustContain": [
+        "Interested In Selling In The USA"
+      ]
     },
     {
       "path": "/interested-in-selling-eu-and-usa/",
@@ -405,7 +435,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Interested In Selling In EU And USA"
+      ],
+      "h1MustContain": [
+        "Interested In Selling In EU And USA"
+      ]
     },
     {
       "path": "/interested-in-selling-eu-qr-2/",
@@ -413,7 +449,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Interested In Selling In EU"
+      ],
+      "h1MustContain": [
+        "Interested In Selling In EU"
+      ]
     },
     {
       "path": "/blog/page/2/",

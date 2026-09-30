@@ -78,7 +78,7 @@ t('/blog/: links only to built routes; no invented pagination/archives', () => {
   // /nitro-coffee-future/ is built but not in the evidenced first-page list, so it must not be listed on /blog/ yet.
   for (const p of ARTICLES.filter((x) => x !== '/nitro-coffee-future/')) assert.ok(internal.includes(p), `${p} listed`);
   assert.ok(!internal.includes('/nitro-coffee-future/'), 'unevidenced /nitro-coffee-future/ not on first page');
-  assert.ok(!internal.some((x) => /\/page\/|\/category\/|\/author\/|coffee-trends/.test(x)));
+  assert.ok(!internal.some((x) => /\/page\/|\/category\/|\/author\//.test(x)));
 });
 
 t('historical health/COVID framing kept; no new claim language', () => {

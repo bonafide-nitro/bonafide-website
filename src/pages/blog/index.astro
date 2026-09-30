@@ -11,9 +11,10 @@ const posts = [
   { path: '/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/', title: 'Cold Brew Bag In Box Coffee', date: '2020-01-02', datetxt: 'Jan 2, 2020', upd: 'Jan 12, 2026' },
   { path: '/nitro-coffee-health-benefits/', title: 'NITRO COFFEE HEALTH BENEFITS', date: '2018-06-14', datetxt: 'Jun 14, 2018', upd: 'May 18, 2022' },
   { path: '/is-coffee-healthy/', title: 'IS COFFEE HEALTHY', date: '2018-05-08', datetxt: 'May 8, 2018', upd: 'Feb 5, 2020' },
+  { path: '/coffee-trends-dominate-2018/', title: 'COFFEE TRENDS THAT WILL DOMINATE IN 2018', date: '2018-03-22', datetxt: 'Mar 22, 2018', upd: 'Nov 16, 2018' },
 ];
 ---
-<!-- scaffold: kept until the excerpts/categories/images and /blog/page/2/ pagination are preserved. Cards link only to built routes. /nitro-coffee-future/ is a built page but is not in the evidenced first-page list, so it is not listed here until its archive position is evidenced. "Coffee Trends That Will Dominate in 2018" (Mar 22, 2018) is on the live first page but its route is not built yet, so it is listed without a link. Pagination (/blog/page/2/) and the category archive are the next batches; no link is invented. -->
+<!-- scaffold: kept until the excerpts/categories/images and /blog/page/2/ pagination are preserved. Cards link only to built routes. /nitro-coffee-future/ is a built page but is not in the evidenced first-page list, so it is not listed here until its archive position is evidenced. "Coffee Trends That Will Dominate in 2018" (Mar 22, 2018) is linked now that its route is built (Block 8). Pagination (/blog/page/2/) and the category archive are the next batches; no link is invented. -->
 <Base title="Nitro Coffee & Nitro Tea News | Bona Fide Brewing Company | Blog" canonicalPath="/blog/" breadcrumbs={[{ name: 'Blog', path: '/blog/' }]} scaffold>
   <h1>Nitro Coffee &amp; Nitro Tea News</h1>
   <ul class="grid">
@@ -23,9 +24,5 @@ const posts = [
         {p.date && <p class="muted"><time datetime={p.date}>{p.datetxt}</time>{p.upd && <> (updated {p.upd})</>}</p>}
       </li>
     ))}
-    <li class="card">
-      <h2>COFFEE TRENDS THAT WILL DOMINATE IN 2018</h2>
-      <p class="muted"><time datetime="2018-03-22">Mar 22, 2018</time> (updated Nov 16, 2018)</p>
-    </li>
   </ul>
 </Base>
