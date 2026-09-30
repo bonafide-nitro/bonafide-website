@@ -85,3 +85,6 @@ The repository holds only counts and host constraints for commerce links (`/prod
 
 ## Block 5 update (Issue #27)
 `/kegerators/`, `/nitro-cold-brew/`, `/hot-nitro-coffee/`, `/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/`, `/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/` and `/about/` are built and keep the scaffold marker until their image binaries are preserved. Foundation: 0 invariants, 51 migration-remaining; strict still FAIL. See `docs/migration/09-block5-batch2-results.md`.
+
+## Block 6 update (Issue #30)
+`/contact-bona-fide-nitro-coffee-and-tea/`, `/coffee-on-tap-is-the-future/`, `/nitro-coffee-kegs/`, `/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/`, `/nitro-coffee-questions/` and `/hot-nitro-equipment-rental/` are built and keep the scaffold marker (images, meta descriptions, PDFs, Stage-7 form outstanding). Foundation: 0 invariants, 49 migration-remaining; strict still FAIL. See `docs/migration/10-block6-batch3-results.md`.

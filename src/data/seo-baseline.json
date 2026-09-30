@@ -176,7 +176,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Contact"
+      ],
+      "h1MustContain": [
+        "Contact"
+      ]
     },
     {
       "path": "/coffee-on-tap-is-the-future/",
@@ -184,7 +190,14 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "IS THE FUTURE",
+        "Bona Fide Nitro Coffee"
+      ],
+      "h1MustContain": [
+        "IS THE FUTURE"
+      ]
     },
     {
       "path": "/nitro-coffee-kegs/",
@@ -192,7 +205,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Nitro Coffee Kegs"
+      ],
+      "h1MustContain": [
+        "Nitro Coffee Kegs"
+      ]
     },
     {
       "path": "/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/",
@@ -200,7 +219,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "3 Cups of Coffee a Day"
+      ],
+      "h1MustContain": [
+        "3 Cups of Coffee a Day: Why It Can Be Good for the Health"
+      ]
     },
     {
       "path": "/blog/",
@@ -216,7 +241,10 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "FAQ"
+      ]
     },
     {
       "path": "/hot-nitro-equipment-rental/",
@@ -224,7 +252,10 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Hot Nitro Equipment For Rent in EU"
+      ]
     },
     {
       "path": "/nitro-cold-brew-old/",
