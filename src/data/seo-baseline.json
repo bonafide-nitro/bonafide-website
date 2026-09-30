@@ -92,7 +92,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Kegerators"
+      ],
+      "h1MustContain": [
+        "Nitro Cold Brew Coffee"
+      ]
     },
     {
       "path": "/nitro-cold-brew/",
@@ -100,7 +106,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Nitro Cold Brew"
+      ],
+      "h1MustContain": [
+        "NITRO COLD BREW COFFEE"
+      ]
     },
     {
       "path": "/hot-nitro-coffee/",
@@ -108,7 +120,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Hot Nitro Coffee"
+      ],
+      "h1MustContain": [
+        "Hot Nitro Coffee"
+      ]
     },
     {
       "path": "/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/",
@@ -116,7 +134,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Bag In Box"
+      ],
+      "h1MustContain": [
+        "Bag In Box"
+      ]
     },
     {
       "path": "/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/",
@@ -124,7 +148,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Health and benefits"
+      ],
+      "h1MustContain": [
+        "IS NITRO COFFEE HEALTHY"
+      ]
     },
     {
       "path": "/about/",
@@ -132,7 +162,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Bona Fide Nitro Coffee Experts"
+      ],
+      "h1MustContain": [
+        "Bona Fide Nitro Coffee and Tea"
+      ]
     },
     {
       "path": "/contact-bona-fide-nitro-coffee-and-tea/",
