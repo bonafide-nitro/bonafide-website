@@ -82,3 +82,6 @@ The repository holds only counts and host constraints for commerce links (`/prod
 
 ## Block 4 update (Issue #25)
 `/`, `/products/`, `/products-2/`, `/howtobuy/` are built. All four keep the scaffold marker: `/` until the testimonial/Review schema decision (I7) is resolved, `/howtobuy/` until its image binaries and 13 baseline outbound links are preserved, and the two product pages until the exact commerce inventories (13 Amazon / 16 store / 22 store) are resolved **and** their image binaries, alt text, page-level assets, the full 35/25-image inventory and the meta descriptions (both product pages) are preserved. Foundation: 0 invariants, 55 migration-remaining; strict still FAIL. See `docs/migration/08-block4-source-capture-results.md`.
+
+## Block 5 update (Issue #27)
+`/kegerators/`, `/nitro-cold-brew/`, `/hot-nitro-coffee/`, `/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/`, `/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/` and `/about/` are built and keep the scaffold marker until their image binaries are preserved. Foundation: 0 invariants, 51 migration-remaining; strict still FAIL. See `docs/migration/09-block5-batch2-results.md`.
