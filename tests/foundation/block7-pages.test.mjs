@@ -75,7 +75,9 @@ t('/blog/: links only to built routes; no invented pagination/archives', () => {
   const h = page('/blog/');
   const internal = hrefs(h).filter((x) => x.startsWith('/') && !x.startsWith('//'));
   for (const u of internal) assert.ok(fs.existsSync(`dist${u}index.html`) || fs.existsSync(`dist${u}`), `broken/unbuilt link ${u}`);
-  for (const p of ARTICLES) assert.ok(internal.includes(p), `${p} listed`);
+  // /nitro-coffee-future/ is built but not in the evidenced first-page list, so it must not be listed on /blog/ yet.
+  for (const p of ARTICLES.filter((x) => x !== '/nitro-coffee-future/')) assert.ok(internal.includes(p), `${p} listed`);
+  assert.ok(!internal.includes('/nitro-coffee-future/'), 'unevidenced /nitro-coffee-future/ not on first page');
   assert.ok(!internal.some((x) => /\/page\/|\/category\/|\/author\/|coffee-trends/.test(x)));
 });
 

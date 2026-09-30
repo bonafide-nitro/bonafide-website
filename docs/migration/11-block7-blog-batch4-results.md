@@ -23,7 +23,7 @@ All articles show "By John Goerke" and the evidenced dates as `<time>`. `src/dat
 - **Article schema:** not emitted (image and other required fields unevidenced).
 
 ## Per-page gaps
-- **`/blog/`:** lists every evidenced first-page card whose route is built (nine linked cards incl. `/3-cups…/`, `/hot-nitro-coffee/`, `/cold-brew-…bag-in-box…/`, plus `/nitro-coffee-future/`, which is not in the supplied first-page list). "Coffee Trends That Will Dominate in 2018" is on the live first page but its route is not built, so it is shown **unlinked**. Excerpts, categories and images are not evidenced. Pagination (`/blog/page/2/`) is migration-remaining.
+- **`/blog/`:** lists every evidenced first-page card whose route is built (nine linked cards incl. `/3-cups…/`, `/hot-nitro-coffee/`, `/cold-brew-…bag-in-box…/`; `/nitro-coffee-future/` is a built page but is deliberately not listed, as it is not in the supplied first-page list and its archive position is unevidenced). "Coffee Trends That Will Dominate in 2018" is on the live first page but its route is not built, so it is shown **unlinked**. Excerpts, categories and images are not evidenced. Pagination (`/blog/page/2/`) is migration-remaining.
 - **Ambient stable kegs:** the live YouTube embed is omitted (no video destination evidenced).
 - **COVID-19, health benefits, is-coffee-healthy:** labelled as historical articles with a not-medical-advice note; no claim added or strengthened.
 
