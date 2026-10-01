@@ -112,3 +112,10 @@ t('preserved ranking query vocabulary (Codex review f638c67)', () => {
   const easy = text(page('/nitro-cold-brew-coffee-made-easy-2/')).toLowerCase();
   for (const s of ['cold brew on draft', 'nitro draft coffee', 'coffee draft system']) assert.ok(easy.includes(s), s);
 });
+
+t('cancer article keeps organic-coffee/acrylamide vocabulary; trends page needs no outbound links (baseline links are incoming)', () => {
+  const c = text(page('/coffee-doesnt-produce-cancer-says-leading-american-scientist/')).toLowerCase();
+  for (const s of ['organic coffee for cancer', 'acrylamide']) assert.ok(c.includes(s), s);
+  const art = page('/coffee-trends-dominate-2018/').match(/<article[\s\S]*?<\/article>/)[0];
+  assert.ok(!hrefs(art).some((x) => /^https?:/.test(x)), 'no invented outbound links in article body');
+});

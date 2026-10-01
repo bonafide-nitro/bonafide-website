@@ -30,4 +30,8 @@ Foundation QA: PASS, 0 invariants; 48 migration-remaining. Strict: FAIL (expecte
 ## Correction round (Codex review of f638c67)
 - `/nitro-cold-brew-old/`: added the evidenced health-query wording (`is nitro coffee bad for you`, `is nitro cold brew bad for you`) as a neutral question, no new claims; enforced via `mustContainText` and a test.
 - `/nitro-cold-brew-coffee-made-easy-2/`: added `cold brew on draft`, `nitro draft coffee`, `coffee draft system` (and related draft terms); enforced via `mustContainText` and a test.
-- `/coffee-trends-dominate-2018/`: the baseline records **3 external links from 1 domain** but not their destinations. No URLs were invented; this is an **unresolved evidence gap** (needs the live-page link list), recorded in the scaffold comment, which stays until resolved. Not a Stage-complete page.
+- `/coffee-trends-dominate-2018/`: the baseline's "3 external links from 1 domain" are **incoming** links (appendix §11, "incoming links / linking sites"), preserved by keeping the URL a 200 page. Earlier "unresolved outbound-link gap" wording was wrong and is withdrawn; no outbound links are required or invented.
+
+## Correction round 2 (Codex review of 6757bc4)
+- `/coffee-trends-dominate-2018/`: removed the false outbound-link blocker from the scaffold comment (see above).
+- `/coffee-doesnt-produce-cancer-says-leading-american-scientist/`: added `organic coffee for cancer` as neutral historical wording (explicitly no prevention/treatment claim); `mustContainText` now `organic coffee for cancer`, `acrylamide`, with a test.
