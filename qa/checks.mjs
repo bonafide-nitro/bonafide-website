@@ -291,7 +291,10 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     for (const t of [...PER_PAGE_SCHEMA, ...(config.requiredPageSchema ?? [])]) if (!types.includes(t)) F.add('T6', 'schema-page-missing', ck, page.path, `JSON-LD @type ${t} is required on every page (master plan §13.2 T6)`);
   }
   for (const [title, group] of titleGroups) {
-    if (group.length > 1 && !group.every((p) => (rules_.titleUniquenessException ?? []).includes(p)))
+    // Exceptions are pair-scoped: an entry that is an array is one approved duplicate group; a flat string list is one legacy group.
+    const exc = rules_.titleUniquenessException ?? [];
+    const groups = exc.some((e) => Array.isArray(e)) ? exc.filter(Array.isArray) : [exc];
+    if (group.length > 1 && !groups.some((g) => group.every((p) => g.includes(p))))
       F.add('T4', 'duplicate-title', INV, group.join(' , '), `pages share title "${title}" and no declared exception applies`);
   }
   const b1 = pages.get('/products/'); const b2 = pages.get('/products-2/');

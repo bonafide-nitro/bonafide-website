@@ -54,6 +54,7 @@ detects('missing H1', (fx) => fx.put('about/index.html', page({ p: '/about/', ti
 detects('multiple H1', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<h1>Second</h1>' })), 'T4:h1-multiple');
 detects('missing title', (fx) => fx.put('about/index.html', '<html><head><link rel="canonical" href="https://bonafidenitro.com/about/"></head><body><h1>x</h1></body></html>'), 'T4:title-missing');
 detects('duplicate title with no exception', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'Home Nitro' })), 'T4:duplicate-title');
+detects('cross-pair duplicate title is not excused by pair-scoped exceptions', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'Cold Brew Kegs' })), 'T4:duplicate-title');
 detects('title contract violated (titleMustContain)', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Shop', h1: 'Nitro Kegs', body: '<p>Nitro Style</p><a href="https://amazon.com/x">a</a>' })), 'T4:title-contract');
 detects('H1 contract violated (h1MustContain)', (fx) => fx.put('products/index.html', page({ p: '/products/', title: 'Kegs', h1: 'Shop', body: '<p>Nitro Style</p><a href="https://amazon.com/x">a</a>' })), 'T4:h1-contract');
 

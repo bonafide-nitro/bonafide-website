@@ -267,7 +267,14 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Nitro Cold Brew - Bona Fide Brewing Company"
+      ],
+      "h1MustContain": [
+        "ALL ABOUT NITRO COLD BREW COFFEE"
+      ],
+      "mustContainText": ["is nitro coffee bad for you", "is nitro cold brew bad for you", "what is nitro cold brew"]
     },
     {
       "path": "/nitro-coffee-health-benefits/",
@@ -303,7 +310,14 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Simple Explain Nitro Cold Brew Coffee"
+      ],
+      "h1MustContain": [
+        "Simple Explain Nitro Cold Brew Coffee"
+      ],
+      "mustContainText": ["cold brew on draft", "nitro draft coffee", "coffee draft system"]
     },
     {
       "path": "/a-touch-of-vanilla-to-your-nitro-coffee/",
@@ -325,7 +339,17 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Coffee trends that will dominate in 2018"
+      ],
+      "h1MustContain": [
+        "COFFEE TRENDS THAT WILL DOMINATE IN 2018"
+      ],
+      "mustContainText": [
+        "coffee trends",
+        "millennials coffee"
+      ]
     },
     {
       "path": "/how-ambient-stable-coffee-kegs-help-you-save-more-money/",
@@ -375,7 +399,14 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Coffee doesn't produce cancer"
+      ],
+      "h1MustContain": [
+        "says leading American Scientist"
+      ],
+      "mustContainText": ["organic coffee for cancer", "acrylamide"]
     },
     {
       "path": "/nitro-coffee-future/",
@@ -397,7 +428,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Interested In Selling In The USA"
+      ],
+      "h1MustContain": [
+        "Interested In Selling In The USA"
+      ]
     },
     {
       "path": "/interested-in-selling-eu-and-usa/",
@@ -405,7 +442,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Interested In Selling In EU And USA"
+      ],
+      "h1MustContain": [
+        "Interested In Selling In EU And USA"
+      ]
     },
     {
       "path": "/interested-in-selling-eu-qr-2/",
@@ -413,7 +456,13 @@
       "expect": "200",
       "canonical": "self",
       "indexable": true,
-      "inSitemap": true
+      "inSitemap": true,
+      "titleMustContain": [
+        "Interested In Selling In EU"
+      ],
+      "h1MustContain": [
+        "Interested In Selling In EU"
+      ]
     },
     {
       "path": "/blog/page/2/",
@@ -511,8 +560,14 @@
       "minInternalLinksIn": 40
     },
     "titleUniquenessException": [
-      "/products/",
-      "/products-2/"
+      [
+        "/products/",
+        "/products-2/"
+      ],
+      [
+        "/nitro-cold-brew/",
+        "/nitro-cold-brew-old/"
+      ]
     ],
     "realNotFound": true,
     "forbiddenBuildStrings": [
