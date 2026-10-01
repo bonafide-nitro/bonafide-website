@@ -105,3 +105,10 @@ t('/blog/ now links the 2018 trends article; internal links all resolve', () => 
   assert.ok(internal.includes('/coffee-trends-dominate-2018/'));
   for (const p of PATHS) for (const u of hrefs(page(p)).filter((x) => x.startsWith('/') && !x.startsWith('//'))) assert.ok(fs.existsSync(`dist${u}index.html`) || fs.existsSync(`dist${u}`), `${p} -> ${u}`);
 });
+
+t('preserved ranking query vocabulary (Codex review f638c67)', () => {
+  const old = text(page('/nitro-cold-brew-old/')).toLowerCase();
+  for (const s of ['is nitro coffee bad for you', 'is nitro cold brew bad for you']) assert.ok(old.includes(s), s);
+  const easy = text(page('/nitro-cold-brew-coffee-made-easy-2/')).toLowerCase();
+  for (const s of ['cold brew on draft', 'nitro draft coffee', 'coffee draft system']) assert.ok(easy.includes(s), s);
+});

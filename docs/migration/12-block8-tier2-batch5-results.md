@@ -26,3 +26,8 @@ Source: only the public rendered-page evidence supplied in Issue #34 plus repo e
 
 ## Results
 Foundation QA: PASS, 0 invariants; 48 migration-remaining. Strict: FAIL (expected). `npm run build` (32 pages) and `npm run check:dist` OK; `npm test` 200/200; Python isolation 303/303. Live/external effects: none.
+
+## Correction round (Codex review of f638c67)
+- `/nitro-cold-brew-old/`: added the evidenced health-query wording (`is nitro coffee bad for you`, `is nitro cold brew bad for you`) as a neutral question, no new claims; enforced via `mustContainText` and a test.
+- `/nitro-cold-brew-coffee-made-easy-2/`: added `cold brew on draft`, `nitro draft coffee`, `coffee draft system` (and related draft terms); enforced via `mustContainText` and a test.
+- `/coffee-trends-dominate-2018/`: the baseline records **3 external links from 1 domain** but not their destinations. No URLs were invented; this is an **unresolved evidence gap** (needs the live-page link list), recorded in the scaffold comment, which stays until resolved. Not a Stage-complete page.

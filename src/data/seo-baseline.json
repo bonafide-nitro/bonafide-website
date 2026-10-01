@@ -273,7 +273,8 @@
       ],
       "h1MustContain": [
         "ALL ABOUT NITRO COLD BREW COFFEE"
-      ]
+      ],
+      "mustContainText": ["is nitro coffee bad for you", "is nitro cold brew bad for you"]
     },
     {
       "path": "/nitro-coffee-health-benefits/",
@@ -315,7 +316,8 @@
       ],
       "h1MustContain": [
         "Simple Explain Nitro Cold Brew Coffee"
-      ]
+      ],
+      "mustContainText": ["cold brew on draft", "nitro draft coffee", "coffee draft system"]
     },
     {
       "path": "/a-touch-of-vanilla-to-your-nitro-coffee/",
