@@ -14,7 +14,7 @@ Source: only the public rendered-page evidence supplied in Issue #34 plus repo e
 | `/interested-in-selling-eu-qr-2/` | Mirrors EU/USA themes; no invented destinations. |
 
 ## Approved QA exception (ZANETA_DECISION, Issue #34, 2026-10-01)
-`/nitro-cold-brew/` and `/nitro-cold-brew-old/` share the byte-identical evidenced title. Both exact titles are preserved and the two paths were added to `preservationRules.titleUniquenessException` in `src/data/seo-baseline.json` (alongside `/products/`, `/products-2/`). No other gate was changed. Note: the QA check tests that every member of a duplicate group is on the list, so the list is not pair-scoped; QA code was left untouched per "do not weaken other gates".
+`/nitro-cold-brew/` and `/nitro-cold-brew-old/` share the byte-identical evidenced title. Both exact titles are preserved and the two paths were added to `preservationRules.titleUniquenessException` in `src/data/seo-baseline.json` (alongside `/products/`, `/products-2/`). No other gate was changed. Correction (Codex review fb1f0e9): `titleUniquenessException` is now pair-scoped (`[["/products/","/products-2/"],["/nitro-cold-brew/","/nitro-cold-brew-old/"]]`); `qa/checks.mjs` excuses a duplicate-title group only if it is a subset of one declared pair (a flat string list is still accepted as one legacy group), so cross-pair duplicates fail. `/coffee-trends-dominate-2018/` now carries `coffee trends` and `millennials coffee`, enforced via `mustContainText`.
 
 ## Scaffold marker — kept on all seven
 - Images: no binaries/paths evidenced; no `<img>`.

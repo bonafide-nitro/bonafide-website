@@ -119,3 +119,15 @@ t('cancer article keeps organic-coffee/acrylamide vocabulary; trends page needs 
   const art = page('/coffee-trends-dominate-2018/').match(/<article[\s\S]*?<\/article>/)[0];
   assert.ok(!hrefs(art).some((x) => /^https?:/.test(x)), 'no invented outbound links in article body');
 });
+
+t('trends article keeps millennials-coffee vocabulary, enforced by mustContainText (Codex review fb1f0e9)', () => {
+  const tr = text(page('/coffee-trends-dominate-2018/')).toLowerCase();
+  for (const s of ['coffee trends', 'millennials coffee']) assert.ok(tr.includes(s), s);
+  const e = JSON.parse(fs.readFileSync('src/data/seo-baseline.json', 'utf8')).urls.find((x) => x.path === '/coffee-trends-dominate-2018/');
+  assert.deepEqual(e.mustContainText, ['coffee trends', 'millennials coffee']);
+});
+
+t('titleUniquenessException is pair-scoped (Codex review fb1f0e9)', () => {
+  const ex = JSON.parse(fs.readFileSync('src/data/seo-baseline.json', 'utf8')).preservationRules.titleUniquenessException;
+  assert.deepEqual(ex, [['/products/', '/products-2/'], ['/nitro-cold-brew/', '/nitro-cold-brew-old/']]);
+});

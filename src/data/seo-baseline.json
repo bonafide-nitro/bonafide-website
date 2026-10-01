@@ -345,6 +345,10 @@
       ],
       "h1MustContain": [
         "COFFEE TRENDS THAT WILL DOMINATE IN 2018"
+      ],
+      "mustContainText": [
+        "coffee trends",
+        "millennials coffee"
       ]
     },
     {
@@ -556,10 +560,14 @@
       "minInternalLinksIn": 40
     },
     "titleUniquenessException": [
-      "/products/",
-      "/products-2/",
-      "/nitro-cold-brew/",
-      "/nitro-cold-brew-old/"
+      [
+        "/products/",
+        "/products-2/"
+      ],
+      [
+        "/nitro-cold-brew/",
+        "/nitro-cold-brew-old/"
+      ]
     ],
     "realNotFound": true,
     "forbiddenBuildStrings": [

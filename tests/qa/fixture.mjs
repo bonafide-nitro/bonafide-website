@@ -30,7 +30,7 @@ export const baselineFixture = () => ({
   doNotGenerate: ['/wp-admin/*', '/wp-login.php*', '/wp-json/*', '/xmlrpc.php', '/?s={search_term_string}', '/comments/feed/', '/?bpa_page=bookingpress_download&*'],
   preservationRules: {
     productsAndProducts2Separate: true,
-    titleUniquenessException: ['/products/', '/products-2/'],
+    titleUniquenessException: [['/products/', '/products-2/'], ['/about/', '/privacy-policies/']],
     forbiddenBuildStrings: ['quickdelivr', 'coredelivr', 'mpackage'],
   },
 });
