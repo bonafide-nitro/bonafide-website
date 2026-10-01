@@ -274,7 +274,7 @@
       "h1MustContain": [
         "ALL ABOUT NITRO COLD BREW COFFEE"
       ],
-      "mustContainText": ["is nitro coffee bad for you", "is nitro cold brew bad for you"]
+      "mustContainText": ["is nitro coffee bad for you", "is nitro cold brew bad for you", "what is nitro cold brew"]
     },
     {
       "path": "/nitro-coffee-health-benefits/",
