@@ -554,7 +554,9 @@
     },
     "titleUniquenessException": [
       "/products/",
-      "/products-2/"
+      "/products-2/",
+      "/nitro-cold-brew/",
+      "/nitro-cold-brew-old/"
     ],
     "realNotFound": true,
     "forbiddenBuildStrings": [

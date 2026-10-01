@@ -88,3 +88,6 @@ The repository holds only counts and host constraints for commerce links (`/prod
 
 ## Block 6 update (Issue #30)
 `/contact-bona-fide-nitro-coffee-and-tea/`, `/coffee-on-tap-is-the-future/`, `/nitro-coffee-kegs/`, `/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/`, `/nitro-coffee-questions/` and `/hot-nitro-equipment-rental/` are built and keep the scaffold marker (images, meta descriptions, PDFs, Stage-7 form outstanding). Foundation: 0 invariants, 49 migration-remaining; strict still FAIL. See `docs/migration/10-block6-batch3-results.md`.
+
+## Block 8 update (Issue #34)
+`/nitro-cold-brew-old/`, `/nitro-cold-brew-coffee-made-easy-2/`, `/coffee-trends-dominate-2018/`, `/coffee-doesnt-produce-cancer-says-leading-american-scientist/`, `/interested-in-selling-usa/`, `/interested-in-selling-eu-and-usa/` and `/interested-in-selling-eu-qr-2/` are built and keep the scaffold marker (images, meta descriptions, CTA destinations, Stage-7 forms/interaction outstanding). Per ZANETA_DECISION, `/nitro-cold-brew/` + `/nitro-cold-brew-old/` were added to `titleUniquenessException` to preserve their identical launch title. Foundation: 0 invariants, 48 migration-remaining; strict still FAIL. See `docs/migration/12-block8-tier2-batch5-results.md`.
