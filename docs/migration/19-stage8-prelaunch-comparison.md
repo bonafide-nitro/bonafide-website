@@ -100,6 +100,10 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   version and its availability after cutover; sibling rollback location inaccessible from the public web and an off-server second copy; no write access between WordPress and the
   static docroot (and from the deploy key to the rollback copy); a locked staging target on the production hosting account itself; static-build retention/archival (previous five builds
   and outgoing release artifact); and a rehearsed first deployment and rollback. None is verified here and none may be assumed.
+- **Deletion-aware production deployment.** Per `docs/migration/06-stage1-pre-build-blockers-resolved.md` (D1 section, lines 699-706), the live WordPress installation's executable, plugin and
+  theme files must be retired from `/public_html` so they are no longer publicly reachable, and the static build must then be deployed with clearing/deleting of every destination-only file
+  left from the previous build (not an overlay copy) on the initial deploy **and on every later redeploy**. A rehearsed overlay copy can succeed while compromised-era PHP remains publicly
+  reachable, so this remains an explicit launch blocker; the rehearsal above must exercise the deletion-aware path. None is performed or verified here.
 - **New deploy credential (separate human approval required).** Per `docs/migration/06-stage1-pre-build-blockers-resolved.md` (D1 section) and master-plan §10.4, deployment credentials
   must never be reused or pre-staged from the compromised era. A dedicated new deploy key may be created and authorized only **after** forensic preservation, security remediation and
   credential rotation, and only with its own recorded Žaneta approval. The deploy-key permission checks above apply to that new key. None is created or approved here.
