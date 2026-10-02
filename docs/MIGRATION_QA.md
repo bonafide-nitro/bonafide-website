@@ -100,3 +100,6 @@ The repository holds only counts and host constraints for commerce links (`/prod
 
 ## Block 11 update (Issue #40)
 The contact page now carries a semantic POST form (name, email, message, honeypot) whose action comes only from the public build-time variable `PUBLIC_CONTACT_FORM_ENDPOINT`; unset/invalid renders it disabled with no action. No provider, endpoint, secret or script is committed. The page keeps the scaffold marker (meta description outstanding). Foundation: 0 invariants, 44 migration-remaining; strict still FAIL. See `docs/migration/15-block11-contact-form-results.md`.
+
+## Block 12 update (Issue #42)
+`/book-appointment/` is built as a static 200, self-canonical, `noindex`, sitemap-excluded page (planned-page contract recorded in `seo-baseline.json`). The Calendly destination comes only from the public build-time variable `PUBLIC_CALENDLY_URL`; unset/invalid renders a disabled, non-linking action. No script, embed, tracking or secret was added; the five booking redirects and three AMP overrides are unchanged and tested as one-hop. The page keeps the scaffold marker until the Calendly URL is configured (integration-remaining). Foundation: 0 invariants, 45 migration-remaining; strict still FAIL. See `docs/migration/16-block12-booking-results.md`.

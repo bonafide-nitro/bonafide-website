@@ -1,0 +1,19 @@
+---
+import Base from '../../layouts/Base.astro';
+import { resolveCalendlyUrl } from '../../lib/calendly.mjs';
+// The Calendly destination is a public build-time value (see docs/migration/16-block12-booking-results.md).
+const calendlyUrl = resolveCalendlyUrl(import.meta.env.PUBLIC_CALENDLY_URL);
+---
+<!-- scaffold (Block 12, Issue #42): the exact live Calendly URL is not preserved in repository evidence and is never invented; it is supplied only through PUBLIC_CALENDLY_URL. Kept until that value is configured by a human. Route contract: static 200, self-canonical, noindex, excluded from the sitemap (booking is a transactional utility URL, 01-baseline line 355, master plan sitemap rule). Plain external link only: no Calendly script, embed, cookie or tracking. BookingPress is not recreated. -->
+<Base title="Book an Appointment - Bona Fide Nitro Coffee And Tea" canonicalPath="/book-appointment/" breadcrumbs={[{ name: 'Book an Appointment', path: '/book-appointment/' }]} scaffold noindex>
+  <h1>Book an Appointment</h1>
+  <p>Schedule a time to talk with the Bona Fide team.</p>
+  {calendlyUrl ? (
+    <p><a class="cta" href={calendlyUrl} rel="noopener noreferrer">Schedule an appointment</a></p>
+  ) : (
+    <>
+      <p><span class="cta cta-label" aria-disabled="true">Online scheduling is not available yet</span></p>
+      <p class="muted" role="status">Online booking is not available at the moment. Please <a href="/contact-bona-fide-nitro-coffee-and-tea/">contact us</a> to arrange a time.</p>
+    </>
+  )}
+</Base>
