@@ -100,6 +100,9 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   version and its availability after cutover; sibling rollback location inaccessible from the public web and an off-server second copy; no write access between WordPress and the
   static docroot (and from the deploy key to the rollback copy); a locked staging target on the production hosting account itself; static-build retention/archival (previous five builds
   and outgoing release artifact); and a rehearsed first deployment and rollback. None is verified here and none may be assumed.
+- **New deploy credential (separate human approval required).** Per `docs/migration/06-stage1-pre-build-blockers-resolved.md` (D1 section) and master-plan §10.4, deployment credentials
+  must never be reused or pre-staged from the compromised era. A dedicated new deploy key may be created and authorized only **after** forensic preservation, security remediation and
+  credential rotation, and only with its own recorded Žaneta approval. The deploy-key permission checks above apply to that new key. None is created or approved here.
 
 ## 3. CONFIGURATION-REMAINING — human/provider-supplied, not safe to invent
 
@@ -131,6 +134,9 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   rather than publishing a possibly stale offering.
 - **I2 — indexed marketing-plan PDF (unresolved, deploy-blocking decision):** `/wp-content/uploads/2026/02/Bona-Fide-Marketing-Plan-2026.pdf` is a standalone indexed asset (602 impressions) tied to no
   page marker or QA contract. Master-plan I2 requires a business decision: preserve the exact path, or remove it and request removal in Search Console. Neither is decided or done here.
+- **I3 — indexed offices-coffee PDF (unresolved, preserve-or-redirect requirement):** `/wp-content/uploads/2021/09/17x11-Bona-FIde-coffee-for-Offices-version-10-Email_compressed.pdf`
+  (569 impressions) has no copy under `public/` and no redirect, and is tied to no page marker or QA contract. Master-plan I3 requires preserving the exact path or redirecting it to
+  `/howtobuy/`; until one is done and verified, removing page markers must not be read as launch readiness, as the URL would otherwise become an unexpected 404.
 - **Page assets/metadata:** image binaries and alt text, page-level assets, PDFs and meta descriptions for pages that still carry the scaffold marker; `/` testimonial/Review schema decision (I7).
 - **Pending-decision redirects (26, unresolved and not fabricated; launch blocker, see §2):** 14 exact legacy paths (`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`,
   `/collections/`, `/sustainability/`, `/copyright-notice/`, `/kegging-service/`, `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`, `/author/raul/`,
