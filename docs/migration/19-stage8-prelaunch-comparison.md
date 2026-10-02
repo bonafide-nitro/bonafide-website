@@ -68,6 +68,15 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - **Redirect artifact generation and staging verification.** No `.htaccess`/`_redirects` artifact and no generator exist in the repo, so all 32 `defined`
   redirects are currently non-executable. Generating the artifact from `redirects.yaml` (master plan Step 14) and verifying it on staging (T2 one-hop,
   live 301 behaviour, T12 transport; T2 is deploy-blocking) are launch blockers.
+- **Pending-decision redirects (26).** `src/data/redirects.yaml` forbids emitting a `pending-decision` rule until its destination is decided, so even after the artifact
+  for the 32 `defined` rules is generated these 26 sources (including the nine `/services/*` plugin redirects the master plan requires reproducing) would fall through to
+  404. Resolving, or deliberately disposing of, every pending rule (see §4) is a launch blocker.
+- **T7 image gate not yet implemented.** Master-plan T7 (deploy-blocking) requires the ranking-image list to resolve 200 and the 6 alliance images to exist, but
+  `docs/MIGRATION_QA.md` (T7 row) records they are not in the manifest, and the checker validates only `/wp-content/uploads/` paths already referenced by rendered output.
+  `ProductCard.astro` does not render product `image` fields and `public/` holds none of these binaries, so strict QA can turn green without detecting their absence.
+  Populating the manifest/checker coverage and supplying the binaries is a launch blocker.
+- **T16 visual regression.** Pre-deploy gate per master plan (§13.2, 13.3): all 17 Tier-1 URLs at mobile (390px) and desktop (1440px), no horizontal scroll,
+  no missing assets in the console, run against preview and then staging before cutover. Not implemented or run here; it remains a launch blocker.
 - **Clean WordPress rollback copy.** Producing and verifying it is a **Stage 3** (security remediation) requirement and a hard prerequisite to any
   static cutover (`docs/migration/05-execution-plan.md` Stage 3 STOP gate); Stage 9 only records its location and the rollback procedure. Not assessed here.
 
@@ -88,7 +97,7 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   Vanilla, 1 Decaf Mexico (both pages), 6 Alliance (`/products-2/`); `/howtobuy/` distributor/partner outbound hrefs (13 baseline links). Registered in `commerce.yaml` `unresolved`.
 - **Legal copy:** exact body copy, live title and meta description for `/privacy-policies/` and `/terms-of-service/` (marked placeholder, not certified).
 - **Page assets/metadata:** image binaries and alt text, page-level assets, PDFs and meta descriptions for pages that still carry the scaffold marker; `/` testimonial/Review schema decision (I7).
-- **Pending-decision redirects (26, unresolved and not fabricated):** 14 exact legacy paths (`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`,
+- **Pending-decision redirects (26, unresolved and not fabricated; launch blocker, see §2):** 14 exact legacy paths (`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`,
   `/collections/`, `/sustainability/`, `/copyright-notice/`, `/kegging-service/`, `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`, `/author/raul/`,
   `/cold-brew-coffee-tap-future-serve/`, `/contact-email/`, plus `/coffee-trend-dominate-2018`); 9 external `/services/*` rules with truncated store-URL fragments
   only; 3 raw post-ID URLs (`/?p=1187`, `/?p=1202`, `/?p=1211`).
@@ -96,7 +105,7 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 ## 5. NOT BLOCKING REPO BUILD — deferred to pre-cutover configuration
 
 - Production application of the redirect artifact on the host (artifact generation and staging verification are launch blockers, see §2; not performed in this Block).
-- Deferred QA classes per `docs/MIGRATION_QA.md`: T12 transport, live HTTP status/one-hop behaviour, MIME types, T14 forms and T15 analytics smoke tests, T16 visual regression, T17 Lighthouse, scheduled production crawl.
+- Deferred QA classes per `docs/MIGRATION_QA.md`: T12 transport, live HTTP status/one-hop behaviour, MIME types, T14 forms and T15 analytics smoke tests, T17 Lighthouse (advisory; T16 is a launch blocker, see §2), scheduled production crawl.
 - Setting the three `PUBLIC_*` variables and any Meta/Klaviyo configuration at build time on the deploy host.
 - Stage 9 cutover/rollback planning (explicitly out of scope here).
 
