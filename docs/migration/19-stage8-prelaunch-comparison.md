@@ -90,8 +90,10 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   turn green once scaffold markers are removed from the historical article routes without detecting its absence. Emitting it and adding a manifest/T6 gate is a launch blocker.
 - **Full Stage 3 security verification (not only the rollback copy).** `docs/migration/05-execution-plan.md` Stage 3 requires: investigating the injection source; removing malicious code and persistence;
   reviewing unexpected users and access paths; reviewing cron/scheduled tasks and file integrity; rotating credentials and strengthening account protection; confirming the cleaned WordPress site functions
-  and that the suspicious scripts no longer render; and understanding, or materially mitigating, the entry route, all with documented verification. A rollback artifact can exist while the compromised
-  access path is still active, so each item remains an explicit launch blocker and none is assessed here.
+  and that the suspicious scripts no longer render; and understanding, or materially mitigating, the entry route, all with documented verification. The master plan's CLEAN definition
+  (`docs/migration/04-wordpress-to-static-migration-master-plan.md` Stage 3 checklist) additionally requires two independent malware scans returning clean, seven consecutive days with no
+  re-infection, and a Safe Browsing review having been requested (ideally cleared). A rollback artifact can exist while the compromised access path is still active, and a copy cannot be declared
+  CLEAN immediately after remediation, so each item remains an explicit launch blocker and none is assessed here.
 - **Clean WordPress rollback copy.** Producing and verifying it is a **Stage 3** (security remediation) requirement and a hard prerequisite to any
   static cutover (`docs/migration/05-execution-plan.md` Stage 3 STOP gate); Stage 9 only records its location and the rollback procedure. Not assessed here.
 - **Deferred D1 deployment gates (unverified).** Per `docs/migration/06-stage1-pre-build-blockers-resolved.md` ("What remains for a later Block"): confirmation of the installed PHP
@@ -124,6 +126,11 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   made-easy branching flow, the selling-page lead inputs and `SCHEDULE A DEMO` action, the Google Docs CTA destinations, the nitro quiz, and the CZ rental destinations (the last three
   unevidenced). `tests/foundation/block8-pages.test.mjs` currently asserts these pages contain no forms, buttons or external CTA destinations, and strict QA sees only their generic
   scaffold markers, so removing the markers could turn QA green without these behaviours. Each must be implemented or deliberately disposed of, with its own gate, before launch.
+- **D6 — EU equipment rental route (unresolved business decision):** `/hot-nitro-equipment-rental/` is currently rendered as a 200 page, but the master plan makes retaining it conditional on
+  D6 (whether EU equipment rental is still a live business line). Until D6 is decided, removing its scaffold marker must not be read as launch readiness; the correct treatment may be consolidation
+  rather than publishing a possibly stale offering.
+- **I2 — indexed marketing-plan PDF (unresolved, deploy-blocking decision):** `/wp-content/uploads/2026/02/Bona-Fide-Marketing-Plan-2026.pdf` is a standalone indexed asset (602 impressions) tied to no
+  page marker or QA contract. Master-plan I2 requires a business decision: preserve the exact path, or remove it and request removal in Search Console. Neither is decided or done here.
 - **Page assets/metadata:** image binaries and alt text, page-level assets, PDFs and meta descriptions for pages that still carry the scaffold marker; `/` testimonial/Review schema decision (I7).
 - **Pending-decision redirects (26, unresolved and not fabricated; launch blocker, see §2):** 14 exact legacy paths (`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`,
   `/collections/`, `/sustainability/`, `/copyright-notice/`, `/kegging-service/`, `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`, `/author/raul/`,
