@@ -63,8 +63,13 @@ These are the strict-QA findings (45, grouped). None is an invariant regression.
 | Commerce exact inventory (`T5 commerce-inventory-missing`) | 3 | `qa/qa.config.json` `commerceInventory` unpopulated for `/products/` amazon + store and `/products-2/` store. |
 | Inbound links (`T8 inbound-links-min`) | 1 | `/products/`: 39 linking pages, baseline minimum 40. |
 
-Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also a blocker class not visible to QA: the cleaned WordPress rollback copy and live
-staging verification (T12 transport, live 301 behaviour) are Stage 9 items and are not assessed here.
+Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA (not assessed here):
+
+- **Redirect artifact generation and staging verification.** No `.htaccess`/`_redirects` artifact and no generator exist in the repo, so all 32 `defined`
+  redirects are currently non-executable. Generating the artifact from `redirects.yaml` (master plan Step 14) and verifying it on staging (T2 one-hop,
+  live 301 behaviour, T12 transport; T2 is deploy-blocking) are launch blockers.
+- **Clean WordPress rollback copy.** Producing and verifying it is a **Stage 3** (security remediation) requirement and a hard prerequisite to any
+  static cutover (`docs/migration/05-execution-plan.md` Stage 3 STOP gate); Stage 9 only records its location and the rollback procedure. Not assessed here.
 
 ## 3. CONFIGURATION-REMAINING — human/provider-supplied, not safe to invent
 
@@ -87,7 +92,7 @@ staging verification (T12 transport, live 301 behaviour) are Stage 9 items and a
 
 ## 5. NOT BLOCKING REPO BUILD — deferred to pre-cutover configuration
 
-- Production `.htaccess`/redirect artifact generation and application (not generated in this Block).
+- Production application of the redirect artifact on the host (artifact generation and staging verification are launch blockers, see §2; not performed in this Block).
 - Deferred QA classes per `docs/MIGRATION_QA.md`: T12 transport, live HTTP status/one-hop behaviour, MIME types, T14 forms and T15 analytics smoke tests, T16 visual regression, T17 Lighthouse, scheduled production crawl.
 - Setting the three `PUBLIC_*` variables and any Meta/Klaviyo configuration at build time on the deploy host.
 - Stage 9 cutover/rollback planning (explicitly out of scope here).
