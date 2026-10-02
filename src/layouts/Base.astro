@@ -1,5 +1,7 @@
 ---
 import { loadNavigation, loadSite } from '../lib/data.mjs';
+import GoogleTagManager from '../components/GoogleTagManager.astro';
+const gtmId = import.meta.env.PUBLIC_GTM_ID; // public build-time config; unset/invalid => no GTM markup
 // `scaffold` emits the QA marker: strict migration QA fails on it. Only pages that are
 // NOT yet genuinely complete against their preservation contract may set it.
 const { title, canonicalPath, breadcrumbs = [], scaffold = false, noindex = false } = Astro.props;
@@ -30,6 +32,7 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
     {noindex && <meta name="robots" content="noindex" />}
     {canonicalPath && <link rel="canonical" href={abs(canonicalPath)} />}
     <script type="application/ld+json" set:html={jsonLd} />
+    <GoogleTagManager id={gtmId} position="head" />
     <style>
       :root { --ink: #1c1712; --muted: #5b5147; --accent: #8a5a1f; --bg: #fffdf9; --card: #f6efe4; }
       * { box-sizing: border-box; }
@@ -49,6 +52,7 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
     </style>
   </head>
   <body>
+    <GoogleTagManager id={gtmId} position="body" />
     <nav class="site" aria-label="Main">
       <ul>
         {nav.launch.map((i) => <li><a href={i.path}>{i.label}</a></li>)}

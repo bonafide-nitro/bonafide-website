@@ -1,0 +1,15 @@
+---
+// Standard minimal GTM bootstrap, rendered once from the site-wide layout (Base.astro).
+// `position="head"` emits the loader script; `position="body"` emits the noscript iframe.
+// Emits nothing unless `id` is a valid GTM container ID (see src/lib/gtm.mjs).
+import { resolveGtmId } from '../lib/gtm.mjs';
+const { id, position } = Astro.props;
+const gtmId = resolveGtmId(id);
+const loader = gtmId
+  ? `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',${JSON.stringify(gtmId)});`
+  : '';
+---
+{gtmId && position === 'head' && <script is:inline set:html={loader} />}
+{gtmId && position === 'body' && (
+  <noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`} height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+)}

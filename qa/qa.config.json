@@ -1,5 +1,5 @@
 {
-  "allowedScriptHosts": [],
+  "allowedScriptHosts": ["www.googletagmanager.com"],
   "templateSlugs": [
     "thank-you",
     "my-bookings",
