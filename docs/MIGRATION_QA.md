@@ -103,3 +103,6 @@ The contact page now carries a semantic POST form (name, email, message, honeypo
 
 ## Block 12 update (Issue #42)
 `/book-appointment/` is built as a static 200, self-canonical, `noindex`, sitemap-excluded page (planned-page contract recorded in `seo-baseline.json`). The Calendly destination comes only from the public build-time variable `PUBLIC_CALENDLY_URL`; unset/invalid renders a disabled, non-linking action. No script, embed, tracking or secret was added; the five booking redirects and three AMP overrides are unchanged and tested as one-hop. The page keeps the scaffold marker until the Calendly URL is configured (integration-remaining). Foundation: 0 invariants, 45 migration-remaining; strict still FAIL. See `docs/migration/16-block12-booking-results.md`.
+
+## Block 13 update (Issue #44)
+A clean Google Tag Manager layer is wired site-wide through `src/layouts/Base.astro` and driven only by the public build-time variable `PUBLIC_GTM_ID` (valid `GTM-…` IDs only). Unset/invalid emits no GTM script/noscript markup and no third-party script. No ID is committed; no Meta Pixel, Klaviyo, GA4, consent, event or ecommerce code was added (Meta/Klaviyo remain Stage-7 integration-remaining pending verified configuration). No page/SEO/redirect change: foundation QA unchanged. See `docs/migration/17-block13-analytics-results.md`.
