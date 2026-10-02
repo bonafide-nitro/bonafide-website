@@ -1,4 +1,5 @@
 ---
+import { commerceHref } from '../lib/commerce.mjs';
 import Base from '../layouts/Base.astro';
 ---
 <!-- scaffold: kept until the homepage testimonial/Review schema decision (I7) is resolved. -->
@@ -15,7 +16,7 @@ import Base from '../layouts/Base.astro';
   <blockquote>"Bona Fide is your nitrogen infused coffee and nitro tea solution!"</blockquote>
   <blockquote>"AWARD-WINNING QUALITY, THE BEST ON THE MARKET!"</blockquote>
   <p>
-    <a class="cta" href="https://nitrocoffee.store/">Shop nitro coffee &amp; tea and Bag in Box on the webstore</a>
+    <a class="cta" href={commerceHref('webstore-root-apex')}>Shop nitro coffee &amp; tea and Bag in Box on the webstore</a>
     <a class="cta" href="/products/">Products</a>
     <a class="cta" href="/howtobuy/">How to Buy</a>
   </p>
@@ -54,7 +55,7 @@ import Base from '../layouts/Base.astro';
   <p>Our proprietary Craft Draft process uses nitrogen infusion for a cascading presentation and creamy head, made with organic and natural ingredients.</p>
 
   <h2>Serve Nitro Coffee Now!</h2>
-  <p><a class="cta" href="https://nitrocoffee.store/">Visit the webstore</a></p>
+  <p><a class="cta" href={commerceHref('webstore-root-apex')}>Visit the webstore</a></p>
 
   <h2>Refill locations &amp; contact</h2>
   <p><a href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a> for refill locations. Also see the <a href="/blog/">blog</a>.</p>

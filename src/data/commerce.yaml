@@ -1,0 +1,22 @@
+# Central external commerce-link registry (Block 14, Issue #46).
+# Every `href` below is an exact destination already evidenced in the repository (pages rendered before
+# this Block, docs/migration/08-block4-source-capture-results.md). Hrefs are preserved byte-for-byte.
+# Per-product store links stay in products.yaml (one source of truth per product); this file holds the
+# non-product store links that pages used to hard-code, plus the explicit UNRESOLVED register.
+# Nothing here is invented, repaired or normalised. Pending-decision redirect fragments
+# (redirects.yaml) are NOT commerce links and must never be promoted into this file or into a page.
+links:
+  webstore-root-www: { href: "https://www.nitrocoffee.store/", label: "Webstore root (www)" }
+  webstore-root-apex: { href: "https://nitrocoffee.store/", label: "Webstore root (apex)" }
+  bag-in-box-collection: { href: "https://www.nitrocoffee.store/collections/better-than-cold-brew-bag-in-box-coffee-and-tea-collection", label: "Bag In Box coffee and tea collection" }
+  equipment-starter-kit: { href: "https://www.nitrocoffee.store/products/plug-play-cafe-starter-kit-countertop-flash-chiller-w-compressor-bik-compatible?variant=41629884055715", label: "Countertop flash chiller starter kit", note: "observed to return 404 on the store; preserved as-is" }
+  equipment-double-faucet: { href: "https://www.nitrocoffee.store/collections/dispensers/products/double-faucet-countertop-flash-chiller-w-compressor", label: "Double-faucet countertop flash chiller" }
+  equipment-hot-nitro: { href: "https://www.nitrocoffee.store/collections/dispensers/products/selbach-hot-nitro-dispenser-w-2-faucets", label: "Hot nitro dispenser with 2 faucets" }
+# Destinations that are required but NOT evidenced. Metadata only: no href, never rendered as a link.
+# Counts/reasons follow docs/migration/08-block4-source-capture-results.md and qa/qa.config.json.
+unresolved:
+  - { id: products-amazon, page: /products/, kind: amazon, count: 13, reason: "Amazon hrefs not exposed by the source capture; only the CTA labels exist." }
+  - { id: products-retail-vanilla-store, page: /products/, kind: store, count: 1, reason: "Retail Organic Nitro Vanilla store href not resolved by the capture." }
+  - { id: products-decaf-mexico-store, page: both, kind: store, count: 1, reason: "Decaf Mexico store href not captured (special-request SKU)." }
+  - { id: products-2-alliance-store, page: /products-2/, kind: store, count: 6, reason: "Alliance brand store hrefs timed out in the capture reader." }
+  - { id: howtobuy-distributors, page: /howtobuy/, kind: external, count: null, reason: "Distributor/partner outbound hrefs not in the capture (names render as text)." }
