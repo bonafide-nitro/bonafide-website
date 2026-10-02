@@ -112,6 +112,10 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - **Archive title gaps (marker-free routes):** the live `<title>` of the category and author archive pages is unevidenced and derived from H1 + brand
   (`docs/migration/13-block9-tier3-archives-results.md`, open evidence gaps); these routes carry no scaffold marker and their manifest entries have no title contract, so strict QA
   will not surface the gap when other markers are removed. Meta descriptions of all five Tier-3 archives are likewise unevidenced.
+- **Stage 7 page interactions (absent, no remaining gate once markers are removed):** the Tier-2 batch-5 pages (`docs/migration/12-block8-tier2-batch5-results.md`) still lack the
+  made-easy branching flow, the selling-page lead inputs and `SCHEDULE A DEMO` action, the Google Docs CTA destinations, the nitro quiz, and the CZ rental destinations (the last three
+  unevidenced). `tests/foundation/block8-pages.test.mjs` currently asserts these pages contain no forms, buttons or external CTA destinations, and strict QA sees only their generic
+  scaffold markers, so removing the markers could turn QA green without these behaviours. Each must be implemented or deliberately disposed of, with its own gate, before launch.
 - **Page assets/metadata:** image binaries and alt text, page-level assets, PDFs and meta descriptions for pages that still carry the scaffold marker; `/` testimonial/Review schema decision (I7).
 - **Pending-decision redirects (26, unresolved and not fabricated; launch blocker, see §2):** 14 exact legacy paths (`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`,
   `/collections/`, `/sustainability/`, `/copyright-notice/`, `/kegging-service/`, `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`, `/author/raul/`,
