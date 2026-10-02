@@ -1,5 +1,6 @@
 ---
 import { loadNavigation, loadSite } from '../lib/data.mjs';
+import { commerceHref } from '../lib/commerce.mjs';
 import GoogleTagManager from '../components/GoogleTagManager.astro';
 const gtmId = import.meta.env.PUBLIC_GTM_ID; // public build-time config; unset/invalid => no GTM markup
 // `scaffold` emits the QA marker: strict migration QA fails on it. Only pages that are
@@ -56,7 +57,7 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
     <nav class="site" aria-label="Main">
       <ul>
         {nav.launch.map((i) => <li><a href={i.path}>{i.label}</a></li>)}
-        {nav.external.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
+        {nav.external.map((i) => <li><a href={commerceHref(i.commerceId)}>{i.label}</a></li>)}
       </ul>
     </nav>
     <main>

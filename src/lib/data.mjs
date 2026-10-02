@@ -24,7 +24,7 @@ const siteSchema = z.object({
 
 const navigationSchema = z.object({
   launch: z.array(z.object({ path: urlPath, label: z.string() })),
-  external: z.array(z.object({ href: z.string().url(), label: z.string() })),
+  external: z.array(z.object({ commerceId: z.string(), label: z.string() }).strict()),
 });
 
 const STORE_HOSTS = ['nitrocoffee.store', 'www.nitrocoffee.store'];

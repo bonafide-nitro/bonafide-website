@@ -16,3 +16,10 @@ Stage 7 — Integrations. Repository-only; no live store, WordPress, DNS, redire
 
 ## QA
 `tests/foundation/block14-commerce.test.mjs` pins the exact href set of every page, host/https/parameter rules, schema rejection cases, no Amazon hrefs, no pending-decision fragment in dist or the registry, no inline store literals in `src/pages`, and that strict QA still reports `commerce-inventory-missing`, `amazon-links-min` and `store-links-min`. `qa/qa.config.json > commerceInventory` is untouched and still empty, so the exact-inventory gap stays migration-remaining and the scaffold markers stay.
+
+## Correction round 1 (CHANGES_REQUESTED against 9802b0a)
+
+The global Store navigation link no longer carries an inline URL. `navigation.yaml` `external` entries now
+reference a commerce registry id (`webstore-root-www`); `Base.astro` resolves it with `commerceHref()`, so the
+site-wide link passes the same HTTPS / approved-host / no-tracking / no-fragment validation. Rendered `dist/`
+is byte-identical to the pre-correction build (`https://www.nitrocoffee.store/`). Two narrow tests added.

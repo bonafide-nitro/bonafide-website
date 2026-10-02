@@ -13,4 +13,5 @@ launch:
   - { path: /nitro-coffee-questions/, label: Nitro Coffee Questions }
   - { path: /blog/, label: Blog }
 external:
-  - { href: "https://www.nitrocoffee.store/", label: Store }
+  # Store destination lives in src/data/commerce.yaml (validated); referenced by commerce link id.
+  - { commerceId: webstore-root-www, label: Store }

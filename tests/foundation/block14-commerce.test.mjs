@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadCommerce, loadProducts, loadRedirects } from '../../src/lib/data.mjs';
+import { loadCommerce, loadNavigation, loadProducts, loadRedirects } from '../../src/lib/data.mjs';
 import { commerceHref } from '../../src/lib/commerce.mjs';
 import { runQa } from '../../qa/checks.mjs';
 import { loadInputs } from '../../qa/cli.mjs';
@@ -261,4 +261,24 @@ t('strict QA still reports the unresolved commerce inventory; foundation has 0 i
   const codes = strict.findings.map((f) => f.code ?? f.rule ?? JSON.stringify(f)).join(' ');
   for (const code of ['commerce-inventory-missing', 'amazon-links-min', 'store-links-min']) assert.ok(codes.includes(code), code);
   assert.ok(foundation.migrationRemaining.length > 0);
+});
+
+test('global Store nav link is sourced from validated commerce data', () => {
+  const nav = loadNavigation();
+  assert.ok(nav.external.length > 0);
+  for (const i of nav.external) {
+    assert.equal(i.href, undefined, 'navigation carries no inline href');
+    assert.ok(loadCommerce().links[i.commerceId], `nav commerce id ${i.commerceId} is registered`);
+  }
+  assert.deepEqual(nav.external.map((i) => [i.commerceId, i.label]), [['webstore-root-www', 'Store']]);
+  assert.equal(commerceHref('webstore-root-www'), 'https://www.nitrocoffee.store/');
+});
+
+t('rendered global Store nav link is byte-identical on every page', () => {
+  const pages = walk('dist').filter((f) => f.endsWith('.html'));
+  assert.ok(pages.length > 0);
+  for (const f of pages) {
+    const nav = fs.readFileSync(f, 'utf8').match(/<nav class="site"[\s\S]*?<\/nav>/);
+    assert.ok(nav && /<a href="https:\/\/www\.nitrocoffee\.store\/"[^>]*>Store<\/a>/.test(nav[0]), `${f}: Store nav href`);
+  }
 });
