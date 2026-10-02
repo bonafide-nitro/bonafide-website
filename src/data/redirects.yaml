@@ -27,7 +27,6 @@ rules:
   # --- 301 at initial migration (§7.4) ---
   - { id: blog-old, type: exact, from: /blog-old/, to: /blog/, status: 301, state: defined }
   - { id: on-tap-in-10-min, type: exact, from: /on-tap-in-10-min/, to: /coffee-on-tap-is-the-future/, status: 301, state: defined }
-  - { id: stability-kegs, type: exact, from: /stability-kegs-nitro-coffee/, to: /how-ambient-stable-coffee-kegs-help-you-save-more-money/, status: 301, state: defined }
   - { id: gastro-hotel-2023, type: exact, from: /gastro-and-hotel-2023-paid-ticket/, to: /contact-bona-fide-nitro-coffee-and-tea/, status: 301, state: defined }
   - { id: thank-you-page-usa, type: exact, from: /thank-you-page-usa/, to: /interested-in-selling-usa/, status: 301, state: defined }
   - { id: category-our-facilities, type: exact, from: /category/our-facilities/, to: /about/, status: 301, state: defined }

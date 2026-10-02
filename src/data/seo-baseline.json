@@ -423,6 +423,21 @@
       ]
     },
     {
+      "path": "/stability-kegs-nitro-coffee/",
+      "tier": 2,
+      "expect": "200",
+      "canonical": "self",
+      "indexable": true,
+      "inSitemap": true,
+      "note": "Block 9 (Issue #36 ZANETA_DECISION): archive-linked historical article migrated as a distinct static 200; supersedes the earlier 301 to /how-ambient-stable-coffee-kegs-help-you-save-more-money/.",
+      "titleMustContain": [
+        "STABILITY KEGS NITRO COFFEE"
+      ],
+      "h1MustContain": [
+        "STABILITY KEGS NITRO COFFEE"
+      ]
+    },
+    {
       "path": "/interested-in-selling-usa/",
       "tier": 2,
       "expect": "200",

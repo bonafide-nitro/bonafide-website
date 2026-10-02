@@ -1,0 +1,20 @@
+---
+// Static archive list + pagination (no client runtime). Only evidenced posts are passed in.
+const { posts, base, current, total = 2 } = Astro.props;
+const url = (n) => (n === 1 ? base : `${base}page/${n}/`);
+---
+<ul class="grid">
+  {posts.map((p) => (
+    <li class="card">
+      <h2><a href={p.path}>{p.title}</a></h2>
+      <p class="muted"><time datetime={p.date}>{p.datetxt}</time>{p.upd && <> (updated {p.upd})</>}</p>
+    </li>
+  ))}
+</ul>
+<nav class="pagination" aria-label="Pagination">
+  <ol>
+    {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
+      <li>{n === current ? <span aria-current="page">{n}</span> : <a href={url(n)}>{n}</a>}</li>
+    ))}
+  </ol>
+</nav>
