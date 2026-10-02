@@ -5,6 +5,11 @@ against the preserved SEO baseline (`src/data/seo-baseline.json`), the redirect 
 (`src/data/redirects.yaml`), the commerce/integration configuration and `docs/MIGRATION_QA.md`.
 No source, data, config, metadata, redirect or QA change was made in this Block; strict QA was not weakened.
 
+**Scope of this record — current-live comparison NOT performed.** `docs/migration/05-execution-plan.md` Stage 8 requires comparing the
+static preview against both the preserved baseline *and* current live behavior. This Block compared the repository build against the
+preserved baseline only; no live site was accessed. The current-live comparison therefore remains an **unresolved Stage 8 requirement**
+(see §4) and this report must not be treated as the complete Stage 8 record.
+
 **Stage 8 does not authorize cutover.** No production, WordPress/cPanel, DNS, Search Console, redirect,
 credential or provider action was taken.
 
@@ -42,7 +47,7 @@ credential or provider action was taken.
   - Commerce registry (`src/data/commerce.yaml`, `products.yaml`) preserves only evidenced links; unresolved inventory is metadata only, never rendered.
 - **Security carryover.** `quickdelivr`, `coredelivr`, `mpackage` are absent from all of `dist/` (contents and file names; T11 + `check:dist`) and from
   source/scripts (the only occurrences are the forbidden-string list in `src/data/seo-baseline.json`). No `wp-content/plugins|themes`, `wp-includes`
-  or `wp-json` reference in `src` or `dist`; no third-party script host in the build.
+  or `wp-json` reference in rendered/runtime code or `dist` (the only `src` occurrence is the intentional do-not-generate manifest entry `/wp-json/*` in `src/data/seo-baseline.json`); no third-party script host in the build.
 
 ## 2. LAUNCH BLOCKERS — must be resolved before cutover
 
@@ -70,6 +75,7 @@ staging verification (T12 transport, live 301 behaviour) are Stage 9 items and a
 
 ## 4. EVIDENCE-REMAINING — historical source gaps
 
+- **Current-live comparison (Stage 8 requirement, not performed):** comparison of the static preview against current live behavior on `bonafidenitro.com` (status, redirects, canonicals, sitemap/robots, 404s, script carryover). Requires a separately authorised read-only live check; not done in this Block.
 - **Exact commerce inventory:** 13 Amazon destinations on `/products/` (not exposed by the capture); unresolved store hrefs: 1 Retail Organic Nitro
   Vanilla, 1 Decaf Mexico (both pages), 6 Alliance (`/products-2/`); `/howtobuy/` distributor/partner outbound hrefs (13 baseline links). Registered in `commerce.yaml` `unresolved`.
 - **Legal copy:** exact body copy, live title and meta description for `/privacy-policies/` and `/terms-of-service/` (marked placeholder, not certified).
