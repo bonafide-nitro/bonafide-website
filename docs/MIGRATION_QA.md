@@ -97,3 +97,6 @@ The repository holds only counts and host constraints for commerce links (`/prod
 
 ## Block 10 update (Issue #38)
 `/privacy-policies/` and `/terms-of-service/` are built as static 200, self-canonical, `noindex`, sitemap-excluded routes. No exact legal body copy exists in repository evidence, so both carry a marked migration placeholder and the scaffold marker; the legal copy (plus live title/meta description) is an explicit migration-remaining item for pre-launch source recovery and is not certified as preserved. Foundation: 0 invariants, 44 migration-remaining; strict still FAIL. See `docs/migration/14-block10-tier3-legal-results.md`.
+
+## Block 11 update (Issue #40)
+The contact page now carries a semantic POST form (name, email, message, honeypot) whose action comes only from the public build-time variable `PUBLIC_CONTACT_FORM_ENDPOINT`; unset/invalid renders it disabled with no action. No provider, endpoint, secret or script is committed. The page keeps the scaffold marker (meta description outstanding). Foundation: 0 invariants, 44 migration-remaining; strict still FAIL. See `docs/migration/15-block11-contact-form-results.md`.

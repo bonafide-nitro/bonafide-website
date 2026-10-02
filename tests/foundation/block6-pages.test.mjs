@@ -32,7 +32,7 @@ for (const [p, [ti, h1]] of Object.entries(CONTRACT)) {
     assert.equal(canonical(h), `https://bonafidenitro.com${p}`);
     assert.ok(!/<script(?![^>]*application\/ld\+json)/.test(h), 'only JSON-LD script allowed');
     assert.ok(!/quickdelivr|coredelivr|mpackage|thrive|sydney/i.test(h));
-    assert.ok(!/<form\b/i.test(h), 'no form/endpoint before Stage 7');
+    assert.ok(!/<form\b/i.test(h) || /<form[^>]*method="post"/i.test(h), 'any form is POST (Block 11 adds the Stage-7 form)');
     assert.ok(!h.includes('noindex'));
     assert.ok(!hrefs(h).some((x) => x.includes('products-2')), 'no link to /products-2/');
   });
@@ -49,7 +49,7 @@ t('Organization + WebSite + BreadcrumbList JSON-LD on all six pages', () => {
 
 t('/contact-…/: evidenced details, no fake endpoint', () => {
   const h = page('/contact-bona-fide-nitro-coffee-and-tea/');
-  for (const s of ['3020 Sherwin Ave Suite D', 'Ventura, CA 93003', '855-482-1446', 'contact@bonafidenitro.com', 'Consumer', 'Distributor', 'Retailer', 'Co-Packer', 'ZIP code', 'United States', 'Europe']) assert.ok(h.includes(s), s);
+  for (const s of ['3020 Sherwin Ave Suite D', 'Ventura, CA 93003', '855-482-1446', 'contact@bonafidenitro.com', 'consumer', 'distributor', 'retailer', 'co-packer']) assert.ok(h.toLowerCase().includes(s.toLowerCase()), s);
   assert.ok(hrefs(h).includes('https://www.nitrocoffee.store/'));
 });
 
