@@ -47,7 +47,7 @@ canonical or two H1s still fails foundation mode. As Stage 6 replaces a placehol
 | T8 Internal links | **zero links to `/products-2/`**; `minInternalLinksIn`; no link to a redirecting, do-not-generate, or nonexistent URL | |
 | T9 Sitemap | `/sitemap.xml` parses as well-formed XML (strict parser, not a regexp) with a sitemaps.org `<urlset>` root and one `<loc>` per `<url>`; contains `/products-2/`; only manifest `inSitemap` URLs; listed URLs exist and are self-canonical | |
 | T10 robots.txt | declares the sitemap; disallows nothing protected | |
-| T11 Security | `quickdelivr`, `coredelivr`, `mpackage` nowhere in `dist/` (contents or file names); third-party `<script src>` hosts, statically assigned script URLs, static `import`/`export … from` module specifiers and import-map targets must be in `qa/qa.config.json` `allowedScriptHosts` (empty today) | |
+| T11 Security | `quickdelivr`, `coredelivr`, `mpackage` nowhere in `dist/` (contents or file names); third-party `<script src>` hosts, statically assigned script URLs, static `import`/`export … from` module specifiers and import-map targets must be in `qa/qa.config.json` `allowedScriptHosts` (only `www.googletagmanager.com` today, for the Block 13 GTM loader) | |
 | T13 Trailing slash | canonical/links/redirect destinations end in `/`; no non-directory `.html`; `site.yaml` and `astro.config.mjs` keep `trailingSlash: 'always'`, `format: 'directory'`, `output: 'static'` | slash-less → slash 301 on the server is deferred |
 
 ## Intentionally deferred (cannot be proven from a local static artifact)

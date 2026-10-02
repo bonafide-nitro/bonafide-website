@@ -7,6 +7,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { resolveGtmId } from '../../src/lib/gtm.mjs';
+import { runQa } from '../../qa/checks.mjs';
+import { loadInputs } from '../../qa/cli.mjs';
 
 const built = fs.existsSync('dist/index.html');
 const t = (name, fn) => test(name, { skip: !built && 'dist/ not built' }, fn);
@@ -75,6 +77,19 @@ test('invalid PUBLIC_GTM_ID: build succeeds and emits no GTM markup', { timeout:
       const h = fs.readFileSync(f, 'utf8').replace(/<!--[\s\S]*?-->/g, '');
       assert.ok(!GTM_MARKUP.test(h) && !/<iframe/i.test(h), f);
     }
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('GTM-enabled build passes the T11 script-host QA check (allowlist covers only the GTM host)', { timeout: 120000 }, () => {
+  const out = buildWith('GTM-ABC1234');
+  try {
+    const inputs = loadInputs();
+    assert.deepEqual(inputs.config.allowedScriptHosts, ['www.googletagmanager.com']);
+    const r = runQa({ ...inputs, distDir: out, mode: 'foundation' });
+    const t11 = r.findings.filter((f) => f.check === 'T11');
+    assert.deepEqual(t11, [], JSON.stringify(t11));
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }
