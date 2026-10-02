@@ -582,6 +582,10 @@
       [
         "/nitro-cold-brew/",
         "/nitro-cold-brew-old/"
+      ],
+      [
+        "/blog/",
+        "/blog/page/2/"
       ]
     ],
     "realNotFound": true,

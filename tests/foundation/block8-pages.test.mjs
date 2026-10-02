@@ -129,5 +129,5 @@ t('trends article keeps millennials-coffee vocabulary, enforced by mustContainTe
 
 t('titleUniquenessException is pair-scoped (Codex review fb1f0e9)', () => {
   const ex = JSON.parse(fs.readFileSync('src/data/seo-baseline.json', 'utf8')).preservationRules.titleUniquenessException;
-  assert.deepEqual(ex, [['/products/', '/products-2/'], ['/nitro-cold-brew/', '/nitro-cold-brew-old/']]);
+  assert.deepEqual(ex, [['/products/', '/products-2/'], ['/nitro-cold-brew/', '/nitro-cold-brew-old/'], ['/blog/', '/blog/page/2/']]);
 });

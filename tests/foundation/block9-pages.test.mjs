@@ -56,10 +56,12 @@ for (const [p, list, h1] of ARCHIVES) {
   });
 }
 
-t('page 2 routes are real, distinct pages (not page-1 shells or redirects) with their own titles', () => {
+t('page 2 routes are real, distinct pages (not page-1 shells or redirects) with their own titles (except the evidenced /blog/ pair)', () => {
   for (const [a, b] of [['/blog/', '/blog/page/2/'], [CAT, `${CAT}page/2/`], ['/author/admin/', '/author/admin/page/2/']]) {
     assert.notEqual(page(a), page(b));
-    assert.notEqual(title(page(a)), title(page(b)));
+    // /blog/ and /blog/page/2/ share the evidenced live title (ZANETA_DECISION, titleUniquenessException pair).
+    if (a === '/blog/') assert.equal(title(page(a)), title(page(b)));
+    else assert.notEqual(title(page(a)), title(page(b)));
     assert.equal(cards(page(a)).length, 10);
     assert.equal(cards(page(b)).length, 5);
   }

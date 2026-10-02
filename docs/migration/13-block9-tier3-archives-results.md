@@ -6,7 +6,7 @@ Source: only the live archive evidence in the Issue #36 ZANETA_DECISION (2026-10
 | URL | Content |
 | --- | --- |
 | `/blog/` | Unchanged 10-card page 1; now renders the shared list + pagination (1, 2). |
-| `/blog/page/2/` | Real page 2: the 5 evidenced posts, in order. Title carries a ` - Page 2` suffix (see below). |
+| `/blog/page/2/` | Real page 2: the 5 evidenced posts, in order. Title is the evidenced live title, identical to `/blog/` (see below). |
 | `/category/news-nitro-coffee-and-nitro-tea/` (+ `page/2/`) | H1 `Category: News Nitro Coffee and Nitro Tea` and the evidenced intro sentence; page 1 = 10 posts, page 2 = 5 posts. |
 | `/author/admin/` (+ `page/2/`) | H1 `Author: John Goerke`; same 10 / 5 split. |
 | `/stability-kegs-nitro-coffee/` | Approved prerequisite article (By John Goerke, 2017-12-01, upd. 2018-11-16). Conservative historical summary of the evidenced meanings; no price, GP figure or new claim. Keeps the scaffold marker (images, meta description unevidenced). |
@@ -20,7 +20,7 @@ Listing data (membership, order, titles, dates) lives in `src/lib/archive.mjs` a
 
 ## Open evidence gaps (not invented)
 - Live `<title>` of the category/author pages and meta descriptions of all five archives are not evidenced: titles are derived from the evidenced H1 + brand, no meta description is emitted.
-- `/blog/page/2/`: the live title is byte-identical to `/blog/`. The duplicate-title gate (`titleUniquenessException`, pair-scoped) allows only the two declared pairs, and extending it needs a human decision, so the static page-2 title adds ` - Page 2`. If the exact identical title is wanted, a third pair `["/blog/","/blog/page/2/"]` must be approved.
+- `/blog/page/2/`: the live title is byte-identical to `/blog/`. Per ZANETA_DECISION (correction round 1) the exact title is preserved and exactly one pair, `["/blog/","/blog/page/2/"]`, was added to the pair-scoped `titleUniquenessException`. No other QA gate changed.
 - Excerpts, thumbnails and categories on cards are not evidenced and not rendered. `/blog/` keeps the scaffold marker; the five archive routes are complete against their Tier-3 contract and carry no scaffold marker. `/stability-kegs-nitro-coffee/` keeps it.
 - The `admin` URL slug vs the `John Goerke` display name is preserved as observed.
 
