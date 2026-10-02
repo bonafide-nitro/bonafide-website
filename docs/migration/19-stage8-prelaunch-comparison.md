@@ -34,7 +34,8 @@ credential or provider action was taken.
 - **Product separation.** `/products/` and `/products-2/` are distinct 200 pages; QA T5 (distinct output, no
   canonical/redirect collapse, `/products-2/` contract immutable) and T8 (zero links to `/products-2/`) report no invariant failure.
 - **Canonical / indexability / trailing slash / title uniqueness / H1 / schema invariants.** All T3, T4, T6, T13 invariants
-  hold (0 invariant findings), including the declared title-uniqueness exceptions only.
+  hold (0 invariant findings), including the declared title-uniqueness exceptions only. "Schema invariants" here means only what T6 enforces
+  (`Organization`, `WebSite`, `BreadcrumbList` and manifest-declared types); it does **not** cover `Article` + `Person` on posts (see the §2 blocker).
 - **Redirect register.** 58 rules: 32 `defined`, 26 `pending-decision`. All T2 invariants pass: 301-only, unique ids/sources,
   defined⇔destination, no loops, no chains/one-hop violations, no protected URL as a source, protected-200 conflict free,
   AMP booking overrides and canonicalisation rules present, every defined destination known. Pending rules are never emitted
@@ -84,6 +85,13 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - **Forensic preservation (Stage 2) precedes the clean copy.** An offline, checksummed forensic snapshot of the compromised installation must exist before any
   investigation or remediation (`docs/migration/05-execution-plan.md` Stage 2; master plan Steps 3–6), because producing a clean copy modifies the compromised installation and
   could otherwise destroy evidence. Not assessed here; it is a predecessor blocker to the item below.
+- **Article + Person schema on posts not emitted or gated.** The master plan (rows at lines 224 and 710) requires the existing `Article` + `Person` markup on posts to be regenerated, and earlier
+  Block records state it is not emitted. T6 enforces only `Organization`, `WebSite`, `BreadcrumbList` and manifest-declared types, and the manifest declares neither `Article` nor `Person`, so strict QA can
+  turn green once scaffold markers are removed from the historical article routes without detecting its absence. Emitting it and adding a manifest/T6 gate is a launch blocker.
+- **Full Stage 3 security verification (not only the rollback copy).** `docs/migration/05-execution-plan.md` Stage 3 requires: investigating the injection source; removing malicious code and persistence;
+  reviewing unexpected users and access paths; reviewing cron/scheduled tasks and file integrity; rotating credentials and strengthening account protection; confirming the cleaned WordPress site functions
+  and that the suspicious scripts no longer render; and understanding, or materially mitigating, the entry route, all with documented verification. A rollback artifact can exist while the compromised
+  access path is still active, so each item remains an explicit launch blocker and none is assessed here.
 - **Clean WordPress rollback copy.** Producing and verifying it is a **Stage 3** (security remediation) requirement and a hard prerequisite to any
   static cutover (`docs/migration/05-execution-plan.md` Stage 3 STOP gate); Stage 9 only records its location and the rollback procedure. Not assessed here.
 - **Deferred D1 deployment gates (unverified).** Per `docs/migration/06-stage1-pre-build-blockers-resolved.md` ("What remains for a later Block"): confirmation of the installed PHP
