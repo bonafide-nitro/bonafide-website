@@ -77,8 +77,15 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   Populating the manifest/checker coverage and supplying the binaries is a launch blocker.
 - **T16 visual regression.** Pre-deploy gate per master plan (§13.2, 13.3): all 17 Tier-1 URLs at mobile (390px) and desktop (1440px), no horizontal scroll,
   no missing assets in the console, run against preview and then staging before cutover. Not implemented or run here; it remains a launch blocker.
+- **Forensic preservation (Stage 2) precedes the clean copy.** An offline, checksummed forensic snapshot of the compromised installation must exist before any
+  investigation or remediation (`docs/migration/05-execution-plan.md` Stage 2; master plan Steps 3–6), because producing a clean copy modifies the compromised installation and
+  could otherwise destroy evidence. Not assessed here; it is a predecessor blocker to the item below.
 - **Clean WordPress rollback copy.** Producing and verifying it is a **Stage 3** (security remediation) requirement and a hard prerequisite to any
   static cutover (`docs/migration/05-execution-plan.md` Stage 3 STOP gate); Stage 9 only records its location and the rollback procedure. Not assessed here.
+- **Deferred D1 deployment gates (unverified).** Per `docs/migration/06-stage1-pre-build-blockers-resolved.md` ("What remains for a later Block"): confirmation of the installed PHP
+  version and its availability after cutover; sibling rollback location inaccessible from the public web and an off-server second copy; no write access between WordPress and the
+  static docroot (and from the deploy key to the rollback copy); a locked staging target on the production hosting account itself; static-build retention/archival (previous five builds
+  and outgoing release artifact); and a rehearsed first deployment and rollback. None is verified here and none may be assumed.
 
 ## 3. CONFIGURATION-REMAINING — human/provider-supplied, not safe to invent
 
@@ -86,6 +93,8 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - `PUBLIC_CALENDLY_URL` — exact Calendly URL not preserved in evidence; booking action disabled until set.
 - `PUBLIC_GTM_ID` — no GTM container ID configured; zero markup until set.
 - Meta Pixel and Klaviyo — no verified retained configuration; remain explicit integration-remaining (no code added).
+- **D3 — Meta Pixel retention (unresolved business decision).** Whether Meta advertising is active and the Pixel should be retained at all is undecided
+  (`docs/migration/04-wordpress-to-static-migration-master-plan.md` decision table D3). Obtaining a Pixel ID is not authorization to enable it.
 - **D4 — consent handling (unresolved Marketing/Legal decision).** GTM, Meta Pixel and Klaviyo all set cookies; whether a consent banner is required for the
   US-dominant audience is undecided (`docs/migration/04-wordpress-to-static-migration-master-plan.md` consent/analytics note and decision table D4). If required, the
   documented fallback is GTM consent mode, configured once. D4 must be resolved, and consent mode implemented if required, before any of these integrations is enabled.
@@ -96,6 +105,9 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - **Exact commerce inventory:** 13 Amazon destinations on `/products/` (not exposed by the capture); unresolved store hrefs: 1 Retail Organic Nitro
   Vanilla, 1 Decaf Mexico (both pages), 6 Alliance (`/products-2/`); `/howtobuy/` distributor/partner outbound hrefs (13 baseline links). Registered in `commerce.yaml` `unresolved`.
 - **Legal copy:** exact body copy, live title and meta description for `/privacy-policies/` and `/terms-of-service/` (marked placeholder, not certified).
+- **Archive title gaps (marker-free routes):** the live `<title>` of the category and author archive pages is unevidenced and derived from H1 + brand
+  (`docs/migration/13-block9-tier3-archives-results.md`, open evidence gaps); these routes carry no scaffold marker and their manifest entries have no title contract, so strict QA
+  will not surface the gap when other markers are removed. Meta descriptions of all five Tier-3 archives are likewise unevidenced.
 - **Page assets/metadata:** image binaries and alt text, page-level assets, PDFs and meta descriptions for pages that still carry the scaffold marker; `/` testimonial/Review schema decision (I7).
 - **Pending-decision redirects (26, unresolved and not fabricated; launch blocker, see §2):** 14 exact legacy paths (`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`,
   `/collections/`, `/sustainability/`, `/copyright-notice/`, `/kegging-service/`, `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`, `/author/raul/`,
@@ -107,7 +119,7 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - Production application of the redirect artifact on the host (artifact generation and staging verification are launch blockers, see §2; not performed in this Block).
 - Deferred QA classes per `docs/MIGRATION_QA.md`: T12 transport, live HTTP status/one-hop behaviour, MIME types, T14 forms and T15 analytics smoke tests, T17 Lighthouse (advisory; T16 is a launch blocker, see §2), scheduled production crawl.
 - Setting the three `PUBLIC_*` variables and any Meta/Klaviyo configuration at build time on the deploy host.
-- Stage 9 cutover/rollback planning (explicitly out of scope here).
+- Stage 9 cutover/rollback planning (explicitly out of scope here); the deferred D1 deployment gates it depends on remain visible in §2.
 
 ## 7. Statement
 
