@@ -1,0 +1,11 @@
+---
+import Base from '../../../../../layouts/Base.astro';
+import ArchiveList from '../../../../../components/ArchiveList.astro';
+import { PAGE2, CATEGORY } from '../../../../../lib/archive.mjs';
+---
+<!-- Tier-3 archive, complete against its baseline contract (static 200, self-canonical, indexable, sitemap, real pagination). Listing = exact live archive evidence (Issue #36 ZANETA_DECISION). The live <title>/meta description are not evidenced: the title is derived from the evidenced H1 (page 2 adds ' - Page 2' to satisfy the duplicate-title gate); no meta description is emitted. Excerpts/images are not evidenced and not invented. -->
+<Base title="Category: News Nitro Coffee and Nitro Tea | Bona Fide Brewing Company - Page 2" canonicalPath="/category/news-nitro-coffee-and-nitro-tea/page/2/" breadcrumbs={[{ name: 'Category: News Nitro Coffee and Nitro Tea', path: '/category/news-nitro-coffee-and-nitro-tea/' }, { name: 'Page 2', path: '/category/news-nitro-coffee-and-nitro-tea/page/2/' }]}>
+  <h1>Category: News Nitro Coffee and Nitro Tea</h1>
+  <p>We are attentive to all what is happening in the market of Nitro Coffee and Nitro Tea.</p>
+  <ArchiveList posts={PAGE2} base={CATEGORY.base} current={2} />
+</Base>

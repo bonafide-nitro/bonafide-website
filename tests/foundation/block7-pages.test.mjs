@@ -71,14 +71,14 @@ t('articles: author and evidenced dates retained', () => {
   }
 });
 
-t('/blog/: links only to built routes; no invented pagination/archives', () => {
+t('/blog/: links only to built routes; only the evidenced page-2 pagination (Block 9)', () => {
   const h = page('/blog/');
   const internal = hrefs(h).filter((x) => x.startsWith('/') && !x.startsWith('//'));
   for (const u of internal) assert.ok(fs.existsSync(`dist${u}index.html`) || fs.existsSync(`dist${u}`), `broken/unbuilt link ${u}`);
   // /nitro-coffee-future/ is built but not in the evidenced first-page list, so it must not be listed on /blog/ yet.
   for (const p of ARTICLES.filter((x) => x !== '/nitro-coffee-future/')) assert.ok(internal.includes(p), `${p} listed`);
   assert.ok(!internal.includes('/nitro-coffee-future/'), 'unevidenced /nitro-coffee-future/ not on first page');
-  assert.ok(!internal.some((x) => /\/page\/|\/category\/|\/author\//.test(x)));
+  assert.deepEqual(internal.filter((x) => /\/page\/|\/category\/|\/author\//.test(x)), ['/blog/page/2/']);
 });
 
 t('historical health/COVID framing kept; no new claim language', () => {

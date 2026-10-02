@@ -27,9 +27,9 @@ test('launch navigation is the 10 master-plan destinations and excludes /product
   assert.ok(!JSON.stringify(nav).includes('products-2'));
 });
 
-test('baseline: 17 tier-1 + 14 tier-2 protected URLs, all trailing-slash, 200, self-canonical', () => {
+test('baseline: 17 tier-1 + 15 tier-2 protected URLs, all trailing-slash, 200, self-canonical', () => {
   assert.equal(baseline.urls.filter((u) => u.tier === 1).length, 17);
-  assert.equal(baseline.urls.filter((u) => u.tier === 2).length, 14);
+  assert.equal(baseline.urls.filter((u) => u.tier === 2).length, 15);
   for (const u of baseline.urls) assert.ok(u.path.endsWith('/'), u.path);
   assert.equal(new Set(baseline.urls.map((u) => u.path)).size, baseline.urls.length);
 });
