@@ -546,7 +546,11 @@
     {
       "path": "/book-appointment/",
       "expect": "200",
-      "note": "Booking function survives via Calendly (06-stage1 D5); page + embed built in Stage 7."
+      "canonical": "self",
+      "indexable": false,
+      "robots": "noindex",
+      "inSitemap": false,
+      "note": "Booking function survives via Calendly (06-stage1 D5); transactional utility page, noindex and excluded from the sitemap (01-baseline line 355; master plan sitemap rule). Built in Block 12 as a plain link driven by PUBLIC_CALENDLY_URL."
     }
   ],
   "redirectsSource": "src/data/redirects.yaml",
