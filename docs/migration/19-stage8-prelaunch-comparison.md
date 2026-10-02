@@ -77,6 +77,9 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - `PUBLIC_CALENDLY_URL` — exact Calendly URL not preserved in evidence; booking action disabled until set.
 - `PUBLIC_GTM_ID` — no GTM container ID configured; zero markup until set.
 - Meta Pixel and Klaviyo — no verified retained configuration; remain explicit integration-remaining (no code added).
+- **D4 — consent handling (unresolved Marketing/Legal decision).** GTM, Meta Pixel and Klaviyo all set cookies; whether a consent banner is required for the
+  US-dominant audience is undecided (`docs/migration/04-wordpress-to-static-migration-master-plan.md` consent/analytics note and decision table D4). If required, the
+  documented fallback is GTM consent mode, configured once. D4 must be resolved, and consent mode implemented if required, before any of these integrations is enabled.
 
 ## 4. EVIDENCE-REMAINING — historical source gaps
 
