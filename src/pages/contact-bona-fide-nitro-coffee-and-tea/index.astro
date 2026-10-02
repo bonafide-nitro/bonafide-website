@@ -1,20 +1,49 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { resolveContactEndpoint } from '../../lib/contact-form.mjs';
+// Provider endpoint is a public build-time value (see docs/migration/15-block11-contact-form-results.md).
+const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDPOINT);
 ---
-<!-- scaffold: kept until the Stage-7 hosted static form exists (no form backend/endpoint is wired here and nothing is submitted to WordPress/CF7) and the page meta description is preserved. Structure and visible contact details are migrated from the public rendered evidence in Issue #30. -->
+<!-- scaffold: kept until the page meta description is preserved and a provider endpoint is configured. Structure and visible contact details are migrated from the public rendered evidence in Issue #30. The form posts only to the configured endpoint; with none configured it renders disabled and nothing is submitted anywhere. -->
 <Base title="Contact - Bona Fide Nitro Coffee And Tea" canonicalPath="/contact-bona-fide-nitro-coffee-and-tea/" breadcrumbs={[{ name: 'Contact', path: '/contact-bona-fide-nitro-coffee-and-tea/' }]} scaffold>
   <h1>Contact</h1>
   <p>Reach Bona Fide for consumer, distributor, retailer and co-packer inquiries.</p>
 
-  <h2>Who is your inquiry from?</h2>
-  <ul>
-    <li>Consumer</li>
-    <li>Distributor</li>
-    <li>Retailer</li>
-    <li>Co-Packer</li>
-  </ul>
-  <p>Inquiries also ask for your ZIP code, how you heard about us (referral source) and your market: United States or Europe.</p>
-  <p class="muted">The online inquiry form is migration-remaining (Stage 7). Until then, please use the email address or phone number below.</p>
+  <h2>Send us a message</h2>
+  <p>Consumer, distributor, retailer and co-packer inquiries are all welcome. Please tell us which in your message.</p>
+  {!endpoint && (
+    <p class="muted" role="status">The online form is not available yet. Please use the email address or phone number below.</p>
+  )}
+  <form method="post" action={endpoint ?? undefined} class="contact-form">
+    <fieldset disabled={!endpoint}>
+      <legend>Contact form</legend>
+      <p>
+        <label for="contact-name">Name</label><br />
+        <input id="contact-name" name="name" type="text" autocomplete="name" required />
+      </p>
+      <p>
+        <label for="contact-email">Email</label><br />
+        <input id="contact-email" name="email" type="email" autocomplete="email" required />
+      </p>
+      <p>
+        <label for="contact-message">Message</label><br />
+        <textarea id="contact-message" name="message" rows="6" required></textarea>
+      </p>
+      <p class="hp" aria-hidden="true">
+        <label for="contact-hp">Leave this field empty</label>
+        <input id="contact-hp" name="bf_hp" type="text" tabindex="-1" autocomplete="off" />
+      </p>
+      <p><button type="submit" class="cta">Send message</button></p>
+    </fieldset>
+  </form>
+  <style is:global>
+    .contact-form fieldset { border: 0; padding: 0; margin: 0; }
+    .contact-form legend { position: absolute; left: -10000px; }
+    .contact-form input[type="text"], .contact-form input[type="email"], .contact-form textarea { width: 100%; max-width: 32rem; font: inherit; padding: .4rem; }
+    .contact-form .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+    .contact-form button { font: inherit; background: none; color: var(--accent); cursor: pointer; }
+    .contact-form button:disabled { opacity: .5; cursor: not-allowed; }
+  </style>
 
   <h2>Bona Fide HQ</h2>
   <address>
