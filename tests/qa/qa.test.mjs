@@ -272,7 +272,7 @@ test('CLI (real dist/): foundation passes and states migration is incomplete; st
   assert.match(f.stdout, /MIGRATION WORK REMAINING/);
   const s = cli(['--mode', 'strict']);
   assert.equal(s.status, 1);
-  assert.match(s.stdout, /protected-url-missing/);
+  assert.match(s.stdout, /placeholder/); // every protected route is now built; strict still fails on scaffold pages (was protected-url-missing until Block 10)
   assert.match(s.stdout, /sitemap-absent/);
 });
 test('CLI (real dist/ copy): injected script string fails foundation mode with exit 1', { skip: !haveDist }, () => {
