@@ -1,4 +1,5 @@
 ---
+import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept until (a) the /howtobuy/ image binaries and alt text are preserved and (b) the baseline's 13 outbound links (distributor/partner anchors) are captured and rendered; only the store anchors are linked so far. -->
@@ -26,7 +27,7 @@ import Base from '../../layouts/Base.astro';
     <li>Suitable for coffee shops, small offices, homes and businesses</li>
     <li>Nationwide UPS delivery</li>
   </ul>
-  <p><a class="cta" href="https://www.nitrocoffee.store/">Visit the webstore</a></p>
+  <p><a class="cta" href={commerceHref('webstore-root-www')}>Visit the webstore</a></p>
 
   <h2>Nitro Coffee &amp; Tea Keg Distributors</h2>
   <p>Recurring supply through our distribution partners, with equipment, maintenance, training and delivery support, across a growing multi-state distribution network.</p>
@@ -61,5 +62,5 @@ import Base from '../../layouts/Base.astro';
   <p>Put your own-brand coffee or tea in Bona Fide kegs. The Alliance leverages the Bona Fide process with your ingredients: R&amp;D samples, partner branding on the keg collar and tap handle, and a customized quote with low-minimum options and terms.</p>
   <h3>Trusted collaborations</h3>
   <p>CULT Artisan Beverage Company; 10 Speed Coffee; Boyer's Coffee; Caveman Coffee Co.; Dune Coffee Roasters; Esselon Artisan Coffee Roasters; Caribbean Coffee Company; Vail Mountain Coffee &amp; Tea; Libra Coffee; Sudbury Coffee Works; Low Pigeon Coffee Roasters.</p>
-  <p><a class="cta" href="https://www.nitrocoffee.store/">Webstore</a></p>
+  <p><a class="cta" href={commerceHref('webstore-root-www')}>Webstore</a></p>
 </Base>

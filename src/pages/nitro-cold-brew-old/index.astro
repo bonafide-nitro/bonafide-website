@@ -1,4 +1,5 @@
 ---
+import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept until page images (binaries at exact same-path URLs) and the meta description are preserved -- neither is evidenced. Historical informational/FAQ explainer kept as a distinct 200 page from /nitro-cold-brew/ (no canonical/redirect to it). Body copy is a conservative paraphrase of the topics listed in Issue #34; historical health/safety framing is not strengthened or modernised. -->
@@ -34,7 +35,7 @@ import Base from '../../layouts/Base.astro';
   <p>Where a nitrogen tank is used, it needs to be refilled or exchanged. Ask your supplier about nitrogen supply.</p>
 
   <h2>Where can I get nitro coffee?</h2>
-  <p>See <a href="/products/">our products</a> and <a href="/howtobuy/">how to buy</a>, or visit the <a href="https://www.nitrocoffee.store/">Bona Fide webstore</a>.</p>
+  <p>See <a href="/products/">our products</a> and <a href="/howtobuy/">how to buy</a>, or visit the <a href={commerceHref('webstore-root-www')}>Bona Fide webstore</a>.</p>
 
   <h2>Serving, starting and organic questions</h2>
   <p>Further questions about serving nitro coffee, getting started and organic coffee are covered in <a href="/nitro-coffee-questions/">Nitro Coffee Questions</a>. A newer overview is at <a href="/nitro-cold-brew/">All About Nitro Cold Brew Coffee</a>.</p>

@@ -1,4 +1,5 @@
 ---
+import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 import { resolveContactEndpoint } from '../../lib/contact-form.mjs';
 // Provider endpoint is a public build-time value (see docs/migration/15-block11-contact-form-results.md).
@@ -55,7 +56,7 @@ const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDP
 
   <h2>Webstore</h2>
   <p>Looking to order coffee, tea or equipment directly? Visit our webstore.</p>
-  <p><a class="cta" href="https://www.nitrocoffee.store/">Visit the Bona Fide webstore</a></p>
+  <p><a class="cta" href={commerceHref('webstore-root-www')}>Visit the Bona Fide webstore</a></p>
 
   <p>Not sure where to start? See <a href="/howtobuy/">How to Buy</a> or <a href="/nitro-coffee-questions/">Nitro Coffee Questions</a>.</p>
 </Base>

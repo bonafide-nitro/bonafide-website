@@ -27,6 +27,16 @@ const navigationSchema = z.object({
   external: z.array(z.object({ href: z.string().url(), label: z.string() })),
 });
 
+const STORE_HOSTS = ['nitrocoffee.store', 'www.nitrocoffee.store'];
+const storeHref = z.string().superRefine((v, ctx) => {
+  let u;
+  try { u = new URL(v); } catch { return ctx.addIssue({ code: 'custom', message: 'not a URL' }); }
+  if (u.protocol !== 'https:') ctx.addIssue({ code: 'custom', message: 'commerce links must be https://' });
+  if (!STORE_HOSTS.includes(u.hostname)) ctx.addIssue({ code: 'custom', message: `host ${u.hostname} is not the approved store host` });
+  if ([...u.searchParams.keys()].some((k) => k !== 'variant')) ctx.addIssue({ code: 'custom', message: 'no tracking/affiliate parameters' });
+  if (u.hash) ctx.addIssue({ code: 'custom', message: 'no fragments' });
+});
+
 const productSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -39,13 +49,24 @@ const productSchema = z.object({
   description: z.string().optional(),
   styles: z.array(z.enum(['nitro', 'still'])).optional(),
   pricing: z.object({ retail: z.number().nullable(), wholesale: z.number().nullable() }),
-  links: z.object({ store: z.string().url().optional(), storeViews: z.array(z.enum(['retail', 'wholesale'])).optional(), amazon: z.string().url().optional() }).optional(),
+  links: z.object({ store: storeHref.optional(), storeViews: z.array(z.enum(['retail', 'wholesale'])).optional(), amazon: z.string().url().optional() }).optional(),
   amazonCta: z.boolean().optional(),
   specialRequest: z.boolean().optional(),
   image: urlPath.optional(),
   alt: z.string().optional(),
   views: z.array(z.enum(['retail', 'wholesale'])).min(1),
 });
+
+const commerceSchema = z.object({
+  links: z.record(z.string(), z.object({ href: storeHref, label: z.string(), note: z.string().optional() }).strict()),
+  unresolved: z.array(z.object({
+    id: z.string(),
+    page: z.string(),
+    kind: z.enum(['amazon', 'store', 'external']),
+    count: z.number().int().positive().nullable(),
+    reason: z.string(),
+  }).strict()),
+}).strict();
 
 const redirectSchema = z
   .object({
@@ -79,6 +100,7 @@ const baselineSchema = z.object({
 export const loadSite = () => siteSchema.parse(YAML.parse(read('site.yaml')));
 export const loadNavigation = () => navigationSchema.parse(YAML.parse(read('navigation.yaml')));
 export const loadProducts = () => z.array(productSchema).parse(YAML.parse(read('products.yaml')));
+export const loadCommerce = () => commerceSchema.parse(YAML.parse(read('commerce.yaml')));
 export const loadRedirects = () =>
   z.object({ rules: z.array(redirectSchema) }).parse(YAML.parse(read('redirects.yaml'))).rules;
 export const loadBaseline = () => baselineSchema.parse(JSON.parse(read('seo-baseline.json')));

@@ -106,3 +106,6 @@ The contact page now carries a semantic POST form (name, email, message, honeypo
 
 ## Block 13 update (Issue #44)
 A clean Google Tag Manager layer is wired site-wide through `src/layouts/Base.astro` and driven only by the public build-time variable `PUBLIC_GTM_ID` (valid `GTM-…` IDs only). Unset/invalid emits no GTM script/noscript markup and no third-party script. No ID is committed; no Meta Pixel, Klaviyo, GA4, consent, event or ecommerce code was added (Meta/Klaviyo remain Stage-7 integration-remaining pending verified configuration). No page/SEO/redirect change: foundation QA unchanged. See `docs/migration/17-block13-analytics-results.md`.
+
+## Block 14 update (Issue #46)
+External commerce links are centralized in `src/data/commerce.yaml` (+ per-product links in `products.yaml`), validated at build time and resolved through `commerceHref()`. Rendered output is byte-identical to before; no URL was added, repaired or guessed, and the unresolved destinations are recorded as metadata only. `commerceInventory` in `qa/qa.config.json` is unchanged, so strict QA still reports the commerce-inventory gap (migration-remaining). Foundation: 0 invariants. See `docs/migration/18-block14-commerce-links-results.md`.

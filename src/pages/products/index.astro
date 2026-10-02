@@ -1,4 +1,5 @@
 ---
+import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import { loadProducts } from '../../lib/data.mjs';
@@ -26,7 +27,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
     <li>Countertop Flash Chillers</li>
     <li>Distributor Inquiries Welcome!</li>
   </ul>
-  <p>Bona Fide nitro coffee and tea kegs are a creamy, nitrogen-infused alternative for coffee shops, offices and homes, available through our <a href="https://nitrocoffee.store/">web store</a> and distributors. See <a href="/howtobuy/">How to Buy</a>.</p>
+  <p>Bona Fide nitro coffee and tea kegs are a creamy, nitrogen-infused alternative for coffee shops, offices and homes, available through our <a href={commerceHref('webstore-root-apex')}>web store</a> and distributors. See <a href="/howtobuy/">How to Buy</a>.</p>
 
   <h2>Our Cold Brew Nitro Coffee In Keg Products</h2>
   <p>Some varieties may not be available through every distributor. <a href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a> for variety and keg-style information.</p>
@@ -38,7 +39,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
   <ul class="grid">{tea.map((p) => <ProductCard product={p} view="retail" />)}</ul>
 
   <h2>Bag In Box</h2>
-  <p>Prefer a smaller format? See the <a href="https://www.nitrocoffee.store/collections/better-than-cold-brew-bag-in-box-coffee-and-tea-collection">Bag In Box coffee and tea collection</a> and <a href="/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/">Bag-in-Box versus kegs</a>.</p>
+  <p>Prefer a smaller format? See the <a href={commerceHref('bag-in-box-collection')}>Bag In Box coffee and tea collection</a> and <a href="/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/">Bag-in-Box versus kegs</a>.</p>
 
   <h2>Are You Looking For Dispensing Equipment?</h2>
   <p>Countertop dispensers, with hot or cold machine options.</p>
@@ -52,7 +53,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
   <p>Our process provides at least 180 days of flavor stability with no artificial preservatives or stabilizers. It also explains the difference between "cold brew" and "cold-brewed" coffee, and Craft Draft.</p>
 
   <h2>Bag In Box: Baby in Box</h2>
-  <p>A second Bag In Box section for smaller-format coffee and tea (see the <a href="https://www.nitrocoffee.store/collections/better-than-cold-brew-bag-in-box-coffee-and-tea-collection">collection</a>).</p>
+  <p>A second Bag In Box section for smaller-format coffee and tea (see the <a href={commerceHref('bag-in-box-collection')}>collection</a>).</p>
 
   <h2>Coffee &amp; Tea For Office</h2>
   <p>Nitro coffee and tea for workplaces.</p>

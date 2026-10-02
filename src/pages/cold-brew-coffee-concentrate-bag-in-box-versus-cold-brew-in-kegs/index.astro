@@ -1,4 +1,5 @@
 ---
+import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept until Bag-In-Box-And-Pouch-Shopify-Glass-Cold-Coffee.jpg is supplied as a binary at its exact evidenced same-path upload URL (see docs/migration/09) with alt text. -->
@@ -19,5 +20,5 @@ import Base from '../../layouts/Base.astro';
   <h2>Bag in Box versus cold brew in kegs</h2>
   <p>Kegs serve nitro cold brew on tap through a dispenser or kegerator, while the bag in box is a simple fridge format that needs no dispensing equipment. See <a href="/kegerators/">equipment to serve nitro cold brew coffee</a>.</p>
 
-  <p>Browse the <a href="/products/">Bag in Box and keg products</a>, order on the <a href="https://www.nitrocoffee.store/">webstore</a>, or see <a href="/howtobuy/">how to buy</a> wholesale.</p>
+  <p>Browse the <a href="/products/">Bag in Box and keg products</a>, order on the <a href={commerceHref('webstore-root-www')}>webstore</a>, or see <a href="/howtobuy/">how to buy</a> wholesale.</p>
 </Base>
