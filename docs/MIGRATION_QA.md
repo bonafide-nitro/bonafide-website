@@ -109,3 +109,6 @@ A clean Google Tag Manager layer is wired site-wide through `src/layouts/Base.as
 
 ## Block 14 update (Issue #46)
 External commerce links are centralized in `src/data/commerce.yaml` (+ per-product links in `products.yaml`), validated at build time and resolved through `commerceHref()`. Rendered output is byte-identical to before; no URL was added, repaired or guessed, and the unresolved destinations are recorded as metadata only. `commerceInventory` in `qa/qa.config.json` is unchanged, so strict QA still reports the commerce-inventory gap (migration-remaining). Foundation: 0 invariants. See `docs/migration/18-block14-commerce-links-results.md`.
+
+## Block 15 update (Issue #48) — Stage 8 pre-launch comparison
+Read-only comparison of the static build against the baseline, redirect register and integration state; no source, data, QA or metadata change. Results: build, `check:dist`, `npm test` (255/255), Python isolation (303 OK) and foundation QA (0 invariants, 45 migration-remaining) pass; strict QA fails as expected on the same 45 migration-remaining findings, which are grouped (not weakened) in `docs/migration/19-stage8-prelaunch-comparison.md` as launch blockers, configuration-remaining and evidence-remaining. 26 pending-decision redirects remain unresolved. Stage 8 does not authorize cutover.
