@@ -148,8 +148,9 @@ Result: **differs by design; no conflict with the contract; no new blocker** (th
 
 Comparison with the static contract: the static build must emit its own `/sitemap.xml` (`urlset`, includes `/products-2/`, only manifest `inSitemap` URLs; QA T9) and **absent today**
 (`T9 sitemap-absent`). The live file is the WordPress core sitemap index and also exposes a users sitemap (`wp-sitemap-users-1.xml`). **Not a migration target**: do not reproduce the
-WordPress index structure, the `wp-sitemap-*` URLs or the users sitemap. Cutover therefore replaces this live behaviour with the static sitemap; the `wp-sitemap*.xml` URLs are not in the
-protected set and are not given redirects by this Block (any decision on them belongs to a separate approved Block).
+WordPress index structure, the `wp-sitemap-*` URLs or the users sitemap. Cutover therefore replaces this live behaviour with the static sitemap; `/wp-sitemap.xml` (the index) is already decided as a 301 to `/sitemap.xml`
+(`src/data/redirects.yaml` id `wp-sitemap`; master plan §7.7) and this Block does not change it, while the four child `wp-sitemap-*-1.xml` URLs are not in the protected set, cease to exist
+and are not given redirects by this Block (any further decision on them belongs to a separate approved Block).
 Result: **differs by design; no conflict with the contract; no new blocker** (covered by `sitemap-absent`).
 
 ### 10.3 `https://bonafidenitro.com/privacy-policies/`
