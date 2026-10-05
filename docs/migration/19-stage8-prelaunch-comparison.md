@@ -10,6 +10,9 @@ static preview against both the preserved baseline *and* current live behavior. 
 preserved baseline only; no live site was accessed. The current-live comparison therefore remains an **unresolved Stage 8 requirement**
 (see §4) and this report must not be treated as the complete Stage 8 record.
 
+**Update (Block 16, Issue #50):** a partial current-live comparison, from read-only observations supplied on 2026-10-05, is recorded in
+`docs/migration/20-stage8-current-live-comparison.md`. It found no conflict but leaves robots, sitemap, legal routes and 404 behaviour unresolved, so Stage 8 remains incomplete.
+
 **Stage 8 does not authorize cutover.** No production, WordPress/cPanel, DNS, Search Console, redirect,
 credential or provider action was taken.
 
