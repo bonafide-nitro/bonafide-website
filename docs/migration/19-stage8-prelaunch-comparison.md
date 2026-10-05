@@ -16,6 +16,8 @@ preserved baseline only; no live site was accessed. The current-live comparison 
 **Update (Block 17, Issue #52):** the robots, sitemap, legal-route and 404 observations were supplied on 2026-10-05 and are recorded in `docs/migration/20-stage8-current-live-comparison.md` §10.
 They create no new blocker and leave every blocker in §2 below unchanged. Stage 8 is still not declared complete (see doc 20 §11); sitemap child-membership (whether `/products-2/` is listed live) is still unevidenced (doc 20 item C); the legal-copy item in §4 stays open because the copy itself is not recorded in the repo.
 
+**Update (Block 18, Issue #54):** by `ZANETA_DECISION` the remaining live-evidence gaps A (metadata), B (route sampling) and C (child-sitemap membership of `/products-2/`) are accepted as out-of-scope sample limits and are recorded, unobserved, in `docs/migration/20-stage8-current-live-comparison.md` §12. Stage 8 is declared complete there (§12.3). Every blocker in §2 below and the §4 legal-copy item are unchanged.
+
 **Stage 8 does not authorize cutover.** No production, WordPress/cPanel, DNS, Search Console, redirect,
 credential or provider action was taken.
 
