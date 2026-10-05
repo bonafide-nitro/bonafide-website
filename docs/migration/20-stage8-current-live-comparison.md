@@ -202,13 +202,14 @@ and the evidence-remaining "Legal copy" item. All blockers in doc 19 §2 remain 
 
 ## 11. Stage 8 completion status (current, after Block 17)
 
-**The five Block-17 live-observation gaps are all directly evidenced: robots.txt, sitemap.xml, `/privacy-policies/`, `/terms-of-service/` and the 404 test path are no longer unresolved.**
+**Four of the five Block-17 live-observation gaps are directly evidenced: robots.txt, `/privacy-policies/`, `/terms-of-service/` and the 404 test path. The sitemap observation is only partly evidenced: the sitemap index and its four child-sitemap URLs were seen, but the child sitemaps were not opened, so current live membership of `/products-2/` is still unevidenced (remaining item C).**
 
-**Stage 8 as a whole is NOT declared complete.** Doc 20 §9 items 1–3 are closed by this Block. Two items from §9 remain unevidenced, and this Block was not supplied evidence for them:
+**Stage 8 as a whole is NOT declared complete.** Doc 20 §9 items 1–3 are closed by this Block, except that the `/products-2/` sitemap-membership part of the sitemap item stays open (item C). Three items remain unevidenced, and this Block was not supplied evidence for them:
 
 - **Remaining item A (§9 item 4):** canonical and robots-meta indexability, plus title and H1, for the sampled routes where not yet stated (including `/`, `/products-2/`, `/howtobuy/`, `/contact-bona-fide-nitro-coffee-and-tea/`, `/book-appointment/`, and the live titles/meta of the two legal routes).
 - **Remaining item B (§9 item 5):** sampling of the rest of the protected Tier-1 set and a representative Tier-2/Tier-3 sample, with exact status codes and redirect chains (including the status code of the `/contact/` redirect and of the 404-test redirect).
+- **Remaining item C (sitemap membership, from §6 / §10.2):** the contents of the four child sitemaps (`wp-sitemap-posts-post-1.xml`, `wp-sitemap-posts-page-1.xml`, `wp-sitemap-taxonomies-category-1.xml`, `wp-sitemap-users-1.xml`) were not opened, so whether `/products-2/` (and `/products/`) is currently listed live is **unevidenced**. Stage 8 must not be declared complete until this is evidenced or a later explicit scope decision accepts it as out of scope.
 
-Whether items A and B are required before Stage 8 can be called complete, or may be accepted as out-of-scope sample limits, is a scope decision this Block does not make. It is **not** decided here; Žaneta may record it as a `ZANETA_DECISION`.
+Whether items A, B and C are required before Stage 8 can be called complete, or may be accepted as out-of-scope sample limits, is a scope decision this Block does not make. It is **not** decided here; Žaneta may record it as a `ZANETA_DECISION`.
 All pre-cutover blockers in `docs/migration/19-stage8-prelaunch-comparison.md` §2 are **unchanged**. **Do not begin Stage 9** until Stage 8 is explicitly declared complete.
 **Stage 8 completion does not authorize cutover**; cutover requires separate explicit Žaneta approval recorded on GitHub.
