@@ -13,6 +13,9 @@ preserved baseline only; no live site was accessed. The current-live comparison 
 **Update (Block 16, Issue #50):** a partial current-live comparison, from read-only observations supplied on 2026-10-05, is recorded in
 `docs/migration/20-stage8-current-live-comparison.md`. It found no conflict but leaves robots, sitemap, legal routes and 404 behaviour unresolved, so Stage 8 remains incomplete.
 
+**Update (Block 17, Issue #52):** the robots, sitemap, legal-route and 404 observations were supplied on 2026-10-05 and are recorded in `docs/migration/20-stage8-current-live-comparison.md` §10.
+They create no new blocker and leave every blocker in §2 below unchanged. Stage 8 is still not declared complete (see doc 20 §11); the legal-copy item in §4 stays open because the copy itself is not recorded in the repo.
+
 **Stage 8 does not authorize cutover.** No production, WordPress/cPanel, DNS, Search Console, redirect,
 credential or provider action was taken.
 

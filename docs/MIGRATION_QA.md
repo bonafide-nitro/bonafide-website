@@ -115,3 +115,6 @@ Read-only comparison of the static build against the baseline, redirect register
 
 ## Block 16 update (Issue #50) — Stage 8 current-live comparison
 Documentation only. Read-only live observations supplied on 2026-10-05 are recorded in `docs/migration/20-stage8-current-live-comparison.md`: 7 routes sampled, no conflict with the preserved contract, `/products/` and `/products-2/` confirmed distinct live. `/robots.txt`, `/sitemap.xml`, the legal routes and live 404 behaviour were not observable and remain unresolved, so Stage 8 is **not** complete. No QA rule, data, page or redirect changed. Stage 8 does not authorize cutover.
+
+## Block 17 update (Issue #52) — Stage 8 live-observation gaps
+Documentation only. Žaneta's 2026-10-05 observations are recorded in `docs/migration/20-stage8-current-live-comparison.md` §10: live `/robots.txt` and `/sitemap.xml` are WordPress/plugin output (not migration targets; static T9/T10 contracts unchanged), `/privacy-policies/` and `/terms-of-service/` exist live (copy not recorded here, none invented), and a nonexistent path redirects to the homepage (live drift; static contract remains a true 404). No QA rule, data, page or redirect changed and no new blocker was created. Stage 8 is not declared complete (remaining evidence items A/B in doc 20 §11). Stage 8 does not authorize cutover.
