@@ -112,3 +112,6 @@ External commerce links are centralized in `src/data/commerce.yaml` (+ per-produ
 
 ## Block 15 update (Issue #48) — Stage 8 pre-launch comparison
 Read-only comparison of the static build against the baseline, redirect register and integration state; no source, data, QA or metadata change. Results: build, `check:dist`, `npm test` (255/255), Python isolation (303 OK) and foundation QA (0 invariants, 45 migration-remaining) pass; strict QA fails as expected on the same 45 migration-remaining findings, which are grouped (not weakened) in `docs/migration/19-stage8-prelaunch-comparison.md` as launch blockers, configuration-remaining and evidence-remaining. 26 pending-decision redirects remain unresolved. Stage 8 does not authorize cutover.
+
+## Block 16 update (Issue #50) — Stage 8 current-live comparison
+Documentation only. Read-only live observations supplied on 2026-10-05 are recorded in `docs/migration/20-stage8-current-live-comparison.md`: 7 routes sampled, no conflict with the preserved contract, `/products/` and `/products-2/` confirmed distinct live. `/robots.txt`, `/sitemap.xml`, the legal routes and live 404 behaviour were not observable and remain unresolved, so Stage 8 is **not** complete. No QA rule, data, page or redirect changed. Stage 8 does not authorize cutover.
