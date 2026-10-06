@@ -1,4 +1,4 @@
-# Stage 8 — Current-live comparison (Block 16, Issue #50; updated by Block 17, Issue #52)
+# Stage 8 — Current-live comparison (Block 16, Issue #50; updated by Blocks 17 and 18, Issues #52 and #54)
 
 Companion to `docs/migration/19-stage8-prelaunch-comparison.md` (Block 15). Documentation only: no Astro page, SEO metadata, redirect,
 integration, commerce, legal or QA change was made in this Block.
@@ -218,3 +218,43 @@ and the evidence-remaining "Legal copy" item. All blockers in doc 19 §2 remain 
 Whether items A, B and C are required before Stage 8 can be called complete, or may be accepted as out-of-scope sample limits, is a scope decision this Block does not make. It is **not** decided here; Žaneta may record it as a `ZANETA_DECISION`.
 All pre-cutover blockers in `docs/migration/19-stage8-prelaunch-comparison.md` §2 are **unchanged**. **Do not begin Stage 9** until Stage 8 is explicitly declared complete.
 **Stage 8 completion does not authorize cutover**; cutover requires separate explicit Žaneta approval recorded on GitHub.
+
+## 12. Block 18 — scope decision on gaps A/B/C (Issue #54)
+
+Source: `ZANETA_DECISION` on Issue #54 (comment id 5997576185, 2026-10-05T15:26:36Z). Block 18 made **no** request to the live site (the Claude cloud egress proxy blocks
+`bonafidenitro.com`; first dispatch ended in `NEEDS_ZANETA`) and **no live observation is recorded or invented here**. This section records a scope decision, not evidence.
+
+### 12.1 Decision recorded
+
+Žaneta accepted the three remaining evidence gaps as **out of scope for further live-site evidence collection**. Rationale given: do not spend further time re-auditing the compromised
+WordPress site; preserved migration evidence and the static QA/build contract remain authoritative for launch behaviour.
+
+| Gap | What stays unobserved | Disposition |
+| --- | --- | --- |
+| A — live metadata | canonical, robots meta/indexability, and any not-yet-stated title/H1 for the sampled routes (`/`, `/products/` canonical/robots, `/products-2/`, `/howtobuy/`, `/blog/` H1/canonical/robots, `/contact-bona-fide-nitro-coffee-and-tea/`, `/book-appointment/`); live title and meta description of `/privacy-policies/` and `/terms-of-service/` | **Accepted out-of-scope sample limit.** Not evidenced; not treated as a match. |
+| B — route sampling | remaining Tier-1 protected routes; representative Tier-2/Tier-3 sample; exact status codes, redirect chains and final routes (including the `/contact/` redirect status and the 404-test redirect status) | **Accepted out-of-scope sample limit.** Not evidenced; not treated as a match. |
+| C — sitemap membership | whether `/products-2/` (and `/products/`) is listed in the live child sitemap `wp-sitemap-posts-page-1.xml` (or any other child) | **Accepted out-of-scope sample limit.** Live membership is unknown and no drift is asserted. |
+
+### 12.2 Consequences
+
+- The static contract is unchanged: `/products/` and `/products-2/` remain separate protected 200 pages, both governed by the preserved evidence (`docs/migration/03-…`); no static route is removed or altered because of live sitemap/metadata unknowns.
+- The unobserved items are **not matches**. They are documented sample limits of the current-live comparison. Live drift on a compromised WordPress site never changes the static target.
+- No new launch blocker is created. All blockers in `docs/migration/19-stage8-prelaunch-comparison.md` §2, and the "Legal copy" evidence item in §4 of that document (the legal copy itself is still not recorded in the repo), are **unchanged** and still gate Stage 8 and launch.
+- Documents 19 and `docs/MIGRATION_QA.md` received status pointers only. No source, data, redirect, SEO, QA rule or page changed.
+
+### 12.3 Stage 8 status (current, supersedes §9 and §11)
+
+**Stage 8 is NOT complete.** Block 18 resolves one question only: whether live-evidence gaps A, B and C must be collected. Per the `ZANETA_DECISION` they need not be; they are accepted as out-of-scope sample limits (§12.1) and no further live-site evidence is collected for them.
+
+That decision does **not** waive the authoritative Stage 8 proof gates in `docs/migration/05-execution-plan.md` (Tier-1/Tier-2 URL checks pass; redirect plan passes; sitemap/robots/canonical checks pass; no unexpected 404s) or any blocker recorded in `docs/migration/19-stage8-prelaunch-comparison.md`. Stage 8 remains incomplete because those launch/readiness blockers are still open, including at minimum:
+
+- strict QA migration-remaining findings (45 blocking findings in doc 19 §2, including scaffold placeholder pages and commerce/inbound-link counts);
+- `robots.txt` and `sitemap.xml` output not yet present in the static build (T10 `robots-absent`, T9 `sitemap-absent`);
+- the placeholder `404.html` (T1 `placeholder-404`);
+- redirect artifact generation and staging verification (no artifact or generator exists; all 32 `defined` redirects are non-executable, and the 26 `pending-decision` rules are undecided);
+- protected-preview QA;
+- production-host staging QA (T1–T13).
+
+The "Legal copy" evidence item in doc 19 §4 also stays open. All of these are unchanged by this Block.
+
+**Block 18 does not authorize Stage 9, cutover, deployment, publication or any production change.** Do not begin Stage 9 until Stage 8 is explicitly declared complete in a later approved Block/decision. Cutover requires separate explicit Žaneta approval recorded on GitHub.
