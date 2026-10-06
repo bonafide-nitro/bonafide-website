@@ -1,8 +1,8 @@
 # GENERATED FILE - DO NOT EDIT. Source: src/data/redirects.yaml. Regenerate: node scripts/build-htaccess.mjs
 # Apache (mod_rewrite) redirect rules for the static /public_html target. 301 only, one hop, `defined` rules only;
-# `pending-decision` rules are never emitted. Order matters: specific rules first, host/protocol canonicalisation last.
+# `pending-decision`, `deliberate-404` and `dropped` rules are never emitted. Order matters: specific rules first, host/protocol canonicalisation last.
 # Path rules carry an absolute https://bonafidenitro.com destination so http:// and www. requests are still one hop.
-# Rules: 32
+# Rules: 35
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
@@ -70,6 +70,9 @@ RewriteRule ^a-touch-of-vanilla-to-your-nitro-coffee$ https://bonafidenitro.com/
 # slashless-3-cups
 RewriteRule ^3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health$ https://bonafidenitro.com/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/ [R=301,L]
 
+# slashless-coffee-trend
+RewriteRule ^coffee-trend-dominate-2018$ https://bonafidenitro.com/coffee-trends-dominate-2018/ [R=301,L]
+
 # booking-my-bookings
 RewriteRule ^my-bookings/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
 
@@ -90,6 +93,12 @@ RewriteRule ^services/hair-raiser-organic/$ https://www.nitrocoffee.store/produc
 
 # collections-nitro-coffee
 RewriteRule ^collections-nitro-coffee/$ https://www.nitrocoffee.store/collections/nitro-coffee [R=301,L,NE,QSD]
+
+# svc-mango
+RewriteRule ^services/mango-tea/$ https://www.nitrocoffee.store/products/mango-nitro-tea [R=301,L,NE,QSD]
+
+# legacy-cold-brew-tap-future
+RewriteRule ^cold-brew-coffee-tap-future-serve/$ https://bonafidenitro.com/coffee-on-tap-is-the-future/ [R=301,L]
 
 # amp-pattern
 RewriteRule ^([^/]+)/amp/$ https://bonafidenitro.com/$1/ [R=301,L]

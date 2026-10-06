@@ -75,12 +75,12 @@ const redirectSchema = z
     from: z.string(),
     to: z.string().nullable(),
     status: z.literal(301),
-    state: z.enum(['defined', 'pending-decision']),
+    state: z.enum(['defined', 'pending-decision', 'deliberate-404', 'dropped']),
     note: z.string().optional(),
     evidenceFragment: z.string().optional(),
   })
   .refine((r) => (r.state === 'defined') === (r.to !== null), {
-    message: 'defined redirects need a destination; pending-decision redirects must have none',
+    message: 'defined redirects need a destination; every other state must have none',
   });
 
 const baselineSchema = z.object({

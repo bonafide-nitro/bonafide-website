@@ -3,7 +3,7 @@
 //   node scripts/build-htaccess.mjs           write deploy/apache/redirects.htaccess
 //   node scripts/build-htaccess.mjs --check   fail if the committed artifact differs from a fresh generation
 //
-// Only `state: defined` rules are emitted; `pending-decision` rules are never emitted. Output is a pure function of the
+// Only `state: defined` rules are emitted; `pending-decision`, `deliberate-404` and `dropped` rules are never emitted. Output is a pure function of the
 // register and site.yaml (no timestamps, no hashes, stable ordering) so regeneration is byte-stable.
 // Nothing here deploys anything: the artifact is a build product for a later, separately approved deployment Block.
 import fs from 'node:fs';
@@ -77,7 +77,7 @@ export const renderHtaccess = (rules = buildRules()) => {
   const out = [
     '# GENERATED FILE - DO NOT EDIT. Source: src/data/redirects.yaml. Regenerate: node scripts/build-htaccess.mjs',
     '# Apache (mod_rewrite) redirect rules for the static /public_html target. 301 only, one hop, `defined` rules only;',
-    '# `pending-decision` rules are never emitted. Order matters: specific rules first, host/protocol canonicalisation last.',
+    '# `pending-decision`, `deliberate-404` and `dropped` rules are never emitted. Order matters: specific rules first, host/protocol canonicalisation last.',
     '# Path rules carry an absolute https://bonafidenitro.com destination so http:// and www. requests are still one hop.',
     `# Rules: ${rules.length}`,
     '<IfModule mod_rewrite.c>',

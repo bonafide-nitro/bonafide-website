@@ -170,8 +170,8 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     if (seenFrom.has(r.from)) F.add('T2', 'duplicate-source', INV, r.from, 'duplicate redirect source'); seenFrom.add(r.from);
     if (r.status !== 301) F.add('T2', 'non-301', INV, r.from, `redirect status must be 301, got ${r.status}`);
     if (r.state === 'defined' && (r.to == null || r.to === '')) F.add('T2', 'defined-without-destination', INV, r.from, `defined redirect ${r.id} has no destination`);
-    if (r.state === 'pending-decision' && r.to != null) F.add('T2', 'pending-with-destination', INV, r.from, `pending-decision redirect ${r.id} must not carry a destination`);
-    if (!['defined', 'pending-decision'].includes(r.state)) F.add('T2', 'unknown-state', INV, r.from, `redirect ${r.id} has unknown state ${r.state}`);
+    if (r.state !== 'defined' && r.to != null) F.add('T2', 'pending-with-destination', INV, r.from, `${r.state} redirect ${r.id} must not carry a destination`);
+    if (!['defined', 'pending-decision', 'deliberate-404', 'dropped'].includes(r.state)) F.add('T2', 'unknown-state', INV, r.from, `redirect ${r.id} has unknown state ${r.state}`);
     if (r.to && r.to === r.from) F.add('T2', 'loop', INV, r.from, `redirect ${r.id} points to itself`);
     if (r.to && /^https?:/.test(r.to) && !r.to.startsWith('https://')) F.add('T2', 'insecure-destination', INV, r.from, `redirect ${r.id} destination is not https`);
     if (r.to && r.to.startsWith('/') && !hasPlaceholder(r.to) && !r.to.endsWith('/') && !hasExt(r.to)) F.add('T13', 'redirect-destination-no-slash', INV, r.from, `redirect ${r.id} destination ${r.to} lacks trailing slash`);
@@ -199,12 +199,12 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     // a protected 200 URL must never be a redirect source
     if (entryByPath.has(r.from) && entryByPath.get(r.from).expect === '200') F.add('T2', 'protected-url-redirected', INV, r.from, `redirect ${r.id} redirects protected 200 URL ${r.from}`);
   }
-  // pending-decision entries must never be emitted as executable redirects
-  const pendings = rules.filter((r) => r.state === 'pending-decision');
+  // non-defined entries (pending-decision, deliberate-404, dropped) must never be emitted as executable redirects
+  const pendings = rules.filter((r) => r.state !== 'defined');
   for (const [rel, text] of textFiles) {
     const isRedirectArtifact = rel === '.htaccess' || rel === '_redirects' || /(^|\/)redirects?\.(json|txt|conf)$/.test(rel);
     if (!isRedirectArtifact) continue;
-    for (const r of pendings) if (text.includes(r.from)) F.add('T2', 'pending-emitted', INV, r.from, `pending-decision redirect ${r.id} appears in built redirect artifact dist/${rel}`);
+    for (const r of pendings) if (text.includes(r.from)) F.add('T2', 'pending-emitted', INV, r.from, `${r.state} redirect ${r.id} appears in built redirect artifact dist/${rel}`);
   }
   for (const p of pages.values()) if (p.metaRefresh) F.add('T2', 'meta-refresh-redirect', INV, p.path, 'page uses <meta http-equiv="refresh">; redirects must be server-side 301s, never emitted as HTML');
 

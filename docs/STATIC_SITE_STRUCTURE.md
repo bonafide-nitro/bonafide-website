@@ -17,7 +17,7 @@ redirect, Search Console or WordPress action is part of this foundation.
 | `src/data/site.yaml` | apex HTTPS canonical host, trailing-slash policy; deployment/analytics deliberately `null` |
 | `src/data/navigation.yaml` | launch nav (master plan §8.1); `/products-2/` absent by design |
 | `src/data/seo-baseline.json` | protected-URL manifest: 17 Tier-1, 14 Tier-2, retained-200 and noindex URLs, product-page contracts, do-not-generate paths, forbidden build strings |
-| `src/data/redirects.yaml` | redirect register (data only). `state: defined` = decided by evidence; `pending-decision` = destination intentionally `null` |
+| `src/data/redirects.yaml` | redirect register (data only). `state: defined` = decided by evidence; `pending-decision` = destination intentionally `null`; `deliberate-404` / `dropped` (Block 21) = decided not to redirect, never emitted |
 | `src/data/products.yaml` | product structure; `views: [retail, wholesale]` assigns SKUs to `/products/` or `/products-2/`. Two SKUs from the master plan only; full dataset is Stage 6 |
 | `src/lib/data.mjs` | loads + zod-validates every data file (build fails on violation) |
 | `src/lib/products.mjs` | the single view-assignment function |
@@ -33,6 +33,6 @@ redirect, Search Console or WordPress action is part of this foundation.
 - Redirects: 301 only, single hop (tested).
 
 ## Deferred (not decided by this Block)
-- Destinations for the 13 legacy paths that land on the homepage via "404 to Start", for the 3 `?p=` URLs, and for 9 of the 10 `/services/*` redirects (destinations truncated in evidence; `/services/hair-raiser-organic/` and `/collections-nitro-coffee/` are fully recorded, giving 11 existing plugin redirects in total) — left `pending-decision`.
+- (Superseded by Block 21, `docs/migration/23-block21-pending-redirects-results.md`: only the 8 truncated `/services/*` destinations remain `pending-decision`.) Destinations for the 13 legacy paths that land on the homepage via "404 to Start", for the 3 `?p=` URLs, and for 9 of the 10 `/services/*` redirects (destinations truncated in evidence; `/services/hair-raiser-organic/` and `/collections-nitro-coffee/` are fully recorded, giving 11 existing plugin redirects in total) — left `pending-decision`.
 - `/coffee-trend-dominate-2018` slash-less mapping (evidence slug differs from the Tier-2 slug).
 - `.htaccess` generation, sitemap/robots generation, per-URL title/H1 contracts. (Build/QA CI: `.github/workflows/build-qa.yml`, Stage 5.)

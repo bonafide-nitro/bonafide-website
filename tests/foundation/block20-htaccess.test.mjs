@@ -10,7 +10,8 @@ const ORIGIN = 'https://bonafidenitro.com';
 const text = fs.readFileSync(ARTIFACT_PATH, 'utf8');
 const all = loadRedirects();
 const defined = all.filter((r) => r.state === 'defined');
-const pending = all.filter((r) => r.state === 'pending-decision');
+const pending = all.filter((r) => r.state !== 'defined');
+const byState = (st) => all.filter((r) => r.state === st);
 
 const parse = (src) => {
   const rules = []; let id = null; let conds = [];
@@ -58,14 +59,22 @@ test('artifact is byte-identical to a fresh generation and deterministic', () =>
   assert.ok(text.endsWith('\n'));
 });
 
-test('rule count equals the number of defined register rules (32)', () => {
-  assert.equal(defined.length, 32);
+test('rule count equals the number of defined register rules (35)', () => {
+  assert.equal(defined.length, 35);
   assert.equal(rules.length, defined.length);
-  assert.match(text, /^# Rules: 32$/m);
+  assert.match(text, /^# Rules: 35$/m);
 });
 
-test('no pending-decision rule is emitted', () => {
-  assert.equal(pending.length, 26);
+test('no pending-decision, deliberate-404 or dropped rule is emitted (Block 21 accounting)', () => {
+  assert.equal(all.length, 58);
+  assert.equal(byState('pending-decision').length, 8);
+  assert.equal(byState('deliberate-404').length, 12);
+  assert.equal(byState('dropped').length, 3);
+  assert.equal(pending.length, 23);
+  assert.deepEqual(byState('pending-decision').map((r) => r.id).sort(), ['svc-cascara', 'svc-espresso', 'svc-ethiopia', 'svc-green-citrus', 'svc-guatemala', 'svc-hibiscus', 'svc-passion-fruit', 'svc-peru']);
+  assert.deepEqual(byState('dropped').map((r) => r.from).sort(), ['/?p=1187', '/?p=1202', '/?p=1211']);
+  assert.ok(pending.every((r) => r.to === null));
+  assert.ok(byState('deliberate-404').every((r) => r.type === 'exact' && r.from.startsWith('/')));
   const ids = new Set(rules.map((r) => r.id));
   for (const p of pending) {
     assert.equal(ids.has(p.id), false, `pending id ${p.id} emitted`);
@@ -157,7 +166,22 @@ test('protected URLs are never redirect sources: canonical https URLs fall throu
 test('generator refuses a pending, non-301 or protected-source input', () => {
   const base = { id: 'x', type: 'exact', from: '/x/', to: '/about/', status: 301, state: 'defined' };
   assert.equal(buildRules([{ ...base, state: 'pending-decision', to: null }]).length, 0);
+  assert.equal(buildRules([{ ...base, state: 'deliberate-404', to: null }]).length, 0);
+  assert.equal(buildRules([{ ...base, state: 'dropped', to: null }]).length, 0);
   assert.throws(() => buildRules([{ ...base, status: 302 }]), /301/);
   assert.throws(() => buildRules([{ ...base, from: '/products/' }]), /protected/);
   assert.throws(() => buildRules([base, { ...base, id: 'y' }]), /duplicate/);
+});
+
+test('Block 21: the three approved additions are emitted; deliberate-404 sources have no rule or redirect', () => {
+  const dest = (from) => rules.find((r) => r.pattern === `^${from.slice(1)}$`)?.target;
+  assert.equal(dest('/coffee-trend-dominate-2018'), ORIGIN + '/coffee-trends-dominate-2018/');
+  assert.equal(dest('/cold-brew-coffee-tap-future-serve/'), ORIGIN + '/coffee-on-tap-is-the-future/');
+  assert.equal(dest('/services/mango-tea/'), 'https://www.nitrocoffee.store/products/mango-nitro-tea');
+  for (const r of all.filter((x) => x.state === 'deliberate-404')) {
+    assert.equal(rules.some((x) => x.pattern === `^${r.from.slice(1)}$`), false, r.from);
+    assert.equal(request(ORIGIN + r.from), null, r.from);
+  }
+  // no emitted rule sends anything to the bare homepage except the pre-existing evidenced /amp/ rules
+  for (const r of rules.filter((x) => x.target === ORIGIN + '/')) assert.match(r.id, /^amp-/);
 });

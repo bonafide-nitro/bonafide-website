@@ -168,3 +168,5 @@ Foundation QA stays at **0 invariants**; strict QA fails on 45 legitimate migrat
 **Stage 8 does not authorize cutover.** Cutover requires separate explicit Žaneta approval recorded on GitHub.
 
 > **Status pointer (Block 20, Issue #58):** the "artifact generation" half of the redirect blocker in §2 is resolved (`deploy/apache/redirects.htaccess`, 32 `defined` rules; see `docs/migration/22-block20-htaccess-results.md`). The 26 pending-decision redirects and production-host staging verification remain open. Stage 8 remains incomplete.
+
+> **Status pointer (Block 21, Issue #60):** of the 26 pending-decision redirects, 3 became `defined`, 12 `deliberate-404`, 3 `dropped`; **8** truncated `/services/*` redirects remain open (`docs/migration/23-block21-pending-redirects-results.md`). Stage 8 remains incomplete.
