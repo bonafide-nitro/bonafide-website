@@ -12,6 +12,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check:dist": "node scripts/check-build-output.mjs",
+    "build:htaccess": "node scripts/build-htaccess.mjs",
+    "check:htaccess": "node scripts/build-htaccess.mjs --check",
     "test": "node --test \"tests/foundation/*.test.mjs\" \"tests/qa/*.test.mjs\"",
     "test:build": "npm run build && npm run check:dist && npm run qa:foundation",
     "qa": "node qa/cli.mjs --mode foundation",
