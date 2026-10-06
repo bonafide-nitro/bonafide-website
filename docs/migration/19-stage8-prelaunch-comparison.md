@@ -166,3 +166,5 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 
 Foundation QA stays at **0 invariants**; strict QA fails on 45 legitimate migration-remaining findings that are enumerated above and not hidden.
 **Stage 8 does not authorize cutover.** Cutover requires separate explicit Žaneta approval recorded on GitHub.
+
+> **Status pointer (Block 20, Issue #58):** the "artifact generation" half of the redirect blocker in §2 is resolved (`deploy/apache/redirects.htaccess`, 32 `defined` rules; see `docs/migration/22-block20-htaccess-results.md`). The 26 pending-decision redirects and production-host staging verification remain open. Stage 8 remains incomplete.
