@@ -5,6 +5,11 @@
 # state: defined            -> destination decided by the authoritative evidence
 # state: pending-decision   -> evidence does not decide the destination; destination is null
 #                              and MUST NOT be generated until decided (never invented here).
+# state: deliberate-404     -> Block 21 (ZANETA_DECISION on Issue #60): intentionally NOT redirected at launch; the
+#                              source is a real 404 on the static host. Destination is null; never emitted.
+# state: dropped            -> Block 21 (ZANETA_DECISION on Issue #60): no redirect rule is emitted because no reliable
+#                              mapping exists. Destination is null; never emitted. (Used for query-only `/?p=` sources,
+#                              which Apache cannot 404 on the static host.)
 rules:
   # --- protocol/host canonicalisation, single hop (SEO-7, §7.5) ---
   - { id: http-apex, type: canonicalisation, from: "http://bonafidenitro.com/*", to: "https://bonafidenitro.com/*", status: 301, state: defined }
@@ -39,13 +44,7 @@ rules:
   - { id: slashless-nitro-cold-brew, type: exact, from: /nitro-cold-brew, to: /nitro-cold-brew/, status: 301, state: defined }
   - { id: slashless-vanilla, type: exact, from: /a-touch-of-vanilla-to-your-nitro-coffee, to: /a-touch-of-vanilla-to-your-nitro-coffee/, status: 301, state: defined }
   - { id: slashless-3-cups, type: exact, from: /3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health, to: /3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/, status: 301, state: defined }
-  - id: slashless-coffee-trend
-    type: exact
-    from: /coffee-trend-dominate-2018
-    to: null
-    status: 301
-    state: pending-decision
-    note: "Evidence spelling (/coffee-trend-dominate-2018) differs from the Tier-2 launch slug /coffee-trends-dominate-2018/; the intended destination needs confirmation, not a guess."
+  - { id: slashless-coffee-trend, type: exact, from: /coffee-trend-dominate-2018, to: /coffee-trends-dominate-2018/, status: 301, state: defined, note: "Block 21: ZANETA_DECISION confirmed the launch slug /coffee-trends-dominate-2018/ as the destination of the evidence spelling" }
   # --- booking (D5 / 06-stage1: Calendly survives, BookingPress does not; §7.4 'booking survives') ---
   # /book-appointment/ itself is a planned 200 page with an embedded scheduler (Stage 7).
   - { id: booking-my-bookings, type: exact, from: /my-bookings/, to: /book-appointment/, status: 301, state: defined }
@@ -62,7 +61,7 @@ rules:
   - { id: svc-ethiopia, type: external, from: /services/ethiopia-yirgacheffe-organic/, to: null, evidenceFragment: "nitrocoffee.store/products/ethiopia-yirgacheffe-…", status: 301, state: pending-decision }
   - { id: svc-guatemala, type: external, from: /services/guatemala-organic/, to: null, evidenceFragment: "nitrocoffee.store/products/guatemala-organic-nit…", status: 301, state: pending-decision }
   - { id: svc-hibiscus, type: external, from: /services/organic-hibiscus-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-hibiscus-nitr…", status: 301, state: pending-decision }
-  - { id: svc-mango, type: external, from: /services/mango-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/mango-nitro-tea", status: 301, state: pending-decision, note: "fragment appears complete but is not confirmed as the full URL" }
+  - { id: svc-mango, type: external, from: /services/mango-tea/, to: "https://www.nitrocoffee.store/products/mango-nitro-tea", evidenceFragment: "nitrocoffee.store/products/mango-nitro-tea", status: 301, state: defined, note: "Block 21: ZANETA_DECISION confirmed the complete-looking preserved fragment as the full URL" }
   - { id: svc-espresso, type: external, from: /services/espresso-organic-nitro-coffee/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-espresso-nitr…", status: 301, state: pending-decision }
   - { id: svc-passion-fruit, type: external, from: /services/passion-fruit-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-passion-fruit…", status: 301, state: pending-decision }
   - { id: svc-green-citrus, type: external, from: /services/green-citrus-nitro-tea/, to: null, evidenceFragment: "nitrocoffee.store/products/organic-citrus-green-…", status: 301, state: pending-decision }
@@ -71,20 +70,20 @@ rules:
   # 06-stage1 (I1): observed behaviour is NOT reproduced (SEO-12) and each path needs a deliberate
   # destination reachable from apex HTTPS in one hop. That decision is Stage 2+; not made here.
   # (www./http:// variants of /kegging-service/ and /where-to-refill-your- are covered by canonicalisation.)
-  - { id: legacy-to, type: exact, from: /To, to: null, status: 301, state: pending-decision }
-  - { id: legacy-roots, type: exact, from: /roots/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-where-to-refill, type: exact, from: /where-to-refill-your-, to: null, status: 301, state: pending-decision }
-  - { id: legacy-blog-new, type: exact, from: /blog-new/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-collections, type: exact, from: /collections/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-sustainability, type: exact, from: /sustainability/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-copyright-notice, type: exact, from: /copyright-notice/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-kegging-service, type: exact, from: /kegging-service/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-best-coffee-creamers, type: exact, from: /best-coffee-creamers/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-best-nitro-maker, type: exact, from: /best-nitro-cold-brew-coffee-maker/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-author-raul, type: exact, from: /author/raul/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-cold-brew-tap-future, type: exact, from: /cold-brew-coffee-tap-future-serve/, to: null, status: 301, state: pending-decision }
-  - { id: legacy-contact-email, type: exact, from: /contact-email/, to: null, status: 301, state: pending-decision }
+  - { id: legacy-to, type: exact, from: /To, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-roots, type: exact, from: /roots/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-where-to-refill, type: exact, from: /where-to-refill-your-, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-blog-new, type: exact, from: /blog-new/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-collections, type: exact, from: /collections/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-sustainability, type: exact, from: /sustainability/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-copyright-notice, type: exact, from: /copyright-notice/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-kegging-service, type: exact, from: /kegging-service/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-best-coffee-creamers, type: exact, from: /best-coffee-creamers/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-best-nitro-maker, type: exact, from: /best-nitro-cold-brew-coffee-maker/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-author-raul, type: exact, from: /author/raul/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
+  - { id: legacy-cold-brew-tap-future, type: exact, from: /cold-brew-coffee-tap-future-serve/, to: /coffee-on-tap-is-the-future/, status: 301, state: defined, note: "Block 21: ZANETA_DECISION" }
+  - { id: legacy-contact-email, type: exact, from: /contact-email/, to: null, status: 301, state: deliberate-404, note: "Block 21: ZANETA_DECISION - no evidenced exact equivalent; real 404, never redirected to /" }
   # --- raw post-ID URLs (§7.5 'current destinations' — not stated in the evidence used here) ---
-  - { id: post-id-1187, type: query, from: "/?p=1187", to: null, status: 301, state: pending-decision }
-  - { id: post-id-1202, type: query, from: "/?p=1202", to: null, status: 301, state: pending-decision }
-  - { id: post-id-1211, type: query, from: "/?p=1211", to: null, status: 301, state: pending-decision }
+  - { id: post-id-1187, type: query, from: "/?p=1187", to: null, status: 301, state: dropped, note: "Block 21: ZANETA_DECISION - no reliable ID-to-post mapping; no rule emitted" }
+  - { id: post-id-1202, type: query, from: "/?p=1202", to: null, status: 301, state: dropped, note: "Block 21: ZANETA_DECISION - no reliable ID-to-post mapping; no rule emitted" }
+  - { id: post-id-1211, type: query, from: "/?p=1211", to: null, status: 301, state: dropped, note: "Block 21: ZANETA_DECISION - no reliable ID-to-post mapping; no rule emitted" }

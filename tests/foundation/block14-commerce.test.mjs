@@ -233,7 +233,7 @@ test('commerce schema rejects http, foreign hosts, tracking parameters, fragment
 
 t('pending-decision redirect fragments never become live hrefs or visible store URLs', () => {
   const pending = loadRedirects().filter((r) => r.state === 'pending-decision' && r.evidenceFragment);
-  assert.ok(pending.length >= 9);
+  assert.equal(pending.length, 8); // svc-mango confirmed `defined` in Block 21; the other 8 stay open
   const all = walk('dist').filter((x) => x.endsWith('.html')).map((f) => fs.readFileSync(f, 'utf8')).join('\n');
   for (const r of pending) {
     const frag = r.evidenceFragment.replace(/…$/, '');
