@@ -34,3 +34,5 @@ booking AMP URLs go straight to `/book-appointment/`, `/products/` and `/product
 - 26 `pending-decision` redirects remain an explicit Stage-8 blocker; no destination was invented.
 - Production-host staging verification of the artifact remains a launch blocker.
 - **Stage 8 remains incomplete.** Only the "artifact generation" part of the doc 19 §2 redirect blocker is resolved. This does not authorize deployment, cutover or Stage 9.
+
+> **Status pointer (Block 21, Issue #60):** the artifact now holds 35 `defined` rules; the 26 pending are now 8 pending / 12 `deliberate-404` / 3 `dropped` (see `23-block21-pending-redirects-results.md`). Stage 8 remains incomplete.
