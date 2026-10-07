@@ -123,6 +123,23 @@ const pngInterlaced = (w, h, raw) => { // 8-bit greyscale Adam7 PNG with the giv
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 0; ihdr[12] = 1;
   return Buffer.concat([PNG.subarray(0, 8), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
 };
+const pngIhdr = (depth, color, comp, filt, extra = []) => { // 1x1 PNG with chosen IHDR encoding fields; `extra` chunks go before IDAT; data is sized for 8-bit greyscale-like [filter, sample]
+  const crcT = (x) => { let c = 0xffffffff; for (const v of x) { c ^= v; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (t, d) => { const b = Buffer.concat([Buffer.from(t), d]); const o = Buffer.alloc(4); o.writeUInt32BE(d.length); const c = Buffer.alloc(4); c.writeUInt32BE(crcT(b)); return Buffer.concat([o, b, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(1, 0); ihdr.writeUInt32BE(1, 4); ihdr.set([depth, color, comp, filt, 0], 8);
+  const samples = { 0: 1, 3: 1 }[color] ?? 1;
+  const raw = Buffer.alloc(1 + Math.ceil((samples * depth) / 8));
+  return Buffer.concat([PNG.subarray(0, 8), chunk('IHDR', ihdr), ...extra.map(([t, d]) => chunk(t, d)), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+};
+detects('required PNG declares compression method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 1, 0)), 'T7:required-image-invalid');
+detects('required PNG declares filter method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 1)), 'T7:required-image-invalid');
+detects('required greyscale PNG declares illegal bit depth 3', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(3, 0, 0, 0)), 'T7:required-image-invalid');
+detects('required PNG declares colour type 2 with illegal bit depth 4', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(4, 2, 0, 0)), 'T7:required-image-invalid');
+detects('required indexed PNG has no PLTE chunk', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 3, 0, 0)), 'T7:required-image-invalid');
+test('accepts: indexed PNG with a PLTE chunk', () => {
+  const fx = makeFixture();
+  try { fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 3, 0, 0, [['PLTE', Buffer.from([0, 0, 0])]])); assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid')); } finally { cleanup(fx); }
+});
 detects('required interlaced PNG declares large dimensions but inflates to one byte', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngInterlaced(64, 64, Buffer.alloc(1))), 'T7:required-image-invalid');
 test('accepts: interlaced PNG whose inflated stream matches the Adam7 pass sizes', () => {
   const fx = makeFixture();

@@ -23,6 +23,8 @@ function pngPixelsDecode(hdr, data) {
   const [w, h, depth, color, , , interlace] = [hdr.readUInt32BE(0), hdr.readUInt32BE(4), hdr[8], hdr[9], hdr[10], hdr[11], hdr[12]];
   const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[color];
   if (!channels || interlace > 1) return false;
+  if (hdr[10] !== 0 || hdr[11] !== 0) return false; // only compression method 0 and filter method 0 exist
+  if (!{ 0: [1, 2, 4, 8, 16], 2: [8, 16], 3: [1, 2, 4, 8], 4: [8, 16], 6: [8, 16] }[color].includes(depth)) return false;
   if (interlace === 1) { // Adam7: seven passes, each non-empty pass is `rows` scanlines of a filter byte + packed pixels
     let off = 0;
     for (const [x0, y0, dx, dy] of [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]]) {
@@ -42,7 +44,7 @@ function filtersValid(raw, start, rows, stride) {
 }
 function validPng(b) {
   if (b.length < 45 || !b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return false;
-  let off = 8; let first = true; let hdr = null; const idat = [];
+  let off = 8; let first = true; let hdr = null; let plte = false; const idat = [];
   while (off + 12 <= b.length) {
     const len = b.readUInt32BE(off); const type = b.toString('latin1', off + 4, off + 8);
     const end = off + 12 + len;
@@ -50,8 +52,9 @@ function validPng(b) {
     if (b.readUInt32BE(end - 4) !== crc32(b.subarray(off + 4, end - 4))) return false;
     if (first) { if (type !== 'IHDR' || len !== 13 || b.readUInt32BE(off + 8) === 0 || b.readUInt32BE(off + 12) === 0) return false; hdr = b.subarray(off + 8, off + 21); first = false; }
     else if (type === 'IHDR') return false;
+    if (type === 'PLTE') plte = true;
     if (type === 'IDAT') idat.push(b.subarray(off + 8, end - 4));
-    if (type === 'IEND') return len === 0 && idat.length > 0 && end === b.length && pngPixelsDecode(hdr, Buffer.concat(idat));
+    if (type === 'IEND') return len === 0 && idat.length > 0 && end === b.length && (hdr[9] !== 3 || plte) && pngPixelsDecode(hdr, Buffer.concat(idat));
     off = end;
   }
   return false;
