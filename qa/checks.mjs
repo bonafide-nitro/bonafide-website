@@ -12,6 +12,42 @@ import { jsonLdTypes } from './lib/html.mjs';
 import { patternToRegExp, hasPlaceholder } from './lib/patterns.mjs';
 import { parseXml } from './lib/xml.mjs';
 
+// Structural image validation (T7): a signature alone accepts truncated or garbage-suffixed files.
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+function crc32(b) { let c = 0xffffffff; for (const x of b) c = CRC_TABLE[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+function validPng(b) {
+  if (b.length < 45 || !b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return false;
+  let off = 8; let first = true; let idat = false;
+  while (off + 12 <= b.length) {
+    const len = b.readUInt32BE(off); const type = b.toString('latin1', off + 4, off + 8);
+    const end = off + 12 + len;
+    if (end > b.length) return false;
+    if (b.readUInt32BE(end - 4) !== crc32(b.subarray(off + 4, end - 4))) return false;
+    if (first) { if (type !== 'IHDR' || len !== 13 || b.readUInt32BE(off + 8) === 0 || b.readUInt32BE(off + 12) === 0) return false; first = false; }
+    else if (type === 'IHDR') return false;
+    if (type === 'IDAT') idat = true;
+    if (type === 'IEND') return len === 0 && idat && end === b.length;
+    off = end;
+  }
+  return false;
+}
+function validJpeg(b) {
+  if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
+  let off = 2; let sof = false;
+  while (off + 4 <= b.length) {
+    if (b[off] !== 0xff) return false;
+    const m = b[off + 1];
+    if (m === 0xff) { off++; continue; }
+    if (m === 0xd9) return false; // EOI before any scan data
+    const len = b.readUInt16BE(off + 2);
+    if (len < 2 || off + 2 + len > b.length) return false;
+    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (len < 8 || b.readUInt16BE(off + 5) === 0 || b.readUInt16BE(off + 7) === 0) return false; sof = true; }
+    if (m === 0xda) return sof && off + 2 + len < b.length - 2; // entropy-coded data must follow the scan header
+    off += 2 + len;
+  }
+  return false;
+}
+
 export const INV = 'invariant';
 export const REM = 'migration-remaining';
 
@@ -388,12 +424,10 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
         else F.add('T7', 'required-image-missing', REM, ip, `required ${img.group} image is not in the build at its preserved path (binary not supplied)`);
         continue;
       }
-      const head = fs.readFileSync(abs).subarray(0, 12);
       const ext = path.extname(rel).toLowerCase();
-      const isPng = head.length >= 8 && head.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-      const isJpg = head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
-      const ok = (ext === '.png' && isPng) || ((ext === '.jpg' || ext === '.jpeg') && isJpg);
-      if (!ok) F.add('T7', 'required-image-invalid', INV, ip, 'file at the required path is empty or is not a real PNG/JPEG matching its extension');
+      const buf = fs.readFileSync(abs);
+      const ok = (ext === '.png' && validPng(buf)) || ((ext === '.jpg' || ext === '.jpeg') && validJpeg(buf));
+      if (!ok) F.add('T7', 'required-image-invalid', INV, ip, 'file at the required path is empty, truncated, or is not a structurally complete PNG/JPEG matching its extension');
     }
     const alliance = list.filter((i) => i?.group === 'alliance').length;
     if (list.length > 0 && alliance !== (man?.alliance?.requiredCount ?? 6)) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${man?.alliance?.requiredCount ?? 6}`);

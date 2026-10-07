@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { makeFixture, t7Manifest, PNG, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
+import { makeFixture, t7Manifest, PNG, JPG, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
 
 // Adds rules to the healthy register, replacing any inventory rule with the same source (sources must stay unique).
 const putRules = (fx, ...rs) => { fx.redirects = fx.redirects.filter((x) => !rs.some((r) => r.from === x.from)); fx.redirects.push(...rs); };
@@ -107,6 +107,12 @@ detects('required ranking image missing (binary not supplied)', (fx) => rm(fx, '
 detects('required image is empty', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', ''), 'T7:required-image-invalid');
 detects('required image is HTML masquerading as PNG', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', '<html>not found</html>'), 'T7:required-image-invalid');
 detects('required image is PNG bytes under a .jpg path', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', PNG), 'T7:required-image-invalid');
+detects('required PNG has valid signature but garbage body', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', Buffer.concat([PNG.subarray(0, 8), Buffer.from('not a png')])), 'T7:required-image-invalid');
+detects('required PNG is truncated before IEND', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', PNG.subarray(0, PNG.length - 12)), 'T7:required-image-invalid');
+detects('required PNG has trailing bytes after IEND', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', Buffer.concat([PNG, Buffer.from('junk')])), 'T7:required-image-invalid');
+detects('required PNG has a corrupted chunk CRC', (fx) => { const b = Buffer.from(PNG); b[20] ^= 0xff; fx.put('wp-content/uploads/2022/05/a-alliance.png', b); }, 'T7:required-image-invalid');
+detects('required JPEG has valid signature but garbage body', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', Buffer.concat([JPG.subarray(0, 4), Buffer.from('not a jpeg')])), 'T7:required-image-invalid');
+detects('required JPEG is truncated before EOI', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', JPG.subarray(0, JPG.length - 2)), 'T7:required-image-invalid');
 detects('required image only present at differently-cased path', (fx) => { rm(fx, 'wp-content/uploads/2022/05/a-alliance.png'); fx.put('wp-content/uploads/2022/05/A-alliance.png', PNG); }, 'T7:required-image-path-case');
 detects('manifest dropped to fewer than 6 alliance images', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.filter((i) => i.path !== '/wp-content/uploads/2022/05/f-alliance.png'); }, 'T7:alliance-count');
 detects('manifest absent', (fx) => { delete fx.config.imageManifest; }, 'T7:manifest-undeclared');
