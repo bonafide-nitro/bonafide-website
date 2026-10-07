@@ -52,7 +52,10 @@ function validPng(b) {
     if (b.readUInt32BE(end - 4) !== crc32(b.subarray(off + 4, end - 4))) return false;
     if (first) { if (type !== 'IHDR' || len !== 13 || b.readUInt32BE(off + 8) === 0 || b.readUInt32BE(off + 12) === 0) return false; hdr = b.subarray(off + 8, off + 21); first = false; }
     else if (type === 'IHDR') return false;
-    if (type === 'PLTE') plte = true;
+    if (type === 'PLTE') { // palette: once, before the first IDAT, whole RGB triples, at most 2^depth (and 256) entries
+      if (plte || idat.length > 0 || len === 0 || len % 3 !== 0 || len / 3 > Math.min(256, 2 ** hdr[8]) || hdr[9] === 0 || hdr[9] === 4) return false;
+      plte = true;
+    }
     if (type === 'IDAT') idat.push(b.subarray(off + 8, end - 4));
     if (type === 'IEND') return len === 0 && idat.length > 0 && end === b.length && (hdr[9] !== 3 || plte) && pngPixelsDecode(hdr, Buffer.concat(idat));
     off = end;
