@@ -17,13 +17,16 @@ const RANKING = [
   '/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg',
   '/wp-content/uploads/2023/03/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap-PET-Keg.jpg',
   '/wp-content/uploads/2023/03/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-1.jpg',
+  '/wp-content/uploads/2020/07/What-is-nitro-Coffee-Explained-simple-Bona-Fide.jpg',
+  '/wp-content/uploads/2023/03/Bona-Fide-Ai-Created-Image-.jpg',
+  '/wp-content/uploads/2018/06/Nitro-Coffeee-serving-from-tap-Bona-Fide.jpg',
 ];
 
-test('manifest lists exactly the 6 alliance + 7 evidenced ranking images, no extras', () => {
+test('manifest lists exactly the 6 alliance + 10 evidenced ranking images, no extras', () => {
   const by = (g) => manifest.images.filter((i) => i.group === g).map((i) => i.path);
   assert.deepEqual(by('alliance'), ALLIANCE);
   assert.deepEqual(by('ranking'), RANKING);
-  assert.equal(manifest.images.length, 13);
+  assert.equal(manifest.images.length, 16);
   assert.equal(manifest.alliance.requiredCount, 6);
 });
 

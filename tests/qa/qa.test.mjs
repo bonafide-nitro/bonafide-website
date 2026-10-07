@@ -115,6 +115,21 @@ detects('required PNG has a corrupted chunk CRC', (fx) => { const b = Buffer.fro
 const pngWithIdat = (idat) => { const b = Buffer.from(PNG); const len = 10; const start = b.indexOf('IDAT') - 4; const crcT = (x) => { let c = 0xffffffff; for (const v of x) { c ^= v; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ 0xffffffff) >>> 0; }; const body = Buffer.concat([Buffer.from('IDAT'), idat]); const l = Buffer.alloc(4); l.writeUInt32BE(idat.length); const c = Buffer.alloc(4); c.writeUInt32BE(crcT(body)); return Buffer.concat([b.subarray(0, start), l, body, c, b.subarray(start + 12 + len)]); };
 detects('required PNG has CRC-correct IDAT that is not a zlib stream', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngWithIdat(Buffer.from('not zlib!!'))), 'T7:required-image-invalid');
 detects('required PNG IDAT inflates to the wrong pixel-data size', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngWithIdat(zlib.deflateSync(Buffer.alloc(7)))), 'T7:required-image-invalid');
+const pngInterlaced = (w, h, raw) => { // 8-bit greyscale Adam7 PNG with the given decoded stream
+  const crcT = (x) => { let c = 0xffffffff; for (const v of x) { c ^= v; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (t, d) => { const b = Buffer.concat([Buffer.from(t), d]); const o = Buffer.alloc(4); o.writeUInt32BE(d.length); const c = Buffer.alloc(4); c.writeUInt32BE(crcT(b)); return Buffer.concat([o, b, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 0; ihdr[12] = 1;
+  return Buffer.concat([PNG.subarray(0, 8), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+};
+detects('required interlaced PNG declares large dimensions but inflates to one byte', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngInterlaced(64, 64, Buffer.alloc(1))), 'T7:required-image-invalid');
+test('accepts: interlaced PNG whose inflated stream matches the Adam7 pass sizes', () => {
+  const fx = makeFixture();
+  try {
+    // 2x2 8-bit grey: pass1 1x1 (2 bytes), pass6 1x1 at (1,0) (2 bytes), pass7 2x1 at row 1 (3 bytes)
+    fx.put('wp-content/uploads/2022/05/a-alliance.png', pngInterlaced(2, 2, Buffer.alloc(7)));
+    assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid'));
+  } finally { cleanup(fx); }
+});
 detects('required JPEG has junk after EOI', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', Buffer.concat([JPG, Buffer.from([0xff, 0xd9])])), 'T7:required-image-invalid');
 detects('required JPEG has valid signature but garbage body', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', Buffer.concat([JPG.subarray(0, 4), Buffer.from('not a jpeg')])), 'T7:required-image-invalid');
 detects('required JPEG is truncated before EOI', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', JPG.subarray(0, JPG.length - 2)), 'T7:required-image-invalid');

@@ -16,14 +16,21 @@ import { parseXml } from './lib/xml.mjs';
 // Structural image validation (T7): a signature alone accepts truncated or garbage-suffixed files.
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
 function crc32(b) { let c = 0xffffffff; for (const x of b) c = CRC_TABLE[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
-// The IDAT stream must inflate cleanly, and for non-interlaced images to exactly the scanline size the IHDR implies.
+// The IDAT stream must inflate cleanly, and for non-interlaced images to exactly the scanline size the IHDR implies (Adam7 pass by pass for interlaced images).
 function pngPixelsDecode(hdr, data) {
   let raw;
   try { raw = zlib.inflateSync(data); } catch { return false; }
   const [w, h, depth, color, , , interlace] = [hdr.readUInt32BE(0), hdr.readUInt32BE(4), hdr[8], hdr[9], hdr[10], hdr[11], hdr[12]];
   const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[color];
   if (!channels || interlace > 1) return false;
-  if (interlace === 1) return raw.length > 0;
+  if (interlace === 1) { // Adam7: seven passes, each non-empty pass is `rows` scanlines of a filter byte + packed pixels
+    let total = 0;
+    for (const [x0, y0, dx, dy] of [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]]) {
+      const pw = Math.ceil((w - x0) / dx); const ph = Math.ceil((h - y0) / dy);
+      if (pw > 0 && ph > 0) total += ph * (1 + Math.ceil((pw * channels * depth) / 8));
+    }
+    return raw.length === total;
+  }
   return raw.length === h * (1 + Math.ceil((w * channels * depth) / 8));
 }
 function validPng(b) {
