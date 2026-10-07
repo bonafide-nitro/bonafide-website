@@ -231,9 +231,9 @@ test('commerce schema rejects http, foreign hosts, tracking parameters, fragment
   assert.equal(run({ ...doc, unresolved: [{ ...doc.unresolved[0], href: 'https://www.nitrocoffee.store/' }] }), 'REJECT');
 });
 
-t('pending-decision redirect fragments never become live hrefs or visible store URLs', () => {
-  const pending = loadRedirects().filter((r) => r.state === 'pending-decision' && r.evidenceFragment);
-  assert.equal(pending.length, 8); // svc-mango confirmed `defined` in Block 21; the other 8 stay open
+t('unresolved redirect fragments never become live hrefs or visible store URLs', () => {
+  const pending = loadRedirects().filter((r) => r.state !== 'defined' && r.evidenceFragment);
+  assert.deepEqual(pending.map((r) => r.id).sort(), ['svc-cascara', 'svc-green-citrus']); // Block 22: the other 6 truncated fragments resolved to `defined`; these 2 are `deliberate-404`
   const all = walk('dist').filter((x) => x.endsWith('.html')).map((f) => fs.readFileSync(f, 'utf8')).join('\n');
   for (const r of pending) {
     const frag = r.evidenceFragment.replace(/…$/, '');

@@ -33,6 +33,6 @@ redirect, Search Console or WordPress action is part of this foundation.
 - Redirects: 301 only, single hop (tested).
 
 ## Deferred (not decided by this Block)
-- (Superseded by Block 21, `docs/migration/23-block21-pending-redirects-results.md`: only the 8 truncated `/services/*` destinations remain `pending-decision`.) Destinations for the 13 legacy paths that land on the homepage via "404 to Start", for the 3 `?p=` URLs, and for 9 of the 10 `/services/*` redirects (destinations truncated in evidence; `/services/hair-raiser-organic/` and `/collections-nitro-coffee/` are fully recorded, giving 11 existing plugin redirects in total) — left `pending-decision`.
+- (Superseded by Block 21 and Block 22, `docs/migration/23-block21-pending-redirects-results.md` and `docs/migration/24-block22-service-redirects-results.md`: no `pending-decision` redirects remain.) Destinations for the 13 legacy paths that land on the homepage via "404 to Start", for the 3 `?p=` URLs, and for 9 of the 10 `/services/*` redirects (destinations truncated in evidence; `/services/hair-raiser-organic/` and `/collections-nitro-coffee/` are fully recorded, giving 11 existing plugin redirects in total) — left `pending-decision`.
 - `/coffee-trend-dominate-2018` slash-less mapping (evidence slug differs from the Tier-2 slug).
 - `.htaccess` generation, sitemap/robots generation, per-URL title/H1 contracts. (Build/QA CI: `.github/workflows/build-qa.yml`, Stage 5.)
