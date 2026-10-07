@@ -1,5 +1,22 @@
 {
   "allowedScriptHosts": ["www.googletagmanager.com"],
+  "articleRoutes": [
+    "/a-touch-of-vanilla-to-your-nitro-coffee/",
+    "/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/",
+    "/how-ambient-stable-coffee-kegs-help-you-save-more-money/",
+    "/hot-nitro-coffee/",
+    "/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/",
+    "/what-is-nitro-cold-brew-coffee/",
+    "/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/",
+    "/nitro-coffee-health-benefits/",
+    "/is-coffee-healthy/",
+    "/coffee-trends-dominate-2018/",
+    "/coffee-doesnt-produce-cancer-says-leading-american-scientist/",
+    "/nitro-coffee-future/",
+    "/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/",
+    "/stability-kegs-nitro-coffee/",
+    "/coffee-on-tap-is-the-future/"
+  ],
   "templateSlugs": [
     "thank-you",
     "my-bookings",

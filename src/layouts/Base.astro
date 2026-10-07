@@ -1,6 +1,7 @@
 ---
 import { loadNavigation, loadSite } from '../lib/data.mjs';
 import { commerceHref } from '../lib/commerce.mjs';
+import { articleNodes } from '../lib/article-schema.mjs';
 import GoogleTagManager from '../components/GoogleTagManager.astro';
 const gtmId = import.meta.env.PUBLIC_GTM_ID; // public build-time config; unset/invalid => no GTM markup
 // `scaffold` emits the QA marker: strict migration QA fails on it. Only pages that are
@@ -15,6 +16,7 @@ const graph = [
 ];
 if (canonicalPath) {
   graph.push({ '@type': 'WebPage', '@id': `${abs(canonicalPath)}#webpage`, url: abs(canonicalPath), name: title, isPartOf: { '@id': `${site.url}/#website` } });
+  graph.push(...articleNodes(canonicalPath, site.url)); // Article + Person on historical posts only; [] elsewhere
   const crumbs = [{ name: 'Home', path: '/' }, ...breadcrumbs];
   graph.push({
     '@type': 'BreadcrumbList',
