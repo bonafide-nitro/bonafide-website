@@ -386,3 +386,38 @@ test('populated exact inventory that matches the rendered set passes strict', ()
   const fx = makeFixture();
   try { const r = run(fx, 'strict'); assert.deepEqual(codes(r).filter((c) => c.startsWith('T5:commerce')), []); } finally { cleanup(fx); }
 });
+
+// --- T6 Article + Person on historical posts (Block 23, Issue #64) ---
+const POST = '/fixture-post/';
+const articleGraph = (over = {}) => [
+  { '@type': 'Organization' }, { '@type': 'WebSite' }, { '@type': 'BreadcrumbList' },
+  { '@type': 'Article', '@id': 'https://bonafidenitro.com/fixture-post/#article', headline: 'Fixture', datePublished: '2020-01-02', dateModified: '2020-02-03', author: { '@id': 'https://bonafidenitro.com/author/admin/#person' } },
+  { '@type': 'Person', '@id': 'https://bonafidenitro.com/author/admin/#person', name: 'John Goerke' },
+].map((n) => (over[n['@type']] === undefined ? n : over[n['@type']])).filter(Boolean);
+const putPost = (fx, graph, extra = {}) => {
+  fx.baseline.urls.push({ path: POST, tier: 2, expect: '200', canonical: 'self', indexable: true, inSitemap: true });
+  fx.put('fixture-post/index.html', page({ p: POST, title: 'Fixture post', ...extra, head: `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script>` }));
+};
+test('healthy Article + Person post passes strict', () => {
+  const fx = makeFixture();
+  try { putPost(fx, articleGraph()); assert.ok(!codes(run(fx)).some((c) => c.startsWith('T6:')), codes(run(fx)).join(', ')); } finally { cleanup(fx); }
+});
+detects('Article + Person absent from a required post route', (fx) => putPost(fx, articleGraph({ Article: null, Person: null })), 'T6:article-schema-count');
+detects('Person absent from a required post route', (fx) => putPost(fx, articleGraph({ Person: null })), 'T6:person-schema-count');
+detects('duplicate Article on a required post route', (fx) => putPost(fx, [...articleGraph(), ...articleGraph().filter((n) => n['@type'] === 'Article')]), 'T6:article-schema-count');
+detects('Article.author not linked to the Person entity', (fx) => putPost(fx, articleGraph({ Article: { '@type': 'Article', headline: 'Fixture', datePublished: '2020-01-02', author: { '@id': 'https://bonafidenitro.com/other#person' } } })), 'T6:article-author-link');
+detects('Article without datePublished', (fx) => putPost(fx, articleGraph({ Article: { '@type': 'Article', headline: 'Fixture', author: { '@id': 'https://bonafidenitro.com/author/admin/#person' } } })), 'T6:article-field-missing');
+detects('Article on a non-post page (archive/other)', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', head: `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': articleGraph() })}</script>` })), 'T6:article-schema-unexpected');
+detects('impossible calendar datePublished (2021-02-31)', (fx) => putPost(fx, articleGraph({ Article: { '@type': 'Article', headline: 'Fixture', datePublished: '2021-02-31', author: { '@id': 'https://bonafidenitro.com/author/admin/#person' } } })), 'T6:article-field-invalid');
+detects('impossible calendar dateModified (2020-99-99)', (fx) => putPost(fx, articleGraph({ Article: { '@type': 'Article', headline: 'Fixture', datePublished: '2020-01-02', dateModified: '2020-99-99', author: { '@id': 'https://bonafidenitro.com/author/admin/#person' } } })), 'T6:article-field-invalid');
+detects('nested Person on a non-post page', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', head: `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': [{ '@type': 'Organization', founder: { '@type': 'Person', name: 'X' } }] })}</script>` })), 'T6:article-schema-unexpected');
+detects('nested Article on a non-post page', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', head: `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', mainEntity: { '@type': 'Article', headline: 'X' } })}</script>` })), 'T6:article-schema-unexpected');
+test('valid nested Article + Person on a post route are counted', () => {
+  const fx = makeFixture();
+  try {
+    const [org, site, bc, art, per] = articleGraph();
+    putPost(fx, [org, site, bc, { ...art, author: { ...per } }]);
+    assert.ok(!codes(run(fx)).some((c) => c.startsWith('T6:article') || c.startsWith('T6:person')), codes(run(fx)).join(', '));
+  } finally { cleanup(fx); }
+});
+detects('qa config declares no historical post routes', (fx) => { fx.config.articleRoutes = []; }, 'T6:article-routes-undeclared');

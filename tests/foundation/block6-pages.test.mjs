@@ -2,6 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { POSTS } from '../../src/lib/article-schema.mjs';
+const POST_PATHS = new Set(POSTS.map((x) => x.path));
 
 const page = (p) => fs.readFileSync(`dist${p}index.html`, 'utf8');
 const dec = (s) => s.replace(/&#38;|&amp;/g, '&').replace(/&#34;|&quot;/g, '"');
@@ -43,7 +45,8 @@ t('Organization + WebSite + BreadcrumbList JSON-LD on all six pages', () => {
     const m = page(p).match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
     const types = JSON.parse(m[1])['@graph'].map((n) => n['@type']);
     for (const ty of ['Organization', 'WebSite', 'BreadcrumbList']) assert.ok(types.includes(ty), `${p} ${ty}`);
-    assert.ok(!types.includes('FAQPage') && !types.includes('Article'), `${p}: no unevidenced FAQ/Article schema`);
+    assert.ok(!types.includes('FAQPage'), `${p}: no unevidenced FAQ schema`);
+    assert.equal(types.includes('Article'), POST_PATHS.has(p), `${p}: Article only on historical posts (Block 23)`);
   }
 });
 

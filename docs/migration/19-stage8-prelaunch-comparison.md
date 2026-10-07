@@ -43,7 +43,7 @@ credential or provider action was taken.
   canonical/redirect collapse, `/products-2/` contract immutable) and T8 (zero links to `/products-2/`) report no invariant failure.
 - **Canonical / indexability / trailing slash / title uniqueness / H1 / schema invariants.** All T3, T4, T6, T13 invariants
   hold (0 invariant findings), including the declared title-uniqueness exceptions only. "Schema invariants" here means only what T6 enforces
-  (`Organization`, `WebSite`, `BreadcrumbList` and manifest-declared types); it does **not** cover `Article` + `Person` on posts (see the §2 blocker).
+  (`Organization`, `WebSite`, `BreadcrumbList` and manifest-declared types); it did **not** cover `Article` + `Person` on posts when this note was written; Block 23 added that gate (see the §2 item).
 - **Redirect register.** 58 rules: 32 `defined`, 26 `pending-decision`. All T2 invariants pass: 301-only, unique ids/sources,
   defined⇔destination, no loops, no chains/one-hop violations, no protected URL as a source, protected-200 conflict free,
   AMP booking overrides and canonicalisation rules present, every defined destination known. Pending rules are never emitted
@@ -93,9 +93,9 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - **Forensic preservation (Stage 2) precedes the clean copy.** An offline, checksummed forensic snapshot of the compromised installation must exist before any
   investigation or remediation (`docs/migration/05-execution-plan.md` Stage 2; master plan Steps 3–6), because producing a clean copy modifies the compromised installation and
   could otherwise destroy evidence. Not assessed here; it is a predecessor blocker to the item below.
-- **Article + Person schema on posts not emitted or gated.** The master plan (rows at lines 224 and 710) requires the existing `Article` + `Person` markup on posts to be regenerated, and earlier
-  Block records state it is not emitted. T6 enforces only `Organization`, `WebSite`, `BreadcrumbList` and manifest-declared types, and the manifest declares neither `Article` nor `Person`, so strict QA can
-  turn green once scaffold markers are removed from the historical article routes without detecting its absence. Emitting it and adding a manifest/T6 gate is a launch blocker.
+- **RESOLVED in Block 23 (Issue #64) — Article + Person schema on posts.** The 15 historical post routes now emit exactly one `Article` linked by `@id` to exactly one `Person`
+  (John Goerke), from the archive evidence only, and T6 gates it (`article-schema-count`, `person-schema-count`, `article-author-link`, `article-field-missing`, `article-schema-unexpected`,
+  `article-routes-undeclared`). See `docs/migration/25-block23-article-person-schema-results.md`. Strict QA can no longer turn green while Article + Person are absent from those routes.
 - **Full Stage 3 security verification (not only the rollback copy).** `docs/migration/05-execution-plan.md` Stage 3 requires: investigating the injection source; removing malicious code and persistence;
   reviewing unexpected users and access paths; reviewing cron/scheduled tasks and file integrity; rotating credentials and strengthening account protection; confirming the cleaned WordPress site functions
   and that the suspicious scripts no longer render; and understanding, or materially mitigating, the entry route, all with documented verification. The master plan's CLEAN definition

@@ -225,6 +225,8 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
   }
 
   // ---------- T3 / T4 / T5 / T6: per built page ----------
+  const articleRoutes = new Set(config.articleRoutes ?? []);
+  if (articleRoutes.size === 0) F.add('T6', 'article-routes-undeclared', INV, null, 'qa config must declare the historical post routes (articleRoutes) that require Article + Person schema (Block 23)');
   const titleGroups = new Map();
   for (const page of pages.values()) {
     const e = entryByPath.get(page.path);
@@ -284,6 +286,27 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     const types = [];
     for (const block of page.jsonLd) {
       try { types.push(...jsonLdTypes(JSON.parse(block))); } catch { F.add('T6', 'jsonld-invalid', INV, page.path, 'JSON-LD block does not parse'); }
+    }
+    // Block 23 (Issue #64): Article + Person on the historical post routes, none elsewhere. Unconditional (config lists the routes).
+    {
+      const nodes = [];
+      const walk = (n) => { if (Array.isArray(n)) n.forEach(walk); else if (n && typeof n === 'object') { if (n['@type']) nodes.push(n); Object.values(n).forEach(walk); } };
+      for (const block of page.jsonLd) { try { walk(JSON.parse(block)); } catch { /* reported above as jsonld-invalid */ } }
+      const isoDate = (v) => { const m = typeof v === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(v); if (!m) return false; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3]; };
+      const of = (t) => nodes.filter((n) => [].concat(n['@type']).includes(t));
+      const arts = of('Article'); const people = of('Person');
+      if (articleRoutes.has(page.path)) {
+        if (arts.length !== 1) F.add('T6', 'article-schema-count', ck, page.path, `exactly one Article required on a historical post, found ${arts.length}`);
+        if (people.length !== 1) F.add('T6', 'person-schema-count', ck, page.path, `exactly one Person required on a historical post, found ${people.length}`);
+        if (arts.length === 1 && people.length === 1) {
+          const a = arts[0]; const pe = people[0];
+          if (typeof pe['@id'] !== 'string' || !pe['@id'] || a.author?.['@id'] !== pe['@id']) F.add('T6', 'article-author-link', ck, page.path, 'Article.author must be an @id reference to the page\'s Person entity');
+          if (typeof pe.name !== 'string' || !pe.name.trim()) F.add('T6', 'person-name-missing', ck, page.path, 'Person.name is required');
+          for (const k of ['headline', 'datePublished']) if (typeof a[k] !== 'string' || !a[k].trim()) F.add('T6', 'article-field-missing', ck, page.path, `Article.${k} is required`);
+          if (a.datePublished != null && !isoDate(a.datePublished)) F.add('T6', 'article-field-invalid', ck, page.path, 'Article.datePublished must be an ISO date');
+          if (a.dateModified != null && !isoDate(a.dateModified)) F.add('T6', 'article-field-invalid', ck, page.path, 'Article.dateModified must be an ISO date');
+        }
+      } else if (arts.length || people.length) F.add('T6', 'article-schema-unexpected', INV, page.path, 'Article/Person schema is only allowed on the historical post routes (archives and other pages must not carry it)');
     }
     for (const t of e?.schema ?? []) if (!types.includes(t)) F.add('T6', 'schema-missing', ck, page.path, `JSON-LD @type ${t} required by manifest`);
     // §13.2 T6: site-wide and per-page schema are required on every built page whether or not the manifest declares them.
