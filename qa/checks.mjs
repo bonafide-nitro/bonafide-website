@@ -7,6 +7,7 @@
 // There is no other way for a finding to be non-blocking: strict mode blocks everything.
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { scanDist } from './lib/scan.mjs';
 import { jsonLdTypes } from './lib/html.mjs';
 import { patternToRegExp, hasPlaceholder } from './lib/patterns.mjs';
@@ -15,35 +16,52 @@ import { parseXml } from './lib/xml.mjs';
 // Structural image validation (T7): a signature alone accepts truncated or garbage-suffixed files.
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
 function crc32(b) { let c = 0xffffffff; for (const x of b) c = CRC_TABLE[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+// The IDAT stream must inflate cleanly, and for non-interlaced images to exactly the scanline size the IHDR implies.
+function pngPixelsDecode(hdr, data) {
+  let raw;
+  try { raw = zlib.inflateSync(data); } catch { return false; }
+  const [w, h, depth, color, , , interlace] = [hdr.readUInt32BE(0), hdr.readUInt32BE(4), hdr[8], hdr[9], hdr[10], hdr[11], hdr[12]];
+  const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[color];
+  if (!channels || interlace > 1) return false;
+  if (interlace === 1) return raw.length > 0;
+  return raw.length === h * (1 + Math.ceil((w * channels * depth) / 8));
+}
 function validPng(b) {
   if (b.length < 45 || !b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return false;
-  let off = 8; let first = true; let idat = false;
+  let off = 8; let first = true; let hdr = null; const idat = [];
   while (off + 12 <= b.length) {
     const len = b.readUInt32BE(off); const type = b.toString('latin1', off + 4, off + 8);
     const end = off + 12 + len;
     if (end > b.length) return false;
     if (b.readUInt32BE(end - 4) !== crc32(b.subarray(off + 4, end - 4))) return false;
-    if (first) { if (type !== 'IHDR' || len !== 13 || b.readUInt32BE(off + 8) === 0 || b.readUInt32BE(off + 12) === 0) return false; first = false; }
+    if (first) { if (type !== 'IHDR' || len !== 13 || b.readUInt32BE(off + 8) === 0 || b.readUInt32BE(off + 12) === 0) return false; hdr = b.subarray(off + 8, off + 21); first = false; }
     else if (type === 'IHDR') return false;
-    if (type === 'IDAT') idat = true;
-    if (type === 'IEND') return len === 0 && idat && end === b.length;
+    if (type === 'IDAT') idat.push(b.subarray(off + 8, end - 4));
+    if (type === 'IEND') return len === 0 && idat.length > 0 && end === b.length && pngPixelsDecode(hdr, Buffer.concat(idat));
     off = end;
   }
   return false;
 }
 function validJpeg(b) {
   if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
-  let off = 2; let sof = false;
-  while (off + 4 <= b.length) {
+  let off = 2; let sof = false; let scans = 0;
+  while (off + 2 <= b.length) {
     if (b[off] !== 0xff) return false;
     const m = b[off + 1];
     if (m === 0xff) { off++; continue; }
-    if (m === 0xd9) return false; // EOI before any scan data
+    if (m === 0xd9) return scans > 0 && off + 2 === b.length; // EOI must close the file after at least one scan
+    if (off + 4 > b.length) return false;
     const len = b.readUInt16BE(off + 2);
     if (len < 2 || off + 2 + len > b.length) return false;
     if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (len < 8 || b.readUInt16BE(off + 5) === 0 || b.readUInt16BE(off + 7) === 0) return false; sof = true; }
-    if (m === 0xda) return sof && off + 2 + len < b.length - 2; // entropy-coded data must follow the scan header
     off += 2 + len;
+    if (m === 0xda) { // entropy-coded data follows the scan header, up to the next real marker (stuffed 0xFF00 and RSTn are data)
+      if (!sof) return false;
+      const start = off;
+      while (off + 1 < b.length && !(b[off] === 0xff && b[off + 1] !== 0x00 && !(b[off + 1] >= 0xd0 && b[off + 1] <= 0xd7) && b[off + 1] !== 0xff)) off++;
+      if (off === start) return false;
+      scans++;
+    }
   }
   return false;
 }
