@@ -24,14 +24,21 @@ function pngPixelsDecode(hdr, data) {
   const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[color];
   if (!channels || interlace > 1) return false;
   if (interlace === 1) { // Adam7: seven passes, each non-empty pass is `rows` scanlines of a filter byte + packed pixels
-    let total = 0;
+    let off = 0;
     for (const [x0, y0, dx, dy] of [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]]) {
       const pw = Math.ceil((w - x0) / dx); const ph = Math.ceil((h - y0) / dy);
-      if (pw > 0 && ph > 0) total += ph * (1 + Math.ceil((pw * channels * depth) / 8));
+      if (pw > 0 && ph > 0 && !filtersValid(raw, off, ph, 1 + Math.ceil((pw * channels * depth) / 8))) return false;
+      if (pw > 0 && ph > 0) off += ph * (1 + Math.ceil((pw * channels * depth) / 8));
     }
-    return raw.length === total;
+    return raw.length === off;
   }
-  return raw.length === h * (1 + Math.ceil((w * channels * depth) / 8));
+  const stride = 1 + Math.ceil((w * channels * depth) / 8);
+  return raw.length === h * stride && filtersValid(raw, 0, h, stride);
+}
+// Every scanline starts with a filter-type byte; PNG defines only types 0-4.
+function filtersValid(raw, start, rows, stride) {
+  for (let r = 0; r < rows; r++) { const o = start + r * stride; if (o >= raw.length || raw[o] > 4) return false; }
+  return true;
 }
 function validPng(b) {
   if (b.length < 45 || !b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return false;
@@ -51,7 +58,7 @@ function validPng(b) {
 }
 function validJpeg(b) {
   if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
-  let off = 2; let sof = false; let scans = 0;
+  let off = 2; let sof = false; let scans = 0; let dqt = false; let dht = false; let huffman = true;
   while (off + 2 <= b.length) {
     if (b[off] !== 0xff) return false;
     const m = b[off + 1];
@@ -60,10 +67,12 @@ function validJpeg(b) {
     if (off + 4 > b.length) return false;
     const len = b.readUInt16BE(off + 2);
     if (len < 2 || off + 2 + len > b.length) return false;
-    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (len < 8 || b.readUInt16BE(off + 5) === 0 || b.readUInt16BE(off + 7) === 0) return false; sof = true; }
+    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (len < 8 || b.readUInt16BE(off + 5) === 0 || b.readUInt16BE(off + 7) === 0) return false; sof = true; huffman = m < 0xc9; }
+    if (m === 0xdb) { if ((len - 2) % 65 !== 0 && (len - 2) % 129 !== 0) return false; dqt = true; } // 8-bit (65 B) or 16-bit (129 B) quantisation tables
+    if (m === 0xc4) { if (len < 19) return false; dht = true; } // table class/id + 16 code counts + symbols
     off += 2 + len;
     if (m === 0xda) { // entropy-coded data follows the scan header, up to the next real marker (stuffed 0xFF00 and RSTn are data)
-      if (!sof) return false;
+      if (!sof || !dqt || (huffman && !dht)) return false; // a scan cannot decode without its quantisation (and Huffman) tables
       const start = off;
       while (off + 1 < b.length && !(b[off] === 0xff && b[off + 1] !== 0x00 && !(b[off + 1] >= 0xd0 && b[off + 1] <= 0xd7) && b[off + 1] !== 0xff)) off++;
       if (off === start) return false;
