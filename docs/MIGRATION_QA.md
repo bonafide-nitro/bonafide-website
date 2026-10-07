@@ -129,3 +129,7 @@ Repository-only. `scripts/build-htaccess.mjs` generates `deploy/apache/redirects
 ### Block 21 — pending redirect decisions (Issue #60)
 
 Repository-only. `ZANETA_DECISION` applied to `src/data/redirects.yaml`: 3 → `defined` (35 emitted rules), 12 → new `deliberate-404`, 3 `/?p=` → new `dropped`, 8 truncated `/services/*` remain `pending-decision` (never emitted). `deploy/apache/redirects.htaccess` regenerated; T2 treats every non-`defined` state as never-executable. **8 pending-decision redirects and production-host staging verification remain open, so Stage 8 remains incomplete.** See `docs/migration/23-block21-pending-redirects-results.md`. Nothing is deployed.
+
+### Block 22 — remaining service redirects (Issue #62)
+
+Repository-only. `ZANETA_DECISION` applied to `src/data/redirects.yaml`: 6 `/services/*` → `defined` with operator-verified exact nitrocoffee.store product URLs (41 emitted rules), `svc-green-citrus` and `svc-cascara` → `deliberate-404` (14 total); 0 `pending-decision` remain. `deploy/apache/redirects.htaccess` regenerated. **Production-host staging verification and the other Stage-8 blockers remain open, so Stage 8 remains incomplete.** See `docs/migration/24-block22-service-redirects-results.md`. Nothing is deployed.

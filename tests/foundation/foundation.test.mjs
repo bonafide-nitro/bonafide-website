@@ -63,10 +63,10 @@ test('redirects: single hop — no destination is itself a redirect source; no s
   }
 });
 
-test('redirects: unique ids and sources; pending-decision entries carry no invented destination', () => {
+test('redirects: unique ids and sources; non-defined entries carry no invented destination', () => {
   assert.equal(new Set(redirects.map((r) => r.id)).size, redirects.length);
   assert.equal(new Set(redirects.map((r) => r.from)).size, redirects.length);
-  assert.ok(redirects.some((r) => r.state === 'pending-decision'));
+  assert.ok(redirects.filter((r) => r.state !== 'defined').every((r) => r.to === null));
 });
 
 test('redirects: internal destinations are launch URLs or planned pages', () => {

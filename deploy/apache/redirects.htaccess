@@ -2,7 +2,7 @@
 # Apache (mod_rewrite) redirect rules for the static /public_html target. 301 only, one hop, `defined` rules only;
 # `pending-decision`, `deliberate-404` and `dropped` rules are never emitted. Order matters: specific rules first, host/protocol canonicalisation last.
 # Path rules carry an absolute https://bonafidenitro.com destination so http:// and www. requests are still one hop.
-# Rules: 35
+# Rules: 41
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
@@ -94,8 +94,26 @@ RewriteRule ^services/hair-raiser-organic/$ https://www.nitrocoffee.store/produc
 # collections-nitro-coffee
 RewriteRule ^collections-nitro-coffee/$ https://www.nitrocoffee.store/collections/nitro-coffee [R=301,L,NE,QSD]
 
+# svc-peru
+RewriteRule ^services/peru-organic/$ https://www.nitrocoffee.store/products/organic-peru-nitro-coffee-5-gal-pet-keg [R=301,L,NE,QSD]
+
+# svc-ethiopia
+RewriteRule ^services/ethiopia-yirgacheffe-organic/$ https://www.nitrocoffee.store/products/organic-ethiopia-yirgacheffe-nitro-coffee-5-gal-pet-keg [R=301,L,NE,QSD]
+
+# svc-guatemala
+RewriteRule ^services/guatemala-organic/$ https://www.nitrocoffee.store/products/guatemala-organic-nitro-coffee [R=301,L,NE,QSD]
+
+# svc-hibiscus
+RewriteRule ^services/organic-hibiscus-tea/$ https://www.nitrocoffee.store/products/organic-hibiscus-nitro-tea [R=301,L,NE,QSD]
+
 # svc-mango
 RewriteRule ^services/mango-tea/$ https://www.nitrocoffee.store/products/mango-nitro-tea [R=301,L,NE,QSD]
+
+# svc-espresso
+RewriteRule ^services/espresso-organic-nitro-coffee/$ https://www.nitrocoffee.store/products/organic-espresso-nitro-pet-5-gal-1 [R=301,L,NE,QSD]
+
+# svc-passion-fruit
+RewriteRule ^services/passion-fruit-tea/$ https://www.nitrocoffee.store/products/organic-passion-fruit-nitro-tea-pet-5-gal [R=301,L,NE,QSD]
 
 # legacy-cold-brew-tap-future
 RewriteRule ^cold-brew-coffee-tap-future-serve/$ https://bonafidenitro.com/coffee-on-tap-is-the-future/ [R=301,L]

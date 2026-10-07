@@ -59,22 +59,35 @@ test('artifact is byte-identical to a fresh generation and deterministic', () =>
   assert.ok(text.endsWith('\n'));
 });
 
-test('rule count equals the number of defined register rules (35)', () => {
-  assert.equal(defined.length, 35);
+test('rule count equals the number of defined register rules (41)', () => {
+  assert.equal(defined.length, 41);
   assert.equal(rules.length, defined.length);
-  assert.match(text, /^# Rules: 35$/m);
+  assert.match(text, /^# Rules: 41$/m);
 });
 
-test('no pending-decision, deliberate-404 or dropped rule is emitted (Block 21 accounting)', () => {
+test('no pending-decision, deliberate-404 or dropped rule is emitted (Block 22 accounting)', () => {
   assert.equal(all.length, 58);
-  assert.equal(byState('pending-decision').length, 8);
-  assert.equal(byState('deliberate-404').length, 12);
+  assert.equal(byState('pending-decision').length, 0);
+  assert.equal(byState('deliberate-404').length, 14);
   assert.equal(byState('dropped').length, 3);
-  assert.equal(pending.length, 23);
-  assert.deepEqual(byState('pending-decision').map((r) => r.id).sort(), ['svc-cascara', 'svc-espresso', 'svc-ethiopia', 'svc-green-citrus', 'svc-guatemala', 'svc-hibiscus', 'svc-passion-fruit', 'svc-peru']);
+  assert.equal(pending.length, 17);
+  assert.deepEqual(byState('deliberate-404').map((r) => r.id).filter((id) => id.startsWith('svc-')).sort(), ['svc-cascara', 'svc-green-citrus']);
+  const svc = {
+    'svc-peru': 'organic-peru-nitro-coffee-5-gal-pet-keg',
+    'svc-ethiopia': 'organic-ethiopia-yirgacheffe-nitro-coffee-5-gal-pet-keg',
+    'svc-guatemala': 'guatemala-organic-nitro-coffee',
+    'svc-hibiscus': 'organic-hibiscus-nitro-tea',
+    'svc-espresso': 'organic-espresso-nitro-pet-5-gal-1',
+    'svc-passion-fruit': 'organic-passion-fruit-nitro-tea-pet-5-gal',
+  };
+  for (const [id, handle] of Object.entries(svc)) {
+    const r = all.find((x) => x.id === id);
+    assert.equal(r.state, 'defined', id);
+    assert.equal(r.to, `https://www.nitrocoffee.store/products/${handle}`, id);
+  }
   assert.deepEqual(byState('dropped').map((r) => r.from).sort(), ['/?p=1187', '/?p=1202', '/?p=1211']);
   assert.ok(pending.every((r) => r.to === null));
-  assert.ok(byState('deliberate-404').every((r) => r.type === 'exact' && r.from.startsWith('/')));
+  assert.ok(byState('deliberate-404').every((r) => (r.type === 'exact' || r.type === 'external') && r.from.startsWith('/')));
   const ids = new Set(rules.map((r) => r.id));
   for (const p of pending) {
     assert.equal(ids.has(p.id), false, `pending id ${p.id} emitted`);
