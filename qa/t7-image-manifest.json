@@ -1,0 +1,77 @@
+{
+  "_note": "Block 24 (Issue #66, ZANETA_DECISION Option 2). Deterministic T7 required-image contract. Every path below is taken verbatim from preserved repository evidence; none is invented, renamed or substituted. The binaries are NOT in the repository, so each is reported as a blocking finding until supplied at exactly this path.",
+  "alliance": {
+    "requiredCount": 6
+  },
+  "rankingList": {
+    "complete": false,
+    "evidenceGap": "Master plan \u00a79.3 says ~20 image URLs rank and names the 2023 Nitro-Coffee-Explain-Graphic-* set by wildcard. Only the 7 ranking paths below are identifiable from preserved evidence. The exact full ranking-image list (e.g. Search Console image export or wp-content/uploads listing) has not been supplied; do not infer it."
+  },
+  "images": [
+    {
+      "path": "/wp-content/uploads/2022/05/Caveman-Coffee-Comapany-Nitro-by-Bona-Fide.png",
+      "group": "alliance",
+      "evidence": "docs/migration/07-block4-public-source-capture.md \u00a7\"Six Alliance image URLs safely resolved\"; docs/migration/03-products-products-2-forensic-seo-preservation.md \u00a74d"
+    },
+    {
+      "path": "/wp-content/uploads/2022/05/ourGorongosa-Coffee-Nitro-by-Bona-Fide.png",
+      "group": "alliance",
+      "evidence": "docs/migration/07-block4-public-source-capture.md \u00a7\"Six Alliance image URLs safely resolved\"; docs/migration/03-products-products-2-forensic-seo-preservation.md \u00a74d"
+    },
+    {
+      "path": "/wp-content/uploads/2022/05/Jittery-Johns-Coffee-Comapany-Nitro-by-Bona-Fide.png",
+      "group": "alliance",
+      "evidence": "docs/migration/07-block4-public-source-capture.md \u00a7\"Six Alliance image URLs safely resolved\"; docs/migration/03-products-products-2-forensic-seo-preservation.md \u00a74d"
+    },
+    {
+      "path": "/wp-content/uploads/2022/05/Thai-Treasures-Coffee-Nitro-by-Bona-Fide.png",
+      "group": "alliance",
+      "evidence": "docs/migration/07-block4-public-source-capture.md \u00a7\"Six Alliance image URLs safely resolved\"; docs/migration/03-products-products-2-forensic-seo-preservation.md \u00a74d"
+    },
+    {
+      "path": "/wp-content/uploads/2022/05/CULT-Coffee-Comapany-Nitro-by-Bona-Fide.png",
+      "group": "alliance",
+      "evidence": "docs/migration/07-block4-public-source-capture.md \u00a7\"Six Alliance image URLs safely resolved\"; docs/migration/03-products-products-2-forensic-seo-preservation.md \u00a74d"
+    },
+    {
+      "path": "/wp-content/uploads/2022/05/Thanksgiving-Coffee-Company-Nitro-by-Bona-Fide.png",
+      "group": "alliance",
+      "evidence": "docs/migration/07-block4-public-source-capture.md \u00a7\"Six Alliance image URLs safely resolved\"; docs/migration/03-products-products-2-forensic-seo-preservation.md \u00a74d"
+    },
+    {
+      "path": "/wp-content/uploads/2021/10/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap.jpg",
+      "group": "ranking",
+      "evidence": "docs/migration/02-seo-raw-data-appendix.md (image-ranking table); master plan \u00a79.3"
+    },
+    {
+      "path": "/wp-content/uploads/2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png",
+      "group": "ranking",
+      "evidence": "master plan \u00a79.3 (name) with upload path from preserved evidence"
+    },
+    {
+      "path": "/wp-content/uploads/2018/06/All-about-nitro-cold-brew-coffee.jpg",
+      "group": "ranking",
+      "evidence": "master plan \u00a79.3; docs/migration/09-block5-batch2-results.md"
+    },
+    {
+      "path": "/wp-content/uploads/2017/10/Hair-Raiser-Nitro-Coffee-for-website.png",
+      "group": "ranking",
+      "evidence": "docs/migration/02-seo-raw-data-appendix.md; docs/migration/07-block4-public-source-capture.md; src/data/products.yaml"
+    },
+    {
+      "path": "/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg",
+      "group": "ranking",
+      "evidence": "master plan \u00a79.3; docs/migration/09-block5-batch2-results.md"
+    },
+    {
+      "path": "/wp-content/uploads/2023/03/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap-PET-Keg.jpg",
+      "group": "ranking",
+      "evidence": "docs/migration/02-seo-raw-data-appendix.md (image-ranking table)"
+    },
+    {
+      "path": "/wp-content/uploads/2023/03/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-1.jpg",
+      "group": "ranking",
+      "evidence": "docs/migration/02-seo-raw-data-appendix.md (image-ranking table)"
+    }
+  ]
+}

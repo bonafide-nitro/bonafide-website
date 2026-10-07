@@ -364,6 +364,42 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     }
   }
 
+  // ---------- T7 required-image manifest (Block 24, Issue #66) ----------
+  // qa/t7-image-manifest.json lists the alliance + evidenced ranking images verbatim from preserved evidence. A missing
+  // binary is migration-remaining (foundation reports it, strict blocks); a malformed contract or a non-image file at a
+  // manifested path is an invariant. The incomplete ranking list stays an explicit evidence-gap finding until declared complete.
+  {
+    const man = config.imageManifest;
+    const list = Array.isArray(man?.images) ? man.images : [];
+    const prefix = '/wp-content/uploads/';
+    if (list.length === 0) F.add('T7', 'manifest-undeclared', INV, null, 'T7 required-image manifest (qa/t7-image-manifest.json) is absent or empty');
+    const seen = new Set();
+    const lower = new Map([...files.keys()].map((k) => [k.toLowerCase(), k]));
+    for (const img of list) {
+      const ip = img?.path;
+      if (typeof ip !== 'string' || !ip.startsWith(prefix) || /[?#\s]/.test(ip) || ip.endsWith('/') || !['alliance', 'ranking'].includes(img.group)) { F.add('T7', 'manifest-entry-invalid', INV, typeof ip === 'string' ? ip : null, 'manifest entry needs a clean /wp-content/uploads/ file path and group alliance|ranking'); continue; }
+      if (seen.has(ip)) { F.add('T7', 'manifest-duplicate', INV, ip, 'manifest lists this required image more than once'); continue; }
+      seen.add(ip);
+      const rel = ip.slice(1);
+      const abs = files.get(rel);
+      if (!abs) {
+        const near = lower.get(rel.toLowerCase());
+        if (near) F.add('T7', 'required-image-path-case', INV, ip, `a file exists only at differently-cased path /${near}; the required path must match exactly`);
+        else F.add('T7', 'required-image-missing', REM, ip, `required ${img.group} image is not in the build at its preserved path (binary not supplied)`);
+        continue;
+      }
+      const head = fs.readFileSync(abs).subarray(0, 12);
+      const ext = path.extname(rel).toLowerCase();
+      const isPng = head.length >= 8 && head.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+      const isJpg = head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
+      const ok = (ext === '.png' && isPng) || ((ext === '.jpg' || ext === '.jpeg') && isJpg);
+      if (!ok) F.add('T7', 'required-image-invalid', INV, ip, 'file at the required path is empty or is not a real PNG/JPEG matching its extension');
+    }
+    const alliance = list.filter((i) => i?.group === 'alliance').length;
+    if (list.length > 0 && alliance !== (man?.alliance?.requiredCount ?? 6)) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${man?.alliance?.requiredCount ?? 6}`);
+    if (man?.rankingList?.complete !== true) F.add('T7', 'ranking-list-incomplete', REM, null, 'the full ranking-image list is not in preserved evidence (master plan §9.3: ~20 image URLs rank; only the manifested subset is identifiable) — evidence must be supplied, not inferred');
+  }
+
   // ---------- T9 sitemap ----------
   const sm = textFiles.get('sitemap.xml');
   if (sm == null) F.add('T9', 'sitemap-absent', REM, '/sitemap.xml', 'dist/sitemap.xml not generated yet');

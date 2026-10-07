@@ -13,6 +13,7 @@ export const loadInputs = () => {
     redirects = YAML.parse(fs.readFileSync(path.resolve('src/data/redirects.yaml'), 'utf8')).rules;
   }
   const config = JSON.parse(fs.readFileSync(path.resolve('qa/qa.config.json'), 'utf8'));
+  config.imageManifest = JSON.parse(fs.readFileSync(path.resolve('qa/t7-image-manifest.json'), 'utf8'));
   const astroConfig = fs.readFileSync(path.resolve('astro.config.mjs'), 'utf8');
   return { baseline, redirects, redirectSchemaError, site: loadSite(), config, astroConfig };
 };

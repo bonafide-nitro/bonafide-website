@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { makeFixture, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
+import { makeFixture, t7Manifest, PNG, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
 
 // Adds rules to the healthy register, replacing any inventory rule with the same source (sources must stay unique).
 const putRules = (fx, ...rs) => { fx.redirects = fx.redirects.filter((x) => !rs.some((r) => r.from === x.from)); fx.redirects.push(...rs); };
@@ -102,6 +102,17 @@ test('detects: redirect register failing schema validation', () => {
 // --- T7 images ---
 detects('referenced /wp-content/uploads/ asset missing', (fx) => rm(fx, 'wp-content'), 'T7:missing-upload');
 detects('absolute-URL upload reference missing', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<img srcset="https://bonafidenitro.com/wp-content/uploads/2020/02/x.png 1x, /wp-content/uploads/2020/01/hero.jpg 2x">' })), 'T7:missing-upload');
+detects('required alliance image missing (binary not supplied)', (fx) => rm(fx, 'wp-content/uploads/2022/05/a-alliance.png'), 'T7:required-image-missing', { invariant: false });
+detects('required ranking image missing (binary not supplied)', (fx) => rm(fx, 'wp-content/uploads/2018/06/rank.jpg'), 'T7:required-image-missing', { invariant: false });
+detects('required image is empty', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', ''), 'T7:required-image-invalid');
+detects('required image is HTML masquerading as PNG', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', '<html>not found</html>'), 'T7:required-image-invalid');
+detects('required image is PNG bytes under a .jpg path', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', PNG), 'T7:required-image-invalid');
+detects('required image only present at differently-cased path', (fx) => { rm(fx, 'wp-content/uploads/2022/05/a-alliance.png'); fx.put('wp-content/uploads/2022/05/A-alliance.png', PNG); }, 'T7:required-image-path-case');
+detects('manifest dropped to fewer than 6 alliance images', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.filter((i) => i.path !== '/wp-content/uploads/2022/05/f-alliance.png'); }, 'T7:alliance-count');
+detects('manifest absent', (fx) => { delete fx.config.imageManifest; }, 'T7:manifest-undeclared');
+detects('manifest entry outside /wp-content/uploads/', (fx) => { fx.config.imageManifest.images.push({ path: '/img/x.png', group: 'ranking' }); }, 'T7:manifest-entry-invalid');
+detects('manifest duplicate entry', (fx) => { fx.config.imageManifest.images.push({ ...fx.config.imageManifest.images[0] }); }, 'T7:manifest-duplicate');
+detects('incomplete ranking list stays a blocking evidence gap', (fx) => { fx.config.imageManifest.rankingList.complete = false; }, 'T7:ranking-list-incomplete', { invariant: false });
 
 // --- T8 / T13 links ---
 detects('internal link to a redirecting URL', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/contact/">c</a>' })), 'T8:link-to-redirect');
