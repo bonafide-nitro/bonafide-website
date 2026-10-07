@@ -290,8 +290,9 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     // Block 23 (Issue #64): Article + Person on the historical post routes, none elsewhere. Unconditional (config lists the routes).
     {
       const nodes = [];
-      const walk = (n) => { if (Array.isArray(n)) n.forEach(walk); else if (n && typeof n === 'object') { if (n['@type']) nodes.push(n); if (n['@graph']) walk(n['@graph']); } };
+      const walk = (n) => { if (Array.isArray(n)) n.forEach(walk); else if (n && typeof n === 'object') { if (n['@type']) nodes.push(n); Object.values(n).forEach(walk); } };
       for (const block of page.jsonLd) { try { walk(JSON.parse(block)); } catch { /* reported above as jsonld-invalid */ } }
+      const isoDate = (v) => { const m = typeof v === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(v); if (!m) return false; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3]; };
       const of = (t) => nodes.filter((n) => [].concat(n['@type']).includes(t));
       const arts = of('Article'); const people = of('Person');
       if (articleRoutes.has(page.path)) {
@@ -302,8 +303,8 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
           if (typeof pe['@id'] !== 'string' || !pe['@id'] || a.author?.['@id'] !== pe['@id']) F.add('T6', 'article-author-link', ck, page.path, 'Article.author must be an @id reference to the page\'s Person entity');
           if (typeof pe.name !== 'string' || !pe.name.trim()) F.add('T6', 'person-name-missing', ck, page.path, 'Person.name is required');
           for (const k of ['headline', 'datePublished']) if (typeof a[k] !== 'string' || !a[k].trim()) F.add('T6', 'article-field-missing', ck, page.path, `Article.${k} is required`);
-          if (a.datePublished != null && !/^\d{4}-\d{2}-\d{2}$/.test(a.datePublished)) F.add('T6', 'article-field-invalid', ck, page.path, 'Article.datePublished must be an ISO date');
-          if (a.dateModified != null && !/^\d{4}-\d{2}-\d{2}$/.test(a.dateModified)) F.add('T6', 'article-field-invalid', ck, page.path, 'Article.dateModified must be an ISO date');
+          if (a.datePublished != null && !isoDate(a.datePublished)) F.add('T6', 'article-field-invalid', ck, page.path, 'Article.datePublished must be an ISO date');
+          if (a.dateModified != null && !isoDate(a.dateModified)) F.add('T6', 'article-field-invalid', ck, page.path, 'Article.dateModified must be an ISO date');
         }
       } else if (arts.length || people.length) F.add('T6', 'article-schema-unexpected', INV, page.path, 'Article/Person schema is only allowed on the historical post routes (archives and other pages must not carry it)');
     }
