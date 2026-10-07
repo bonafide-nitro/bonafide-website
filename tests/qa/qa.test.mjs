@@ -131,6 +131,12 @@ const pngIhdr = (depth, color, comp, filt, extra = [], late = []) => { // 1x1 PN
   const raw = Buffer.alloc(1 + Math.ceil((samples * depth) / 8));
   return Buffer.concat([PNG.subarray(0, 8), chunk('IHDR', ihdr), ...extra.map(([t, d]) => chunk(t, d)), chunk('IDAT', zlib.deflateSync(raw)), ...late.map(([t, d]) => chunk(t, d)), chunk('IEND', Buffer.alloc(0))]);
 };
+detects('required PNG has an unknown critical chunk', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 0, [['ABCD', Buffer.alloc(0)]])), 'T7:required-image-invalid');
+test('accepts: PNG with an unknown ancillary chunk', () => {
+  const fx = makeFixture();
+  try { fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 0, [['abCD', Buffer.alloc(0)]])); assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid')); } finally { cleanup(fx); }
+});
+detects('required JPEG DHT counts exceed its symbols', (fx) => { const b = Buffer.from(JPG); b[b.indexOf(0xc4) + 5] = 2; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
 detects('required PNG declares compression method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 1, 0)), 'T7:required-image-invalid');
 detects('required PNG declares filter method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 1)), 'T7:required-image-invalid');
 detects('required greyscale PNG declares illegal bit depth 3', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(3, 0, 0, 0)), 'T7:required-image-invalid');

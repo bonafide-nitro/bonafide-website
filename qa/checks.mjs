@@ -52,6 +52,7 @@ function validPng(b) {
     if (b.readUInt32BE(end - 4) !== crc32(b.subarray(off + 4, end - 4))) return false;
     if (first) { if (type !== 'IHDR' || len !== 13 || b.readUInt32BE(off + 8) === 0 || b.readUInt32BE(off + 12) === 0) return false; hdr = b.subarray(off + 8, off + 21); first = false; }
     else if (type === 'IHDR') return false;
+    if (!(b[off + 4] & 0x20) && !['IHDR', 'PLTE', 'IDAT', 'IEND'].includes(type)) return false; // an unrecognised critical chunk makes the file undecodable
     if (type === 'PLTE') { // palette: once, before the first IDAT, whole RGB triples, at most 2^depth (and 256) entries
       if (plte || idat.length > 0 || len === 0 || len % 3 !== 0 || len / 3 > Math.min(256, 2 ** hdr[8]) || hdr[9] === 0 || hdr[9] === 4) return false;
       plte = true;
@@ -61,6 +62,17 @@ function validPng(b) {
     off = end;
   }
   return false;
+}
+// A DHT segment holds one or more tables: class/id byte, 16 code-length counts, then exactly sum(counts) symbols.
+function dhtValid(seg) {
+  let o = 0;
+  while (o < seg.length) {
+    if (o + 17 > seg.length || (seg[o] >> 4) > 1 || (seg[o] & 0x0f) > 3) return false;
+    let n = 0; for (let i = 1; i <= 16; i++) n += seg[o + i];
+    if (n === 0 || n > 256 || o + 17 + n > seg.length) return false;
+    o += 17 + n;
+  }
+  return seg.length > 0;
 }
 function validJpeg(b) {
   if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
@@ -75,7 +87,7 @@ function validJpeg(b) {
     if (len < 2 || off + 2 + len > b.length) return false;
     if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (len < 8 || b.readUInt16BE(off + 5) === 0 || b.readUInt16BE(off + 7) === 0) return false; sof = true; huffman = m < 0xc9; }
     if (m === 0xdb) { if ((len - 2) % 65 !== 0 && (len - 2) % 129 !== 0) return false; dqt = true; } // 8-bit (65 B) or 16-bit (129 B) quantisation tables
-    if (m === 0xc4) { if (len < 19) return false; dht = true; } // table class/id + 16 code counts + symbols
+    if (m === 0xc4) { if (!dhtValid(b.subarray(off + 4, off + 2 + len))) return false; dht = true; }
     off += 2 + len;
     if (m === 0xda) { // entropy-coded data follows the scan header, up to the next real marker (stuffed 0xFF00 and RSTn are data)
       if (!sof || !dqt || (huffman && !dht)) return false; // a scan cannot decode without its quantisation (and Huffman) tables
