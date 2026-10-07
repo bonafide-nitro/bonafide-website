@@ -80,7 +80,7 @@ export const makeFixture = () => {
   for (const m of t7Manifest().images) put(m.path.slice(1), m.path.endsWith('.png') ? PNG : JPG);
   put('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', '/products/', '/products-2/', '/about/'].map((u) => `<url><loc>${ORIGIN}${u}</loc></url>`).join('')}</urlset>`);
   put('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
-  return { dir, put, baseline: baselineFixture(), redirects: redirectsFixture(), site: { trailingSlash: 'always', buildFormat: 'directory' }, config: { imageManifest: t7Manifest(), allowedScriptHosts: [], articleRoutes: ['/fixture-post/'], commerceInventory: { pages: { '/products/': { amazon: ['https://www.amazon.com/dp/1'], store: ['https://www.nitrocoffee.store/products/x'] }, '/products-2/': { store: Array.from({ length: 22 }, (_, i) => `https://www.nitrocoffee.store/products/p${i}`) } } } } };
+  return { dir, put, baseline: baselineFixture(), redirects: redirectsFixture(), site: { trailingSlash: 'always', buildFormat: 'directory' }, config: { imageManifest: t7Manifest(), rankingExpectedCount: 1, allowedScriptHosts: [], articleRoutes: ['/fixture-post/'], commerceInventory: { pages: { '/products/': { amazon: ['https://www.amazon.com/dp/1'], store: ['https://www.nitrocoffee.store/products/x'] }, '/products-2/': { store: Array.from({ length: 22 }, (_, i) => `https://www.nitrocoffee.store/products/p${i}`) } } } } };
 };
 
 export const run = (fx, mode = 'strict', extra = {}) => runQa({ distDir: fx.dir, baseline: fx.baseline, redirects: fx.redirects, site: fx.site, config: fx.config, mode, ...extra });

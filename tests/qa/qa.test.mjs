@@ -176,6 +176,7 @@ detects('manifest dropped to fewer than 6 alliance images', (fx) => { fx.config.
 detects('manifest absent', (fx) => { delete fx.config.imageManifest; }, 'T7:manifest-undeclared');
 detects('manifest entry outside /wp-content/uploads/', (fx) => { fx.config.imageManifest.images.push({ path: '/img/x.png', group: 'ranking' }); }, 'T7:manifest-entry-invalid');
 detects('manifest duplicate entry', (fx) => { fx.config.imageManifest.images.push({ ...fx.config.imageManifest.images[0] }); }, 'T7:manifest-duplicate');
+detects('complete:true without the evidenced ranking inventory does not waive the gap', (fx) => { delete fx.config.rankingExpectedCount; }, 'T7:ranking-list-incomplete', { invariant: false });
 detects('incomplete ranking list stays a blocking evidence gap', (fx) => { fx.config.imageManifest.rankingList.complete = false; }, 'T7:ranking-list-incomplete', { invariant: false });
 
 // --- T8 / T13 links ---

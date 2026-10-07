@@ -13,7 +13,7 @@ Repository-only. No production, WordPress/cPanel, DNS, Search Console, hosting, 
 - `required-image-invalid` (invariant) — empty file or bytes that are not a real PNG/JPEG matching the extension (e.g. an HTML error page).
 - `required-image-path-case` (invariant) — file exists only at a differently-cased path.
 - `alliance-count` (invariant) — manifest lists other than 6 alliance images (cannot be silently shrunk); `manifest-undeclared`, `manifest-entry-invalid`, `manifest-duplicate` (invariants).
-- `ranking-list-incomplete` (migration-remaining) — until the full list is evidenced and `complete` is set.
+- `ranking-list-incomplete` (migration-remaining) — until the full list is evidenced and `complete` is set; `complete: true` alone does not clear it — the manifest must also list the pinned evidenced total (21 ranking images: the 10 exact paths plus the 11 summarised URLs in doc 02).
 The existing "every referenced `/wp-content/uploads/` path exists" rule is unchanged. No strict check was weakened.
 
 ## Not done (deliberately)

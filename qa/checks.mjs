@@ -63,6 +63,7 @@ function validPng(b) {
   }
   return false;
 }
+const RANKING_EVIDENCED_TOTAL = 21; // 10 exact paths + 11 further URLs summarised in docs/migration/02-seo-raw-data-appendix.md; not read from the manifest so `complete: true` alone cannot waive the gap
 const ALLIANCE_REQUIRED = 6; // fixed by the master plan; deliberately not read from the manifest so it cannot be weakened in step with the list
 // A DQT segment holds one or more tables: Pq/Tq byte (Pq 0|1, Tq 0-3) then 64 entries of (Pq+1) bytes.
 function dqtValid(seg) {
@@ -496,7 +497,9 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     }
     const alliance = list.filter((i) => i?.group === 'alliance').length;
     if (list.length > 0 && alliance !== ALLIANCE_REQUIRED) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${ALLIANCE_REQUIRED}`);
-    if (man?.rankingList?.complete !== true) F.add('T7', 'ranking-list-incomplete', REM, null, 'the full ranking-image list is not in preserved evidence (master plan §9.3: ~20 image URLs rank; only the manifested subset is identifiable) — evidence must be supplied, not inferred');
+    const rankingListed = list.filter((i) => i?.group === 'ranking').length;
+    const rankingExpected = config.rankingExpectedCount ?? RANKING_EVIDENCED_TOTAL;
+    if (man?.rankingList?.complete !== true || rankingListed < rankingExpected) F.add('T7', 'ranking-list-incomplete', REM, null, 'the full ranking-image list is not in preserved evidence (master plan §9.3: ~20 image URLs rank; only the manifested subset is identifiable) — evidence must be supplied, not inferred');
   }
 
   // ---------- T9 sitemap ----------
