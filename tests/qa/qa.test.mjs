@@ -136,6 +136,9 @@ test('accepts: PNG with an unknown ancillary chunk', () => {
   const fx = makeFixture();
   try { fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 0, [['abCD', Buffer.alloc(0)]])); assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid')); } finally { cleanup(fx); }
 });
+detects('required JPEG DQT has an illegal precision/id byte', (fx) => { const b = Buffer.from(JPG); b[b.indexOf(0xdb) + 3] = 0xf4; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG DHT code lengths are oversubscribed', (fx) => { const i = JPG.indexOf(0xc4); const seg = Buffer.from([0xff, 0xc4, 0x00, 0x16, 0x00, 0x03, ...new Array(15).fill(0), 0, 1, 2]); fx.put('wp-content/uploads/2018/06/rank.jpg', Buffer.concat([JPG.subarray(0, i - 1), seg, JPG.subarray(i - 1 + 2 + JPG.readUInt16BE(i + 1))])); }, 'T7:required-image-invalid');
+detects('alliance minimum weakened together with the declared count', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.filter((i) => i.path !== '/wp-content/uploads/2022/05/f-alliance.png'); fx.config.imageManifest.alliance.requiredCount = 5; }, 'T7:alliance-count');
 detects('required JPEG DHT counts exceed its symbols', (fx) => { const b = Buffer.from(JPG); b[b.indexOf(0xc4) + 5] = 2; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
 detects('required PNG declares compression method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 1, 0)), 'T7:required-image-invalid');
 detects('required PNG declares filter method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 1)), 'T7:required-image-invalid');

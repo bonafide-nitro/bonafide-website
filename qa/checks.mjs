@@ -63,6 +63,16 @@ function validPng(b) {
   }
   return false;
 }
+const ALLIANCE_REQUIRED = 6; // fixed by the master plan; deliberately not read from the manifest so it cannot be weakened in step with the list
+// A DQT segment holds one or more tables: Pq/Tq byte (Pq 0|1, Tq 0-3) then 64 entries of (Pq+1) bytes.
+function dqtValid(seg) {
+  let o = 0;
+  while (o < seg.length) {
+    if ((seg[o] >> 4) > 1 || (seg[o] & 0x0f) > 3) return false;
+    o += 1 + 64 * ((seg[o] >> 4) + 1);
+  }
+  return seg.length > 0 && o === seg.length;
+}
 // A DHT segment holds one or more tables: class/id byte, 16 code-length counts, then exactly sum(counts) symbols.
 function dhtValid(seg) {
   let o = 0;
@@ -70,6 +80,9 @@ function dhtValid(seg) {
     if (o + 17 > seg.length || (seg[o] >> 4) > 1 || (seg[o] & 0x0f) > 3) return false;
     let n = 0; for (let i = 1; i <= 16; i++) n += seg[o + i];
     if (n === 0 || n > 256 || o + 17 + n > seg.length) return false;
+    let free = 1; // remaining code space; each length doubles it, codes consume it, and the all-ones code stays reserved
+    for (let i = 1; i <= 16; i++) { free = free * 2 - seg[o + i]; if (free < 0) return false; }
+    if (free < 1) return false;
     o += 17 + n;
   }
   return seg.length > 0;
@@ -86,7 +99,7 @@ function validJpeg(b) {
     const len = b.readUInt16BE(off + 2);
     if (len < 2 || off + 2 + len > b.length) return false;
     if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (len < 8 || b.readUInt16BE(off + 5) === 0 || b.readUInt16BE(off + 7) === 0) return false; sof = true; huffman = m < 0xc9; }
-    if (m === 0xdb) { if ((len - 2) % 65 !== 0 && (len - 2) % 129 !== 0) return false; dqt = true; } // 8-bit (65 B) or 16-bit (129 B) quantisation tables
+    if (m === 0xdb) { if (!dqtValid(b.subarray(off + 4, off + 2 + len))) return false; dqt = true; }
     if (m === 0xc4) { if (!dhtValid(b.subarray(off + 4, off + 2 + len))) return false; dht = true; }
     off += 2 + len;
     if (m === 0xda) { // entropy-coded data follows the scan header, up to the next real marker (stuffed 0xFF00 and RSTn are data)
@@ -482,7 +495,7 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
       if (!ok) F.add('T7', 'required-image-invalid', INV, ip, 'file at the required path is empty, truncated, or is not a structurally complete PNG/JPEG matching its extension');
     }
     const alliance = list.filter((i) => i?.group === 'alliance').length;
-    if (list.length > 0 && alliance !== (man?.alliance?.requiredCount ?? 6)) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${man?.alliance?.requiredCount ?? 6}`);
+    if (list.length > 0 && alliance !== ALLIANCE_REQUIRED) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${ALLIANCE_REQUIRED}`);
     if (man?.rankingList?.complete !== true) F.add('T7', 'ranking-list-incomplete', REM, null, 'the full ranking-image list is not in preserved evidence (master plan §9.3: ~20 image URLs rank; only the manifested subset is identifiable) — evidence must be supplied, not inferred');
   }
 
