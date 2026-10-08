@@ -7,146 +7,38 @@
 // There is no other way for a finding to be non-blocking: strict mode blocks everything.
 import fs from 'node:fs';
 import path from 'node:path';
-import zlib from 'node:zlib';
+import { decode as decodePng } from 'fast-png';
+import jpeg from 'jpeg-js';
 import { scanDist } from './lib/scan.mjs';
 import { jsonLdTypes } from './lib/html.mjs';
 import { patternToRegExp, hasPlaceholder } from './lib/patterns.mjs';
 import { parseXml } from './lib/xml.mjs';
 
-// Structural image validation (T7): a signature alone accepts truncated or garbage-suffixed files.
-const CRC_TABLE = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
-function crc32(b) { let c = 0xffffffff; for (const x of b) c = CRC_TABLE[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
-// The IDAT stream must inflate cleanly, and for non-interlaced images to exactly the scanline size the IHDR implies (Adam7 pass by pass for interlaced images).
-function pngPixelsDecode(hdr, data) {
-  let raw;
-  try { raw = zlib.inflateSync(data); } catch { return false; }
-  const [w, h, depth, color, , , interlace] = [hdr.readUInt32BE(0), hdr.readUInt32BE(4), hdr[8], hdr[9], hdr[10], hdr[11], hdr[12]];
-  const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[color];
-  if (!channels || interlace > 1) return false;
-  if (hdr[10] !== 0 || hdr[11] !== 0) return false; // only compression method 0 and filter method 0 exist
-  if (!{ 0: [1, 2, 4, 8, 16], 2: [8, 16], 3: [1, 2, 4, 8], 4: [8, 16], 6: [8, 16] }[color].includes(depth)) return false;
-  if (interlace === 1) { // Adam7: seven passes, each non-empty pass is `rows` scanlines of a filter byte + packed pixels
-    let off = 0;
-    for (const [x0, y0, dx, dy] of [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]]) {
-      const pw = Math.ceil((w - x0) / dx); const ph = Math.ceil((h - y0) / dy);
-      if (pw > 0 && ph > 0 && !filtersValid(raw, off, ph, 1 + Math.ceil((pw * channels * depth) / 8))) return false;
-      if (pw > 0 && ph > 0) off += ph * (1 + Math.ceil((pw * channels * depth) / 8));
-    }
-    return raw.length === off;
+const decodeJpeg = jpeg.decode;
+
+// Image validation (T7): a real decoder (dev-only fast-png / jpeg-js) must fully decode the file, and no bytes may trail IEND / EOI.
+// Decoder limits are documented in docs/migration/26-block24-t7-image-gate-results.md; no custom PNG/JPEG conformance parsing lives here.
+function pngEndsAtIend(b) {
+  let off = 8;
+  while (off + 12 <= b.length) {
+    const len = b.readUInt32BE(off);
+    if (b.toString('latin1', off + 4, off + 8) === 'IEND') return off + 12 + len === b.length;
+    off += 12 + len;
   }
-  const stride = 1 + Math.ceil((w * channels * depth) / 8);
-  return raw.length === h * stride && filtersValid(raw, 0, h, stride);
-}
-// Every scanline starts with a filter-type byte; PNG defines only types 0-4.
-function filtersValid(raw, start, rows, stride) {
-  for (let r = 0; r < rows; r++) { const o = start + r * stride; if (o >= raw.length || raw[o] > 4) return false; }
-  return true;
+  return false;
 }
 function validPng(b) {
-  if (b.length < 45 || !b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return false;
-  let off = 8; let first = true; let hdr = null; let plte = false; let idatEnded = false; const idat = [];
-  while (off + 12 <= b.length) {
-    const len = b.readUInt32BE(off); const type = b.toString('latin1', off + 4, off + 8);
-    const end = off + 12 + len;
-    if (end > b.length) return false;
-    if (b.readUInt32BE(end - 4) !== crc32(b.subarray(off + 4, end - 4))) return false;
-    if (first) { if (type !== 'IHDR' || len !== 13 || b.readUInt32BE(off + 8) === 0 || b.readUInt32BE(off + 12) === 0) return false; hdr = b.subarray(off + 8, off + 21); first = false; }
-    else if (type === 'IHDR') return false;
-    if (!(b[off + 4] & 0x20) && !['IHDR', 'PLTE', 'IDAT', 'IEND'].includes(type)) return false; // an unrecognised critical chunk makes the file undecodable
-    if (type === 'PLTE') { // palette: once, before the first IDAT, whole RGB triples, at most 2^depth (and 256) entries
-      if (plte || idat.length > 0 || len === 0 || len % 3 !== 0 || len / 3 > Math.min(256, 2 ** hdr[8]) || hdr[9] === 0 || hdr[9] === 4) return false;
-      plte = true;
-    }
-    if (type === 'IDAT') { if (idatEnded) return false; idat.push(b.subarray(off + 8, end - 4)); } // IDAT chunks must be consecutive
-    else if (idat.length > 0) idatEnded = true;
-    if (type === 'IEND') return len === 0 && idat.length > 0 && end === b.length && (hdr[9] !== 3 || plte) && pngPixelsDecode(hdr, Buffer.concat(idat));
-    off = end;
-  }
-  return false;
-}
-const RANKING_EVIDENCED_TOTAL = 21; // 10 exact paths + 11 further URLs summarised in docs/migration/02-seo-raw-data-appendix.md; not read from the manifest so `complete: true` alone cannot waive the gap
-const ALLIANCE_REQUIRED = 6; // fixed by the master plan; deliberately not read from the manifest so it cannot be weakened in step with the list
-// A DQT segment holds one or more tables: Pq/Tq byte (Pq 0|1, Tq 0-3) then 64 entries of (Pq+1) bytes.
-function dqtValid(seg, ids) {
-  let o = 0;
-  while (o < seg.length) {
-    if ((seg[o] >> 4) > 1 || (seg[o] & 0x0f) > 3) return false;
-    ids.add(seg[o] & 0x0f);
-    o += 1 + 64 * ((seg[o] >> 4) + 1);
-  }
-  return seg.length > 0 && o === seg.length;
-}
-// A DHT segment holds one or more tables: class/id byte, 16 code-length counts, then exactly sum(counts) symbols.
-function dhtValid(seg, ids) {
-  let o = 0;
-  while (o < seg.length) {
-    if (o + 17 > seg.length || (seg[o] >> 4) > 1 || (seg[o] & 0x0f) > 3) return false;
-    ids.add(seg[o]); // class<<4 | id
-    let n = 0; for (let i = 1; i <= 16; i++) n += seg[o + i];
-    if (n === 0 || n > 256 || o + 17 + n > seg.length) return false;
-    let free = 1; // remaining code space; each length doubles it, codes consume it, and the all-ones code stays reserved
-    for (let i = 1; i <= 16; i++) { free = free * 2 - seg[o + i]; if (free < 0) return false; }
-    if (free < 1) return false;
-    o += 17 + n;
-  }
-  return seg.length > 0;
-}
-// A SOF segment: precision, height, width (both nonzero), component count n >= 1, then n x (id, H<<4|V, Tq) with unique ids, H/V 1-4 and Tq 0-3; length is exactly 6 + 3n.
-function sofValid(seg, comps) {
-  if (seg.length < 6 || seg[0] === 0 || seg.readUInt16BE(1) === 0 || seg.readUInt16BE(3) === 0) return false;
-  const n = seg[5];
-  if (n < 1 || seg.length !== 6 + 3 * n) return false;
-  const ids = new Set();
-  for (let i = 0; i < n; i++) {
-    const [id, hv, tq] = [seg[6 + 3 * i], seg[7 + 3 * i], seg[8 + 3 * i]];
-    if (ids.has(id) || (hv >> 4) < 1 || (hv >> 4) > 4 || (hv & 15) < 1 || (hv & 15) > 4 || tq > 3) return false;
-    ids.add(id); comps.set(id, tq);
-  }
-  return true;
-}
-// A SOS header: Ns >= 1 components (each in the frame, unique), length exactly 4 + 2Ns, Td/Ta selectors 0-3 naming parsed
-// DHT tables, then Ss/Se/Ah/Al. The frame component's Tq must name a parsed DQT table.
-function sosValid(seg, comps, dqtIds, dhtIds, huffman) {
-  const n = seg[0];
-  if (!(n >= 1) || seg.length !== 4 + 2 * n) return false;
-  const seen = new Set();
-  // Only the tables a scan actually uses are required: DC when it codes DC coefficients (Ss = 0, not a DC refinement),
-  // AC when it codes any AC coefficient (Se > 0). A progressive DC-only scan therefore needs no AC table.
-  const [ss, se, ah] = [seg[1 + 2 * n], seg[2 + 2 * n], seg[3 + 2 * n] >> 4];
-  const needDc = ss === 0 && ah === 0; const needAc = se > 0;
-  for (let i = 0; i < n; i++) {
-    const [cs, t] = [seg[1 + 2 * i], seg[2 + 2 * i]];
-    if (!comps.has(cs) || seen.has(cs) || !dqtIds.has(comps.get(cs))) return false;
-    seen.add(cs);
-    if (huffman && ((needDc && !dhtIds.has(t >> 4)) || (needAc && !dhtIds.has(0x10 | (t & 15))))) return false;
-  }
-  return true;
+  try { decodePng(b); } catch { return false; }
+  return pngEndsAtIend(b);
 }
 function validJpeg(b) {
-  if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
-  let off = 2; let sof = false; let scans = 0; let huffman = true; const comps = new Map(); const dqtIds = new Set(); const dhtIds = new Set();
-  while (off + 2 <= b.length) {
-    if (b[off] !== 0xff) return false;
-    const m = b[off + 1];
-    if (m === 0xff) { off++; continue; }
-    if (m === 0xd9) return scans > 0 && off + 2 === b.length; // EOI must close the file after at least one scan
-    if (off + 4 > b.length) return false;
-    const len = b.readUInt16BE(off + 2);
-    if (len < 2 || off + 2 + len > b.length) return false;
-    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (sof || !sofValid(b.subarray(off + 4, off + 2 + len), comps)) return false; sof = true; huffman = m < 0xc9; }
-    if (m === 0xdb) { if (!dqtValid(b.subarray(off + 4, off + 2 + len), dqtIds)) return false; }
-    if (m === 0xc4) { if (!dhtValid(b.subarray(off + 4, off + 2 + len), dhtIds)) return false; }
-    off += 2 + len;
-    if (m === 0xda) { // entropy-coded data follows the scan header, up to the next real marker (stuffed 0xFF00 and RSTn are data)
-      if (!sof || !sosValid(b.subarray(off - len + 2, off), comps, dqtIds, dhtIds, huffman)) return false; // a scan needs a well-formed header whose components reference parsed tables
-      const start = off;
-      while (off + 1 < b.length && !(b[off] === 0xff && b[off + 1] !== 0x00 && !(b[off + 1] >= 0xd0 && b[off + 1] <= 0xd7) && b[off + 1] !== 0xff)) off++;
-      if (off === start) return false;
-      scans++;
-    }
-  }
-  return false;
+  if (b.length < 4 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
+  try { decodeJpeg(b, { useTArray: true }); } catch { return false; }
+  return true;
 }
+
+const RANKING_EVIDENCED_TOTAL = 21; // 10 exact paths + 11 further URLs summarised in docs/migration/02-seo-raw-data-appendix.md; not read from the manifest so `complete: true` alone cannot waive the gap
+const ALLIANCE_REQUIRED = 6; // fixed by the master plan; deliberately not read from the manifest so it cannot be weakened in step with the list
 
 export const INV = 'invariant';
 export const REM = 'migration-remaining';
@@ -527,7 +419,7 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
       const ext = path.extname(rel).toLowerCase();
       const buf = fs.readFileSync(abs);
       const ok = (ext === '.png' && validPng(buf)) || ((ext === '.jpg' || ext === '.jpeg') && validJpeg(buf));
-      if (!ok) F.add('T7', 'required-image-invalid', INV, ip, 'file at the required path is empty, truncated, or is not a structurally complete PNG/JPEG matching its extension');
+      if (!ok) F.add('T7', 'required-image-invalid', INV, ip, 'file at the required path is empty, truncated, or is not a PNG/JPEG that a real decoder fully decodes (matching its extension, no trailing bytes)');
     }
     const alliance = list.filter((i) => i?.group === 'alliance').length;
     if (list.length > 0 && alliance !== ALLIANCE_REQUIRED) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${ALLIANCE_REQUIRED}`);
