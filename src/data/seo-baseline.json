@@ -44,7 +44,7 @@
         "WebPage",
         "BreadcrumbList"
       ],
-      "minInternalLinksIn": 40,
+      "minInternalLinksIn": 39,
       "view": "retail"
     },
     {
@@ -576,7 +576,7 @@
     },
     "products": {
       "inNavigation": true,
-      "minInternalLinksIn": 40
+      "minInternalLinksIn": 39
     },
     "titleUniquenessException": [
       [

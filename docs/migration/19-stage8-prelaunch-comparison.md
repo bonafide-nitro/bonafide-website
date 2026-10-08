@@ -71,6 +71,7 @@ These are the strict-QA findings (45, grouped). None is an invariant regression.
 | Commerce destination counts (`T5 amazon-links-min`, `T5 store-links-min`) | 3 | `/products/`: 0 of 13 Amazon, 13 of 16 store; `/products-2/`: 12 of 22 store. |
 | Commerce exact inventory (`T5 commerce-inventory-missing`) | 3 | `qa/qa.config.json` `commerceInventory` unpopulated for `/products/` amazon + store and `/products-2/` store. |
 | Inbound links (`T8 inbound-links-min`) | 1 | `/products/`: 39 linking pages, baseline minimum 40. |
+|   *Block 25 update* | | **Resolved.** Baseline minimum corrected 40 → 39 (maximum countable is 39); see `docs/migration/27-block25-products-inbound-links-results.md`. The row above is the historical count at Block 8. |
 
 Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA (not assessed here):
 
