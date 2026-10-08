@@ -88,6 +88,19 @@ function dhtValid(seg) {
   }
   return seg.length > 0;
 }
+// A SOF segment: precision, height, width (both nonzero), component count n >= 1, then n x (id, H<<4|V, Tq) with unique ids, H/V 1-4 and Tq 0-3; length is exactly 6 + 3n.
+function sofValid(seg) {
+  if (seg.length < 6 || seg[0] === 0 || seg.readUInt16BE(1) === 0 || seg.readUInt16BE(3) === 0) return false;
+  const n = seg[5];
+  if (n < 1 || seg.length !== 6 + 3 * n) return false;
+  const ids = new Set();
+  for (let i = 0; i < n; i++) {
+    const [id, hv, tq] = [seg[6 + 3 * i], seg[7 + 3 * i], seg[8 + 3 * i]];
+    if (ids.has(id) || (hv >> 4) < 1 || (hv >> 4) > 4 || (hv & 15) < 1 || (hv & 15) > 4 || tq > 3) return false;
+    ids.add(id);
+  }
+  return true;
+}
 function validJpeg(b) {
   if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
   let off = 2; let sof = false; let scans = 0; let dqt = false; let dht = false; let huffman = true;
@@ -99,7 +112,7 @@ function validJpeg(b) {
     if (off + 4 > b.length) return false;
     const len = b.readUInt16BE(off + 2);
     if (len < 2 || off + 2 + len > b.length) return false;
-    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (len < 8 || b.readUInt16BE(off + 5) === 0 || b.readUInt16BE(off + 7) === 0) return false; sof = true; huffman = m < 0xc9; }
+    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (sof || !sofValid(b.subarray(off + 4, off + 2 + len))) return false; sof = true; huffman = m < 0xc9; }
     if (m === 0xdb) { if (!dqtValid(b.subarray(off + 4, off + 2 + len))) return false; dqt = true; }
     if (m === 0xc4) { if (!dhtValid(b.subarray(off + 4, off + 2 + len))) return false; dht = true; }
     off += 2 + len;
@@ -498,8 +511,7 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     const alliance = list.filter((i) => i?.group === 'alliance').length;
     if (list.length > 0 && alliance !== ALLIANCE_REQUIRED) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${ALLIANCE_REQUIRED}`);
     const rankingListed = list.filter((i) => i?.group === 'ranking').length;
-    const rankingExpected = config.rankingExpectedCount ?? RANKING_EVIDENCED_TOTAL;
-    if (man?.rankingList?.complete !== true || rankingListed < rankingExpected) F.add('T7', 'ranking-list-incomplete', REM, null, 'the full ranking-image list is not in preserved evidence (master plan §9.3: ~20 image URLs rank; only the manifested subset is identifiable) — evidence must be supplied, not inferred');
+    if (man?.rankingList?.complete !== true || rankingListed < RANKING_EVIDENCED_TOTAL) F.add('T7', 'ranking-list-incomplete', REM, null, 'the full ranking-image list is not in preserved evidence (master plan §9.3: ~20 image URLs rank; only the manifested subset is identifiable) — evidence must be supplied, not inferred');
   }
 
   // ---------- T9 sitemap ----------

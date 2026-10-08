@@ -176,7 +176,12 @@ detects('manifest dropped to fewer than 6 alliance images', (fx) => { fx.config.
 detects('manifest absent', (fx) => { delete fx.config.imageManifest; }, 'T7:manifest-undeclared');
 detects('manifest entry outside /wp-content/uploads/', (fx) => { fx.config.imageManifest.images.push({ path: '/img/x.png', group: 'ranking' }); }, 'T7:manifest-entry-invalid');
 detects('manifest duplicate entry', (fx) => { fx.config.imageManifest.images.push({ ...fx.config.imageManifest.images[0] }); }, 'T7:manifest-duplicate');
-detects('complete:true without the evidenced ranking inventory does not waive the gap', (fx) => { delete fx.config.rankingExpectedCount; }, 'T7:ranking-list-incomplete', { invariant: false });
+detects('complete:true without the evidenced ranking inventory does not waive the gap', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.slice(0, -20); }, 'T7:ranking-list-incomplete', { invariant: false });
+detects('config rankingExpectedCount cannot lower the pinned ranking total', (fx) => { fx.config.rankingExpectedCount = 1; fx.config.imageManifest.images = fx.config.imageManifest.images.slice(0, -20); }, 'T7:ranking-list-incomplete', { invariant: false });
+const jpgSof = (mut) => { const b = Buffer.from(JPG); mut(b, b.indexOf(Buffer.from([0xff, 0xc0]))); return b; };
+detects('required JPEG SOF declares zero components', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 9] = 0; })), 'T7:required-image-invalid');
+detects('required JPEG SOF length disagrees with its component count', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 9] = 2; })), 'T7:required-image-invalid');
+detects('required JPEG SOF has illegal sampling factors', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 11] = 0x00; })), 'T7:required-image-invalid');
 detects('incomplete ranking list stays a blocking evidence gap', (fx) => { fx.config.imageManifest.rankingList.complete = false; }, 'T7:ranking-list-incomplete', { invariant: false });
 
 // --- T8 / T13 links ---
