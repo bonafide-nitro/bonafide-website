@@ -193,6 +193,23 @@ const jpgSof = (mut) => { const b = Buffer.from(JPG); mut(b, b.indexOf(Buffer.fr
 detects('required JPEG SOF declares zero components', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 9] = 0; })), 'T7:required-image-invalid');
 detects('required JPEG SOF length disagrees with its component count', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 9] = 2; })), 'T7:required-image-invalid');
 detects('required JPEG SOF has illegal sampling factors', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 11] = 0x00; })), 'T7:required-image-invalid');
+// Progressive DC-only scan (SOF2, Ss = Se = 0): only the DC Huffman table it references is required.
+const jpgDcOnly = () => {
+  const b = Buffer.from(JPG); const d = b.indexOf(Buffer.from([0xff, 0xc4])); const dlen = b.readUInt16BE(d + 2);
+  const dc = Buffer.concat([Buffer.from([0xff, 0xc4, 0x00, 0x14]), b.subarray(d + 4, d + 4 + 18)]);
+  const out = Buffer.concat([b.subarray(0, d), dc, b.subarray(d + 2 + dlen)]);
+  out[out.indexOf(Buffer.from([0xff, 0xc0])) + 1] = 0xc2;
+  out[out.indexOf(Buffer.from([0xff, 0xda])) + 8] = 0x00; // Se = 0
+  return out;
+};
+test('accepts: progressive DC-only JPEG scan with only the DC Huffman table', () => {
+  const fx = makeFixture();
+  try {
+    fx.put('wp-content/uploads/2018/06/rank.jpg', jpgDcOnly());
+    assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid'));
+  } finally { cleanup(fx); }
+});
+detects('required JPEG DC-only scan without its DC table is rejected', (fx) => { const b = jpgDcOnly(); b[b.indexOf(Buffer.from([0xff, 0xda])) + 6] = 0x10; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
 detects('incomplete ranking list stays a blocking evidence gap', (fx) => { fx.config.imageManifest.rankingList.complete = false; }, 'T7:ranking-list-incomplete', { invariant: false });
 
 // --- T8 / T13 links ---

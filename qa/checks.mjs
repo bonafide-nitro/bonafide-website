@@ -110,11 +110,15 @@ function sosValid(seg, comps, dqtIds, dhtIds, huffman) {
   const n = seg[0];
   if (!(n >= 1) || seg.length !== 4 + 2 * n) return false;
   const seen = new Set();
+  // Only the tables a scan actually uses are required: DC when it codes DC coefficients (Ss = 0, not a DC refinement),
+  // AC when it codes any AC coefficient (Se > 0). A progressive DC-only scan therefore needs no AC table.
+  const [ss, se, ah] = [seg[1 + 2 * n], seg[2 + 2 * n], seg[3 + 2 * n] >> 4];
+  const needDc = ss === 0 && ah === 0; const needAc = se > 0;
   for (let i = 0; i < n; i++) {
     const [cs, t] = [seg[1 + 2 * i], seg[2 + 2 * i]];
     if (!comps.has(cs) || seen.has(cs) || !dqtIds.has(comps.get(cs))) return false;
     seen.add(cs);
-    if (huffman && (!dhtIds.has(t >> 4) || !dhtIds.has(0x10 | (t & 15)))) return false;
+    if (huffman && ((needDc && !dhtIds.has(t >> 4)) || (needAc && !dhtIds.has(0x10 | (t & 15))))) return false;
   }
   return true;
 }
