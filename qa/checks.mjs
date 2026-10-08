@@ -7,10 +7,38 @@
 // There is no other way for a finding to be non-blocking: strict mode blocks everything.
 import fs from 'node:fs';
 import path from 'node:path';
+import { decode as decodePng } from 'fast-png';
+import jpeg from 'jpeg-js';
 import { scanDist } from './lib/scan.mjs';
 import { jsonLdTypes } from './lib/html.mjs';
 import { patternToRegExp, hasPlaceholder } from './lib/patterns.mjs';
 import { parseXml } from './lib/xml.mjs';
+
+const decodeJpeg = jpeg.decode;
+
+// Image validation (T7): a real decoder (dev-only fast-png / jpeg-js) must fully decode the file, and no bytes may trail IEND / EOI.
+// Decoder limits are documented in docs/migration/26-block24-t7-image-gate-results.md; no custom PNG/JPEG conformance parsing lives here.
+function pngEndsAtIend(b) {
+  let off = 8;
+  while (off + 12 <= b.length) {
+    const len = b.readUInt32BE(off);
+    if (b.toString('latin1', off + 4, off + 8) === 'IEND') return off + 12 + len === b.length;
+    off += 12 + len;
+  }
+  return false;
+}
+function validPng(b) {
+  try { decodePng(b); } catch { return false; }
+  return pngEndsAtIend(b);
+}
+function validJpeg(b) {
+  if (b.length < 4 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
+  try { decodeJpeg(b, { useTArray: true }); } catch { return false; }
+  return true;
+}
+
+const RANKING_EVIDENCED_TOTAL = 21; // 10 exact paths + 11 further URLs summarised in docs/migration/02-seo-raw-data-appendix.md; not read from the manifest so `complete: true` alone cannot waive the gap
+const ALLIANCE_REQUIRED = 6; // fixed by the master plan; deliberately not read from the manifest so it cannot be weakened in step with the list
 
 export const INV = 'invariant';
 export const REM = 'migration-remaining';
@@ -362,6 +390,41 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
       let decoded = ref; try { decoded = decodeURI(ref); } catch { /* keep raw */ }
       if (!files.has(decoded.slice(1))) F.add('T7', 'missing-upload', INV, decoded, 'referenced /wp-content/uploads/ asset is missing from the build (original path must be preserved)', '/' + rel);
     }
+  }
+
+  // ---------- T7 required-image manifest (Block 24, Issue #66) ----------
+  // qa/t7-image-manifest.json lists the alliance + evidenced ranking images verbatim from preserved evidence. A missing
+  // binary is migration-remaining (foundation reports it, strict blocks); a malformed contract or a non-image file at a
+  // manifested path is an invariant. The incomplete ranking list stays an explicit evidence-gap finding until declared complete.
+  {
+    const man = config.imageManifest;
+    const list = Array.isArray(man?.images) ? man.images : [];
+    const prefix = '/wp-content/uploads/';
+    if (list.length === 0) F.add('T7', 'manifest-undeclared', INV, null, 'T7 required-image manifest (qa/t7-image-manifest.json) is absent or empty');
+    const seen = new Set();
+    const lower = new Map([...files.keys()].map((k) => [k.toLowerCase(), k]));
+    for (const img of list) {
+      const ip = img?.path;
+      if (typeof ip !== 'string' || !ip.startsWith(prefix) || /[?#\s]/.test(ip) || ip.endsWith('/') || !['alliance', 'ranking'].includes(img.group)) { F.add('T7', 'manifest-entry-invalid', INV, typeof ip === 'string' ? ip : null, 'manifest entry needs a clean /wp-content/uploads/ file path and group alliance|ranking'); continue; }
+      if (seen.has(ip)) { F.add('T7', 'manifest-duplicate', INV, ip, 'manifest lists this required image more than once'); continue; }
+      seen.add(ip);
+      const rel = ip.slice(1);
+      const abs = files.get(rel);
+      if (!abs) {
+        const near = lower.get(rel.toLowerCase());
+        if (near) F.add('T7', 'required-image-path-case', INV, ip, `a file exists only at differently-cased path /${near}; the required path must match exactly`);
+        else F.add('T7', 'required-image-missing', REM, ip, `required ${img.group} image is not in the build at its preserved path (binary not supplied)`);
+        continue;
+      }
+      const ext = path.extname(rel).toLowerCase();
+      const buf = fs.readFileSync(abs);
+      const ok = (ext === '.png' && validPng(buf)) || ((ext === '.jpg' || ext === '.jpeg') && validJpeg(buf));
+      if (!ok) F.add('T7', 'required-image-invalid', INV, ip, 'file at the required path is empty, truncated, or is not a PNG/JPEG that a real decoder fully decodes (matching its extension, no trailing bytes)');
+    }
+    const alliance = list.filter((i) => i?.group === 'alliance').length;
+    if (list.length > 0 && alliance !== ALLIANCE_REQUIRED) F.add('T7', 'alliance-count', INV, null, `manifest lists ${alliance} alliance images; the master plan requires ${ALLIANCE_REQUIRED}`);
+    const rankingListed = list.filter((i) => i?.group === 'ranking').length;
+    if (man?.rankingList?.complete !== true || rankingListed < RANKING_EVIDENCED_TOTAL) F.add('T7', 'ranking-list-incomplete', REM, null, 'the full ranking-image list is not in preserved evidence (master plan §9.3: ~20 image URLs rank; only the manifested subset is identifiable) — evidence must be supplied, not inferred');
   }
 
   // ---------- T9 sitemap ----------

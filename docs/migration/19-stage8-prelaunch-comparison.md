@@ -84,6 +84,7 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
   `docs/MIGRATION_QA.md` (T7 row) records they are not in the manifest, and the checker validates only `/wp-content/uploads/` paths already referenced by rendered output.
   `ProductCard.astro` does not render product `image` fields and `public/` holds none of these binaries, so strict QA can turn green without detecting their absence.
   Populating the manifest/checker coverage and supplying the binaries is a launch blocker.
+  *Block 24 update:* the manifest and automated T7 gate now exist (`docs/migration/26-block24-t7-image-gate-results.md`); the blocker is **narrowed, not resolved** — the binaries and the full ranking-image list are still missing and now fail strict QA explicitly.
 - **Full QA on the protected preview, then T1–T13 on production-host staging.** Master plan Step 16 requires the complete QA suite to pass against the protected
   preview build (fix, do not waive), and Step 17 requires T1–T13 to be re-run on the locked staging URL on the production host to catch server-level differences.
   All results recorded in this report come from a local build only, and the repo contains no preview deployment configuration. Neither the preview-environment run

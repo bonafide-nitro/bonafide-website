@@ -16,6 +16,24 @@ export const page = ({ p, title, h1 = `Heading ${p}`, body = '', head = jsonLd()
   (canonical ? `<link rel="canonical" href="${canonical}">` : '') +
   `${head}</head><body>${h1 === null ? '' : `<h1>${h1}</h1>`}${body}</body></html>`;
 
+const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+const crc32 = (b) => { let c = 0xffffffff; for (const x of b) c = crcTable[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+export const pngChunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const body = Buffer.concat([Buffer.from(type, 'latin1'), data]); const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(body)); return Buffer.concat([len, body, crc]); };
+const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(1, 0); ihdr.writeUInt32BE(1, 4); ihdr.set([8, 0, 0, 0, 0], 8);
+// Structurally complete 1x1 grayscale PNG and baseline JPEG (the T7 gate validates structure, not just the signature).
+export const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), pngChunk('IHDR', ihdr), pngChunk('IDAT', Buffer.from([0x78, 0x9c, 0x63, 0x60, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01])), pngChunk('IEND', Buffer.alloc(0))]);
+export const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x43, 0x00, ...new Array(64).fill(1), 0xff, 0xc4, 0x00, 0x26, 0x00, 0x01, ...new Array(15).fill(0), 0x00, 0x10, 0x01, ...new Array(15).fill(0), 0x00, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00, 0x00, 0xff, 0xd9]);
+// Small healthy T7 manifest: 6 alliance + 1 ranking image, ranking list declared complete.
+export const t7Manifest = () => ({
+  alliance: { requiredCount: 6 },
+  rankingList: { complete: true },
+  images: [
+    ...['a', 'b', 'c', 'd', 'e', 'f'].map((n) => ({ path: `/wp-content/uploads/2022/05/${n}-alliance.png`, group: 'alliance' })),
+    { path: '/wp-content/uploads/2018/06/rank.jpg', group: 'ranking' },
+    ...Array.from({ length: 20 }, (_, i) => ({ path: `/wp-content/uploads/2018/06/rank${i}.jpg`, group: 'ranking' })), // 21 = the evidenced ranking total pinned in qa/checks.mjs
+  ],
+});
+
 const entry = (p, extra = {}) => ({ path: p, tier: 1, expect: '200', canonical: 'self', indexable: true, inSitemap: true, ...extra });
 
 export const baselineFixture = () => ({
@@ -60,9 +78,10 @@ export const makeFixture = () => {
   put('privacy-policies/index.html', page({ p: '/privacy-policies/', title: 'Privacy', robots: 'noindex' }));
   put('404.html', page({ p: '/404.html', title: 'Not found', canonical: null }));
   put('wp-content/uploads/2020/01/hero.jpg', 'jpg');
+  for (const m of t7Manifest().images) put(m.path.slice(1), m.path.endsWith('.png') ? PNG : JPG);
   put('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', '/products/', '/products-2/', '/about/'].map((u) => `<url><loc>${ORIGIN}${u}</loc></url>`).join('')}</urlset>`);
   put('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
-  return { dir, put, baseline: baselineFixture(), redirects: redirectsFixture(), site: { trailingSlash: 'always', buildFormat: 'directory' }, config: { allowedScriptHosts: [], articleRoutes: ['/fixture-post/'], commerceInventory: { pages: { '/products/': { amazon: ['https://www.amazon.com/dp/1'], store: ['https://www.nitrocoffee.store/products/x'] }, '/products-2/': { store: Array.from({ length: 22 }, (_, i) => `https://www.nitrocoffee.store/products/p${i}`) } } } } };
+  return { dir, put, baseline: baselineFixture(), redirects: redirectsFixture(), site: { trailingSlash: 'always', buildFormat: 'directory' }, config: { imageManifest: t7Manifest(), allowedScriptHosts: [], articleRoutes: ['/fixture-post/'], commerceInventory: { pages: { '/products/': { amazon: ['https://www.amazon.com/dp/1'], store: ['https://www.nitrocoffee.store/products/x'] }, '/products-2/': { store: Array.from({ length: 22 }, (_, i) => `https://www.nitrocoffee.store/products/p${i}`) } } } } };
 };
 
 export const run = (fx, mode = 'strict', extra = {}) => runQa({ distDir: fx.dir, baseline: fx.baseline, redirects: fx.redirects, site: fx.site, config: fx.config, mode, ...extra });

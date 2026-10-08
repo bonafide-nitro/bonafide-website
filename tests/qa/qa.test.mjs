@@ -1,10 +1,11 @@
+import zlib from 'node:zlib';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { makeFixture, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
+import { makeFixture, t7Manifest, PNG, JPG, pngChunk, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
 
 // Adds rules to the healthy register, replacing any inventory rule with the same source (sources must stay unique).
 const putRules = (fx, ...rs) => { fx.redirects = fx.redirects.filter((x) => !rs.some((r) => r.from === x.from)); fx.redirects.push(...rs); };
@@ -102,6 +103,102 @@ test('detects: redirect register failing schema validation', () => {
 // --- T7 images ---
 detects('referenced /wp-content/uploads/ asset missing', (fx) => rm(fx, 'wp-content'), 'T7:missing-upload');
 detects('absolute-URL upload reference missing', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<img srcset="https://bonafidenitro.com/wp-content/uploads/2020/02/x.png 1x, /wp-content/uploads/2020/01/hero.jpg 2x">' })), 'T7:missing-upload');
+detects('required alliance image missing (binary not supplied)', (fx) => rm(fx, 'wp-content/uploads/2022/05/a-alliance.png'), 'T7:required-image-missing', { invariant: false });
+detects('required ranking image missing (binary not supplied)', (fx) => rm(fx, 'wp-content/uploads/2018/06/rank.jpg'), 'T7:required-image-missing', { invariant: false });
+detects('required image is empty', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', ''), 'T7:required-image-invalid');
+detects('required image is HTML masquerading as PNG', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', '<html>not found</html>'), 'T7:required-image-invalid');
+detects('required image is PNG bytes under a .jpg path', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', PNG), 'T7:required-image-invalid');
+detects('required PNG has valid signature but garbage body', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', Buffer.concat([PNG.subarray(0, 8), Buffer.from('not a png')])), 'T7:required-image-invalid');
+detects('required PNG is truncated before IEND', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', PNG.subarray(0, PNG.length - 12)), 'T7:required-image-invalid');
+detects('required PNG has trailing bytes after IEND', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', Buffer.concat([PNG, Buffer.from('junk')])), 'T7:required-image-invalid');
+detects('required PNG has a corrupted chunk CRC', (fx) => { const b = Buffer.from(PNG); b[20] ^= 0xff; fx.put('wp-content/uploads/2022/05/a-alliance.png', b); }, 'T7:required-image-invalid');
+const pngWithIdat = (idat) => { const b = Buffer.from(PNG); const len = 10; const start = b.indexOf('IDAT') - 4; const crcT = (x) => { let c = 0xffffffff; for (const v of x) { c ^= v; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ 0xffffffff) >>> 0; }; const body = Buffer.concat([Buffer.from('IDAT'), idat]); const l = Buffer.alloc(4); l.writeUInt32BE(idat.length); const c = Buffer.alloc(4); c.writeUInt32BE(crcT(body)); return Buffer.concat([b.subarray(0, start), l, body, c, b.subarray(start + 12 + len)]); };
+detects('required PNG has CRC-correct IDAT that is not a zlib stream', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngWithIdat(Buffer.from('not zlib!!'))), 'T7:required-image-invalid');
+detects('required PNG uses an invalid scanline filter byte', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngWithIdat(zlib.deflateSync(Buffer.from([5, 0])))), 'T7:required-image-invalid');
+detects('required interlaced PNG uses an invalid scanline filter byte', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngInterlaced(1, 1, Buffer.from([9, 0]))), 'T7:required-image-invalid');
+const pngInterlaced = (w, h, raw) => { // 8-bit greyscale Adam7 PNG with the given decoded stream
+  const crcT = (x) => { let c = 0xffffffff; for (const v of x) { c ^= v; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (t, d) => { const b = Buffer.concat([Buffer.from(t), d]); const o = Buffer.alloc(4); o.writeUInt32BE(d.length); const c = Buffer.alloc(4); c.writeUInt32BE(crcT(b)); return Buffer.concat([o, b, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 0; ihdr[12] = 1;
+  return Buffer.concat([PNG.subarray(0, 8), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+};
+const pngIhdr = (depth, color, comp, filt, extra = [], late = []) => { // 1x1 PNG with chosen IHDR encoding fields; `extra` chunks go before IDAT; data is sized for 8-bit greyscale-like [filter, sample]
+  const crcT = (x) => { let c = 0xffffffff; for (const v of x) { c ^= v; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (t, d) => { const b = Buffer.concat([Buffer.from(t), d]); const o = Buffer.alloc(4); o.writeUInt32BE(d.length); const c = Buffer.alloc(4); c.writeUInt32BE(crcT(b)); return Buffer.concat([o, b, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(1, 0); ihdr.writeUInt32BE(1, 4); ihdr.set([depth, color, comp, filt, 0], 8);
+  const samples = { 0: 1, 3: 1 }[color] ?? 1;
+  const raw = Buffer.alloc(1 + Math.ceil((samples * depth) / 8));
+  return Buffer.concat([PNG.subarray(0, 8), chunk('IHDR', ihdr), ...extra.map(([t, d]) => chunk(t, d)), chunk('IDAT', zlib.deflateSync(raw)), ...late.map(([t, d]) => chunk(t, d)), chunk('IEND', Buffer.alloc(0))]);
+};
+test('accepts: PNG with an unknown ancillary chunk', () => {
+  const fx = makeFixture();
+  try { fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 0, [['abCD', Buffer.alloc(0)]])); assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid')); } finally { cleanup(fx); }
+});
+detects('required JPEG DQT has an illegal precision/id byte', (fx) => { const b = Buffer.from(JPG); b[b.indexOf(0xdb) + 3] = 0xf4; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG DHT code lengths are oversubscribed', (fx) => { const i = JPG.indexOf(0xc4); const seg = Buffer.from([0xff, 0xc4, 0x00, 0x16, 0x00, 0x03, ...new Array(15).fill(0), 0, 1, 2]); fx.put('wp-content/uploads/2018/06/rank.jpg', Buffer.concat([JPG.subarray(0, i - 1), seg, JPG.subarray(i - 1 + 2 + JPG.readUInt16BE(i + 1))])); }, 'T7:required-image-invalid');
+detects('alliance minimum weakened together with the declared count', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.filter((i) => i.path !== '/wp-content/uploads/2022/05/f-alliance.png'); fx.config.imageManifest.alliance.requiredCount = 5; }, 'T7:alliance-count');
+detects('required JPEG DHT counts exceed its symbols', (fx) => { const b = Buffer.from(JPG); b[b.indexOf(0xc4) + 5] = 2; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required PNG declares compression method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 1, 0)), 'T7:required-image-invalid');
+detects('required PNG declares filter method 1', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 0, 0, 1)), 'T7:required-image-invalid');
+detects('required greyscale PNG declares illegal bit depth 3', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(3, 0, 0, 0)), 'T7:required-image-invalid');
+test('accepts: indexed PNG with a PLTE chunk', () => {
+  const fx = makeFixture();
+  try { fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(8, 3, 0, 0, [['PLTE', Buffer.from([0, 0, 0])]])); assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid')); } finally { cleanup(fx); }
+});
+const P = (extra, late, depth = 8) => (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngIhdr(depth, 3, 0, 0, extra, late));
+detects('required indexed PNG has a PLTE that is not whole RGB triples', P([['PLTE', Buffer.from([0, 0, 0, 0])]]), 'T7:required-image-invalid');
+detects('required interlaced PNG declares large dimensions but inflates to one byte', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngInterlaced(64, 64, Buffer.alloc(1))), 'T7:required-image-invalid');
+test('accepts: interlaced PNG whose inflated stream matches the Adam7 pass sizes', () => {
+  const fx = makeFixture();
+  try {
+    // 2x2 8-bit grey: pass1 1x1 (2 bytes), pass6 1x1 at (1,0) (2 bytes), pass7 2x1 at row 1 (3 bytes)
+    fx.put('wp-content/uploads/2022/05/a-alliance.png', pngInterlaced(2, 2, Buffer.alloc(7)));
+    assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid'));
+  } finally { cleanup(fx); }
+});
+detects('required JPEG has valid signature but garbage body', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', Buffer.concat([JPG.subarray(0, 4), Buffer.from('not a jpeg')])), 'T7:required-image-invalid');
+const jpgNoSeg = (marker) => { const i = JPG.indexOf(Buffer.from([0xff, marker])); const len = JPG.readUInt16BE(i + 2); return Buffer.concat([JPG.subarray(0, i), JPG.subarray(i + 2 + len)]); };
+detects('required JPEG has no quantisation table', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgNoSeg(0xdb)), 'T7:required-image-invalid');
+detects('required Huffman JPEG has no Huffman table', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgNoSeg(0xc4)), 'T7:required-image-invalid');
+const pngSplit = (between) => { const idat = PNG.subarray(33, 55).subarray(8, 18); const head = PNG.subarray(0, 33); const iend = PNG.subarray(55); return Buffer.concat([head, pngChunk('IDAT', idat.subarray(0, 4)), ...between, pngChunk('IDAT', idat.subarray(4)), iend]); };
+test('consecutive split IDAT chunks are accepted', () => {
+  const fx = makeFixture();
+  try { fx.put('wp-content/uploads/2022/05/a-alliance.png', pngSplit([])); assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid')); } finally { cleanup(fx); }
+});
+const sosAt = () => JPG.indexOf(Buffer.from([0xff, 0xda])) + 4; // first byte of the SOS payload (Ns)
+detects('required JPEG SOS names a component absent from the frame', (fx) => { const b = Buffer.from(JPG); b[sosAt() + 1] = 9; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG SOS references a Huffman table that was not defined', (fx) => { const b = Buffer.from(JPG); b[sosAt() + 2] = 0x11; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG frame component references a quantisation table that was not defined', (fx) => { const b = Buffer.from(JPG); b[b.indexOf(0xdb) + 3] = 0x01; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG is truncated before EOI', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', JPG.subarray(0, JPG.length - 2)), 'T7:required-image-invalid');
+detects('required image only present at differently-cased path', (fx) => { rm(fx, 'wp-content/uploads/2022/05/a-alliance.png'); fx.put('wp-content/uploads/2022/05/A-alliance.png', PNG); }, 'T7:required-image-path-case');
+detects('manifest dropped to fewer than 6 alliance images', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.filter((i) => i.path !== '/wp-content/uploads/2022/05/f-alliance.png'); }, 'T7:alliance-count');
+detects('manifest absent', (fx) => { delete fx.config.imageManifest; }, 'T7:manifest-undeclared');
+detects('manifest entry outside /wp-content/uploads/', (fx) => { fx.config.imageManifest.images.push({ path: '/img/x.png', group: 'ranking' }); }, 'T7:manifest-entry-invalid');
+detects('manifest duplicate entry', (fx) => { fx.config.imageManifest.images.push({ ...fx.config.imageManifest.images[0] }); }, 'T7:manifest-duplicate');
+detects('complete:true without the evidenced ranking inventory does not waive the gap', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.slice(0, -20); }, 'T7:ranking-list-incomplete', { invariant: false });
+detects('config rankingExpectedCount cannot lower the pinned ranking total', (fx) => { fx.config.rankingExpectedCount = 1; fx.config.imageManifest.images = fx.config.imageManifest.images.slice(0, -20); }, 'T7:ranking-list-incomplete', { invariant: false });
+const jpgSof = (mut) => { const b = Buffer.from(JPG); mut(b, b.indexOf(Buffer.from([0xff, 0xc0]))); return b; };
+detects('required JPEG SOF declares zero components', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 9] = 0; })), 'T7:required-image-invalid');
+detects('required JPEG SOF length disagrees with its component count', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 9] = 2; })), 'T7:required-image-invalid');
+detects('required JPEG SOF has illegal sampling factors', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgSof((b, i) => { b[i + 11] = 0x00; })), 'T7:required-image-invalid');
+// Progressive DC-only scan (SOF2, Ss = Se = 0): only the DC Huffman table it references is required.
+const jpgDcOnly = () => {
+  const b = Buffer.from(JPG); const d = b.indexOf(Buffer.from([0xff, 0xc4])); const dlen = b.readUInt16BE(d + 2);
+  const dc = Buffer.concat([Buffer.from([0xff, 0xc4, 0x00, 0x14]), b.subarray(d + 4, d + 4 + 18)]);
+  const out = Buffer.concat([b.subarray(0, d), dc, b.subarray(d + 2 + dlen)]);
+  out[out.indexOf(Buffer.from([0xff, 0xc0])) + 1] = 0xc2;
+  out[out.indexOf(Buffer.from([0xff, 0xda])) + 8] = 0x00; // Se = 0
+  return out;
+};
+test('accepts: progressive DC-only JPEG scan with only the DC Huffman table', () => {
+  const fx = makeFixture();
+  try {
+    fx.put('wp-content/uploads/2018/06/rank.jpg', jpgDcOnly());
+    assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid'));
+  } finally { cleanup(fx); }
+});
+detects('required JPEG DC-only scan without its DC table is rejected', (fx) => { const b = jpgDcOnly(); b[b.indexOf(Buffer.from([0xff, 0xda])) + 6] = 0x10; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('incomplete ranking list stays a blocking evidence gap', (fx) => { fx.config.imageManifest.rankingList.complete = false; }, 'T7:ranking-list-incomplete', { invariant: false });
 
 // --- T8 / T13 links ---
 detects('internal link to a redirecting URL', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', body: '<a href="/contact/">c</a>' })), 'T8:link-to-redirect');
