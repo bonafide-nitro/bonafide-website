@@ -44,7 +44,7 @@ function filtersValid(raw, start, rows, stride) {
 }
 function validPng(b) {
   if (b.length < 45 || !b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return false;
-  let off = 8; let first = true; let hdr = null; let plte = false; const idat = [];
+  let off = 8; let first = true; let hdr = null; let plte = false; let idatEnded = false; const idat = [];
   while (off + 12 <= b.length) {
     const len = b.readUInt32BE(off); const type = b.toString('latin1', off + 4, off + 8);
     const end = off + 12 + len;
@@ -57,7 +57,8 @@ function validPng(b) {
       if (plte || idat.length > 0 || len === 0 || len % 3 !== 0 || len / 3 > Math.min(256, 2 ** hdr[8]) || hdr[9] === 0 || hdr[9] === 4) return false;
       plte = true;
     }
-    if (type === 'IDAT') idat.push(b.subarray(off + 8, end - 4));
+    if (type === 'IDAT') { if (idatEnded) return false; idat.push(b.subarray(off + 8, end - 4)); } // IDAT chunks must be consecutive
+    else if (idat.length > 0) idatEnded = true;
     if (type === 'IEND') return len === 0 && idat.length > 0 && end === b.length && (hdr[9] !== 3 || plte) && pngPixelsDecode(hdr, Buffer.concat(idat));
     off = end;
   }
@@ -66,19 +67,21 @@ function validPng(b) {
 const RANKING_EVIDENCED_TOTAL = 21; // 10 exact paths + 11 further URLs summarised in docs/migration/02-seo-raw-data-appendix.md; not read from the manifest so `complete: true` alone cannot waive the gap
 const ALLIANCE_REQUIRED = 6; // fixed by the master plan; deliberately not read from the manifest so it cannot be weakened in step with the list
 // A DQT segment holds one or more tables: Pq/Tq byte (Pq 0|1, Tq 0-3) then 64 entries of (Pq+1) bytes.
-function dqtValid(seg) {
+function dqtValid(seg, ids) {
   let o = 0;
   while (o < seg.length) {
     if ((seg[o] >> 4) > 1 || (seg[o] & 0x0f) > 3) return false;
+    ids.add(seg[o] & 0x0f);
     o += 1 + 64 * ((seg[o] >> 4) + 1);
   }
   return seg.length > 0 && o === seg.length;
 }
 // A DHT segment holds one or more tables: class/id byte, 16 code-length counts, then exactly sum(counts) symbols.
-function dhtValid(seg) {
+function dhtValid(seg, ids) {
   let o = 0;
   while (o < seg.length) {
     if (o + 17 > seg.length || (seg[o] >> 4) > 1 || (seg[o] & 0x0f) > 3) return false;
+    ids.add(seg[o]); // class<<4 | id
     let n = 0; for (let i = 1; i <= 16; i++) n += seg[o + i];
     if (n === 0 || n > 256 || o + 17 + n > seg.length) return false;
     let free = 1; // remaining code space; each length doubles it, codes consume it, and the all-ones code stays reserved
@@ -89,7 +92,7 @@ function dhtValid(seg) {
   return seg.length > 0;
 }
 // A SOF segment: precision, height, width (both nonzero), component count n >= 1, then n x (id, H<<4|V, Tq) with unique ids, H/V 1-4 and Tq 0-3; length is exactly 6 + 3n.
-function sofValid(seg) {
+function sofValid(seg, comps) {
   if (seg.length < 6 || seg[0] === 0 || seg.readUInt16BE(1) === 0 || seg.readUInt16BE(3) === 0) return false;
   const n = seg[5];
   if (n < 1 || seg.length !== 6 + 3 * n) return false;
@@ -97,13 +100,27 @@ function sofValid(seg) {
   for (let i = 0; i < n; i++) {
     const [id, hv, tq] = [seg[6 + 3 * i], seg[7 + 3 * i], seg[8 + 3 * i]];
     if (ids.has(id) || (hv >> 4) < 1 || (hv >> 4) > 4 || (hv & 15) < 1 || (hv & 15) > 4 || tq > 3) return false;
-    ids.add(id);
+    ids.add(id); comps.set(id, tq);
+  }
+  return true;
+}
+// A SOS header: Ns >= 1 components (each in the frame, unique), length exactly 4 + 2Ns, Td/Ta selectors 0-3 naming parsed
+// DHT tables, then Ss/Se/Ah/Al. The frame component's Tq must name a parsed DQT table.
+function sosValid(seg, comps, dqtIds, dhtIds, huffman) {
+  const n = seg[0];
+  if (!(n >= 1) || seg.length !== 4 + 2 * n) return false;
+  const seen = new Set();
+  for (let i = 0; i < n; i++) {
+    const [cs, t] = [seg[1 + 2 * i], seg[2 + 2 * i]];
+    if (!comps.has(cs) || seen.has(cs) || !dqtIds.has(comps.get(cs))) return false;
+    seen.add(cs);
+    if (huffman && (!dhtIds.has(t >> 4) || !dhtIds.has(0x10 | (t & 15)))) return false;
   }
   return true;
 }
 function validJpeg(b) {
   if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return false;
-  let off = 2; let sof = false; let scans = 0; let dqt = false; let dht = false; let huffman = true;
+  let off = 2; let sof = false; let scans = 0; let huffman = true; const comps = new Map(); const dqtIds = new Set(); const dhtIds = new Set();
   while (off + 2 <= b.length) {
     if (b[off] !== 0xff) return false;
     const m = b[off + 1];
@@ -112,12 +129,12 @@ function validJpeg(b) {
     if (off + 4 > b.length) return false;
     const len = b.readUInt16BE(off + 2);
     if (len < 2 || off + 2 + len > b.length) return false;
-    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (sof || !sofValid(b.subarray(off + 4, off + 2 + len))) return false; sof = true; huffman = m < 0xc9; }
-    if (m === 0xdb) { if (!dqtValid(b.subarray(off + 4, off + 2 + len))) return false; dqt = true; }
-    if (m === 0xc4) { if (!dhtValid(b.subarray(off + 4, off + 2 + len))) return false; dht = true; }
+    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { if (sof || !sofValid(b.subarray(off + 4, off + 2 + len), comps)) return false; sof = true; huffman = m < 0xc9; }
+    if (m === 0xdb) { if (!dqtValid(b.subarray(off + 4, off + 2 + len), dqtIds)) return false; }
+    if (m === 0xc4) { if (!dhtValid(b.subarray(off + 4, off + 2 + len), dhtIds)) return false; }
     off += 2 + len;
     if (m === 0xda) { // entropy-coded data follows the scan header, up to the next real marker (stuffed 0xFF00 and RSTn are data)
-      if (!sof || !dqt || (huffman && !dht)) return false; // a scan cannot decode without its quantisation (and Huffman) tables
+      if (!sof || !sosValid(b.subarray(off - len + 2, off), comps, dqtIds, dhtIds, huffman)) return false; // a scan needs a well-formed header whose components reference parsed tables
       const start = off;
       while (off + 1 < b.length && !(b[off] === 0xff && b[off + 1] !== 0x00 && !(b[off + 1] >= 0xd0 && b[off + 1] <= 0xd7) && b[off + 1] !== 0xff)) off++;
       if (off === start) return false;

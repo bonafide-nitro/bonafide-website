@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { makeFixture, t7Manifest, PNG, JPG, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
+import { makeFixture, t7Manifest, PNG, JPG, pngChunk, page, jsonLd, run, codes, rm, cleanup, storeLinks } from './fixture.mjs';
 
 // Adds rules to the healthy register, replacing any inventory rule with the same source (sources must stay unique).
 const putRules = (fx, ...rs) => { fx.redirects = fx.redirects.filter((x) => !rs.some((r) => r.from === x.from)); fx.redirects.push(...rs); };
@@ -170,6 +170,17 @@ detects('required JPEG has valid signature but garbage body', (fx) => fx.put('wp
 const jpgNoSeg = (marker) => { const i = JPG.indexOf(Buffer.from([0xff, marker])); const len = JPG.readUInt16BE(i + 2); return Buffer.concat([JPG.subarray(0, i), JPG.subarray(i + 2 + len)]); };
 detects('required JPEG has no quantisation table', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgNoSeg(0xdb)), 'T7:required-image-invalid');
 detects('required Huffman JPEG has no Huffman table', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', jpgNoSeg(0xc4)), 'T7:required-image-invalid');
+const pngSplit = (between) => { const idat = PNG.subarray(33, 55).subarray(8, 18); const head = PNG.subarray(0, 33); const iend = PNG.subarray(55); return Buffer.concat([head, pngChunk('IDAT', idat.subarray(0, 4)), ...between, pngChunk('IDAT', idat.subarray(4)), iend]); };
+detects('required PNG has non-consecutive IDAT chunks', (fx) => fx.put('wp-content/uploads/2022/05/a-alliance.png', pngSplit([pngChunk('tEXt', Buffer.from('a\0b'))])), 'T7:required-image-invalid');
+test('consecutive split IDAT chunks are accepted', () => {
+  const fx = makeFixture();
+  try { fx.put('wp-content/uploads/2022/05/a-alliance.png', pngSplit([])); assert.ok(!codes(run(fx, 'foundation')).includes('T7:required-image-invalid')); } finally { cleanup(fx); }
+});
+const sosAt = () => JPG.indexOf(Buffer.from([0xff, 0xda])) + 4; // first byte of the SOS payload (Ns)
+detects('required JPEG SOS declares zero components', (fx) => { const b = Buffer.from(JPG); b[sosAt()] = 0; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG SOS names a component absent from the frame', (fx) => { const b = Buffer.from(JPG); b[sosAt() + 1] = 9; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG SOS references a Huffman table that was not defined', (fx) => { const b = Buffer.from(JPG); b[sosAt() + 2] = 0x11; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
+detects('required JPEG frame component references a quantisation table that was not defined', (fx) => { const b = Buffer.from(JPG); b[b.indexOf(0xdb) + 3] = 0x01; fx.put('wp-content/uploads/2018/06/rank.jpg', b); }, 'T7:required-image-invalid');
 detects('required JPEG is truncated before EOI', (fx) => fx.put('wp-content/uploads/2018/06/rank.jpg', JPG.subarray(0, JPG.length - 2)), 'T7:required-image-invalid');
 detects('required image only present at differently-cased path', (fx) => { rm(fx, 'wp-content/uploads/2022/05/a-alliance.png'); fx.put('wp-content/uploads/2022/05/A-alliance.png', PNG); }, 'T7:required-image-path-case');
 detects('manifest dropped to fewer than 6 alliance images', (fx) => { fx.config.imageManifest.images = fx.config.imageManifest.images.filter((i) => i.path !== '/wp-content/uploads/2022/05/f-alliance.png'); }, 'T7:alliance-count');
