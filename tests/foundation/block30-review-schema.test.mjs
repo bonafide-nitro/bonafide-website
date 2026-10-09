@@ -23,6 +23,6 @@ t('homepage title, H1 and canonical are preserved', () => {
 });
 
 test('source: homepage still declares no Review markup of its own', () => {
-  const src = fs.readFileSync('src/pages/index.astro', 'utf8');
+  const src = fs.readFileSync('src/pages/index.astro', 'utf8').replace(/<!--[\s\S]*?-->/g, '');
   assert.ok(!/AggregateRating|"Review"|reviewRating/.test(src));
 });
