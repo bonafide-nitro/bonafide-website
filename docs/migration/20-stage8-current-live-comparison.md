@@ -105,7 +105,7 @@ Also not evidenced by the supplied record (never requested, or not stated):
 All blockers in `docs/migration/19-stage8-prelaunch-comparison.md` §2 (45 strict-QA findings, redirect artifact and staging verification, 26 pending-decision redirects,
 T7 image gate, preview/staging QA, T16 visual regression, forensic preservation, Stage 3 security verification, clean rollback copy, D1 deployment gates,
 deletion-aware deployment, new deploy credential), the configuration-remaining items in §3 and the evidence-remaining items in §4 of that document are **unchanged**.
-D3, D4, D6, I2, I3 and I7 are unresolved business decisions and remain so.
+D3, D4, D6, I2 and I3 are unresolved business decisions and remain so. I7 was resolved in Block 30 (Review/rating schema omitted; doc 21); the `/` testimonial section remains a homepage content blocker.
 
 ## 9. Stage 8 completion status (as of Block 16 — superseded by §11)
 
@@ -218,3 +218,5 @@ and the evidence-remaining "Legal copy" item. All blockers in doc 19 §2 remain 
 Whether items A, B and C are required before Stage 8 can be called complete, or may be accepted as out-of-scope sample limits, is a scope decision this Block does not make. It is **not** decided here; Žaneta may record it as a `ZANETA_DECISION`.
 All pre-cutover blockers in `docs/migration/19-stage8-prelaunch-comparison.md` §2 are **unchanged**. **Do not begin Stage 9** until Stage 8 is explicitly declared complete.
 **Stage 8 completion does not authorize cutover**; cutover requires separate explicit Žaneta approval recorded on GitHub.
+
+**Block 30:** I7/D7 resolved by omitting Review/AggregateRating schema (`docs/migration/21-block30-i7-review-schema-decision.md`). No other blocker changes; Stage 8 remains incomplete.

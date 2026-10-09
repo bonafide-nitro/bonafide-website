@@ -154,6 +154,9 @@ detects('site-wide Organization missing on a page (not declared in manifest)', (
 detects('site-wide WebSite missing on a page (not declared in manifest)', (fx) => fx.put('about/index.html', withTypes(['Organization', 'BreadcrumbList'])), 'T6:schema-sitewide-missing');
 detects('BreadcrumbList missing on a page (not declared in manifest)', (fx) => fx.put('about/index.html', withTypes(['Organization', 'WebSite'])), 'T6:schema-page-missing');
 detects('no JSON-LD at all on a page', (fx) => fx.put('about/index.html', page({ p: '/about/', title: 'About us', head: '' })), 'T6:schema-page-missing');
+const withReview = (extra) => page({ p: '/', title: 'Home', head: `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': [{ '@type': 'Organization' }, { '@type': 'WebSite' }, { '@type': 'BreadcrumbList' }, extra] })}</script>` });
+detects('Review schema on a page (Block 30, I7)', (fx) => fx.put('about/index.html', withReview({ '@type': 'Review', name: 'x' })), 'T6:unsupported-review-schema');
+detects('AggregateRating schema on a page (Block 30, I7)', (fx) => fx.put('about/index.html', withReview({ '@type': 'WebPage', aggregateRating: { '@type': 'AggregateRating' } })), 'T6:unsupported-review-schema');
 test('scaffold page without schema is migration-remaining, not an invariant', () => {
   const fx = makeFixture();
   try {

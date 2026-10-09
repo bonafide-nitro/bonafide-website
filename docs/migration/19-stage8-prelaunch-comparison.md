@@ -147,7 +147,7 @@ Total = 35 + 1 + 1 + 1 + 3 + 3 + 1 = 45. Also blocker classes not visible to QA 
 - **I3 — indexed offices-coffee PDF (unresolved, preserve-or-redirect requirement):** `/wp-content/uploads/2021/09/17x11-Bona-FIde-coffee-for-Offices-version-10-Email_compressed.pdf`
   (569 impressions) has no copy under `public/` and no redirect, and is tied to no page marker or QA contract. Master-plan I3 requires preserving the exact path or redirecting it to
   `/howtobuy/`; until one is done and verified, removing page markers must not be read as launch readiness, as the URL would otherwise become an unexpected 404.
-- **Page assets/metadata:** image binaries and alt text, page-level assets, PDFs and meta descriptions for pages that still carry the scaffold marker; `/` testimonial/Review schema decision (I7).
+- **Page assets/metadata:** image binaries and alt text, page-level assets, PDFs and meta descriptions for pages that still carry the scaffold marker; `/` customer-testimonial section (I7 Review schema resolved by omission in Block 30, doc 21).
 - **Pending-decision redirects (26, unresolved and not fabricated; launch blocker, see §2):** 14 exact legacy paths (`/To`, `/roots/`, `/where-to-refill-your-`, `/blog-new/`,
   `/collections/`, `/sustainability/`, `/copyright-notice/`, `/kegging-service/`, `/best-coffee-creamers/`, `/best-nitro-cold-brew-coffee-maker/`, `/author/raul/`,
   `/cold-brew-coffee-tap-future-serve/`, `/contact-email/`, plus `/coffee-trend-dominate-2018`); 9 external `/services/*` rules with truncated store-URL fragments

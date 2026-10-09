@@ -23,6 +23,17 @@ const isP2 = (p) => p === '/products-2/';
 // Master plan §13.2 T6 contract (deployment blocker); the config may add to it, never remove from it.
 const SITE_WIDE_SCHEMA = ['Organization', 'WebSite'];
 const PER_PAGE_SCHEMA = ['BreadcrumbList'];
+// Block 30 / I7: review and rating markup is not evidenced as legitimate third-party data, so it must not be emitted.
+const REVIEW_SCHEMA_TYPES = new Set(['Review', 'AggregateRating', 'Rating', 'EmployerAggregateRating', 'CriticReview', 'UserReview']);
+const REVIEW_SCHEMA_PROPS = new Set(['review', 'reviews', 'aggregateRating', 'reviewRating', 'ratingValue', 'ratingCount', 'reviewCount', 'bestRating', 'worstRating']);
+const findReviewSchema = (node, hits = new Set()) => {
+  if (Array.isArray(node)) node.forEach((n) => findReviewSchema(n, hits));
+  else if (node && typeof node === 'object') {
+    for (const t of [].concat(node['@type'] ?? [])) if (REVIEW_SCHEMA_TYPES.has(t)) hits.add(`@type ${t}`);
+    for (const [k, v] of Object.entries(node)) { if (REVIEW_SCHEMA_PROPS.has(k)) hits.add(`property ${k}`); findReviewSchema(v, hits); }
+  }
+  return hits;
+};
 // Master plan §13.2 T2 inventory (deployment blocker): protocol/host canonicalisation, AMP, the 11 legacy plugin rules and
 // slash normalisation. A rule is matched by its source, so a deleted rule cannot pass by leaving the survivors valid.
 // `defined` rules must also have a decided destination. Config/manifest may add to this list, never remove from it.
@@ -283,7 +294,11 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     // T6 schema
     const types = [];
     for (const block of page.jsonLd) {
-      try { types.push(...jsonLdTypes(JSON.parse(block))); } catch { F.add('T6', 'jsonld-invalid', INV, page.path, 'JSON-LD block does not parse'); }
+      try {
+        const parsed = JSON.parse(block);
+        types.push(...jsonLdTypes(parsed));
+        for (const hit of findReviewSchema(parsed)) F.add('T6', 'unsupported-review-schema', INV, page.path, `JSON-LD ${hit}: review/rating schema has no evidenced third-party provenance (Block 30, I7); omit it`);
+      } catch { F.add('T6', 'jsonld-invalid', INV, page.path, 'JSON-LD block does not parse'); }
     }
     for (const t of e?.schema ?? []) if (!types.includes(t)) F.add('T6', 'schema-missing', ck, page.path, `JSON-LD @type ${t} required by manifest`);
     // §13.2 T6: site-wide and per-page schema are required on every built page whether or not the manifest declares them.
