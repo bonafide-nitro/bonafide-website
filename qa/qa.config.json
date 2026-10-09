@@ -57,5 +57,31 @@
         "store": []
       }
     }
+  },
+  "nonArticleScaffold": {
+    "_note": "Block 29 (Issue #76). Deterministic non-article scaffold contract. 'cleared' = non-article routes whose scaffold marker was removed as evidence-complete; 'remaining' = routes that intentionally stay scaffolded with the recorded blocker. Must not overlap articleRoutes; each page's source marker and built scaffold marker must match. Nothing is invented.",
+    "cleared": [],
+    "remaining": {
+      "/": "homepage testimonial section and Review/rating schema are not preserved: decision I7 (self-serving review markup) is an unresolved business decision; hero imagery not recovered",
+      "/about/": "facilities images 2-8 have no evidenced paths and no image binaries or alt text are preserved (only Bona-Fide-Facilities-1.jpg path is evidenced)",
+      "/blog/": "post excerpts, categories and card images are not preserved",
+      "/book-appointment/": "exact live Calendly URL is not in repository evidence; supplied only via PUBLIC_CALENDLY_URL, which a human must configure",
+      "/contact-bona-fide-nitro-coffee-and-tea/": "page meta description not preserved and no form provider endpoint is configured (form renders disabled)",
+      "/hot-nitro-equipment-rental/": "images and meta description not preserved; no single historical H1 is evidenced (H1 is derived from the launch title)",
+      "/howtobuy/": "image binaries and alt text not preserved; the baseline's 13 outbound distributor/partner links are not captured (only store anchors linked)",
+      "/interested-in-selling-eu-and-usa/": "images and meta description not preserved; CTA destinations (some Google Docs) not evidenced; nitro information/quiz not preserved",
+      "/interested-in-selling-eu-qr-2/": "images and meta description not preserved; CTA destinations (some Google Docs) not evidenced; nitro information/quiz not preserved",
+      "/interested-in-selling-usa/": "images and meta description not preserved; lead form and SCHEDULE A DEMO destination not evidenced (Stage 7); CTA is a label only",
+      "/kegerators/": "equipment image binaries (e.g. Kegerator-counter-top-Bona-Fide.jpg) and alt text not supplied; first CTA destination returns 404 on the store (preserved as observed)",
+      "/nitro-coffee-kegs/": "keg images have no evidenced upload paths and the meta description is not preserved",
+      "/nitro-coffee-questions/": "the Nitro Coffee brochure PDF and Draft System SOP have no evidenced upload paths; live answers were not supplied (answers are rewritten); meta description not preserved",
+      "/nitro-cold-brew-coffee-made-easy-2/": "meta description and images not preserved; the interactive branching/serving-volume form is not recreated (Stage 7)",
+      "/nitro-cold-brew-old/": "page images and meta description not evidenced; body is a conservative paraphrase of the topics listed in Issue #34 (exact copy not preserved)",
+      "/nitro-cold-brew/": "ranking image binaries (All-about-nitro-cold-brew-coffee.jpg, Cold-brew-Nitro-Coffee.jpg and others) and alt text not supplied",
+      "/privacy-policies/": "exact legal body copy, live title and meta description are not in any repository evidence; legal copy must not be invented",
+      "/products-2/": "exact commerce inventory (22 nitrocoffee.store hrefs incl. Alliance CTAs) unresolved; image binaries, alt text, meta description not preserved",
+      "/products/": "exact commerce inventory (13 Amazon + 16 store hrefs) unresolved; image binaries, alt text, meta description not preserved",
+      "/terms-of-service/": "exact legal body copy, live title and meta description are not in any repository evidence; legal copy must not be invented"
+    }
   }
 }
