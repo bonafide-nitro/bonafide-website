@@ -137,3 +137,6 @@ Repository-only. `ZANETA_DECISION` applied to `src/data/redirects.yaml`: 6 `/ser
 ### Block 23 — Article + Person schema gate (Issue #64)
 
 Repository-only. `src/lib/article-schema.mjs` emits `Article` + `Person` on the 15 archive posts (fields from `src/lib/archive.mjs` evidence only); T6 gains the unconditional post-route contract above. Image, publisher and description are unevidenced and omitted. Stage 8 remains incomplete. See `docs/migration/25-block23-article-person-schema-results.md`.
+
+## Block 30 update (Issue #80) — decision I7/D7
+Homepage Review/AggregateRating schema is resolved as **omitted**; QA T6 now rejects unsupported review/rating JSON-LD on every page (`review-rating-schema-unsupported`, invariant). See `docs/migration/32-block30-review-schema-results.md`. `/` keeps its scaffold marker for the separate, unresolved testimonial-content blocker. Stage 8 remains incomplete.

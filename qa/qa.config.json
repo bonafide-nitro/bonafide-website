@@ -62,7 +62,7 @@
     "_note": "Block 29 (Issue #76). Deterministic non-article scaffold contract. 'cleared' = non-article routes whose scaffold marker was removed as evidence-complete; 'remaining' = routes that intentionally stay scaffolded with the recorded blocker. Must not overlap articleRoutes; each page's source marker and built scaffold marker must match. Nothing is invented.",
     "cleared": [],
     "remaining": {
-      "/": "homepage testimonial section and Review/rating schema are not preserved: decision I7 (self-serving review markup) is an unresolved business decision; hero imagery not recovered",
+      "/": "homepage testimonial section is not preserved (no evidence of its source or provenance; not invented); hero imagery not recovered. Review/AggregateRating schema is resolved as omitted (decision I7, Block 30)",
       "/about/": "facilities images 2-8 have no evidenced paths and no image binaries or alt text are preserved (only Bona-Fide-Facilities-1.jpg path is evidenced)",
       "/blog/": "post excerpts, categories and card images are not preserved",
       "/book-appointment/": "exact live Calendly URL is not in repository evidence; supplied only via PUBLIC_CALENDLY_URL, which a human must configure",
