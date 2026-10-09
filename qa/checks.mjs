@@ -11,6 +11,7 @@ import { decode as decodePng } from 'fast-png';
 import jpeg from 'jpeg-js';
 import { scanDist } from './lib/scan.mjs';
 import { jsonLdTypes } from './lib/html.mjs';
+import { findReviewRatingTerms } from './lib/jsonld.mjs';
 import { patternToRegExp, hasPlaceholder } from './lib/patterns.mjs';
 import { parseXml } from './lib/xml.mjs';
 
@@ -335,6 +336,12 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
           if (a.dateModified != null && !isoDate(a.dateModified)) F.add('T6', 'article-field-invalid', ck, page.path, 'Article.dateModified must be an ISO date');
         }
       } else if (arts.length || people.length) F.add('T6', 'article-schema-unexpected', INV, page.path, 'Article/Person schema is only allowed on the historical post routes (archives and other pages must not carry it)');
+    }
+    // Block 30 (Issue #80, decision I7/D7): no third-party review provenance is evidenced, so Review/AggregateRating/Rating JSON-LD is rejected on every page. Terms are IRI-normalised first.
+    for (const block of page.jsonLd) {
+      let data; try { data = JSON.parse(block); } catch { continue; /* reported above as jsonld-invalid */ }
+      const hits = findReviewRatingTerms(data);
+      if (hits.length) F.add('T6', 'review-rating-schema-unsupported', INV, page.path, `unsupported review/rating JSON-LD (no verified third-party provenance, decision I7): ${[...new Set(hits.map((h) => `${h.kind} ${h.term}`))].join(', ')}`);
     }
     for (const t of e?.schema ?? []) if (!types.includes(t)) F.add('T6', 'schema-missing', ck, page.path, `JSON-LD @type ${t} required by manifest`);
     // §13.2 T6: site-wide and per-page schema are required on every built page whether or not the manifest declares them.
