@@ -25,6 +25,11 @@ const applyContext = (state, ctx) => {
   if (ctx['@vocab'] === null) next.vocab = null;
   for (const [k, v] of Object.entries(ctx)) {
     if (k.startsWith('@')) continue;
+    // null (or {"@id": null}) explicitly decouples the term from any inherited IRI (JSON-LD 1.1).
+    if (v === null || (typeof v === 'object' && !Array.isArray(v) && v['@id'] === null)) {
+      next.terms.set(k, null);
+      continue;
+    }
     const id = typeof v === 'string' ? v : v && typeof v === 'object' && typeof v['@id'] === 'string' ? v['@id'] : null;
     if (id) next.terms.set(k, id);
   }
@@ -37,12 +42,13 @@ const expand = (term, state, depth = 0) => {
   if (ABSOLUTE.test(term)) return term;
   if (state.terms.has(term)) {
     const target = state.terms.get(term);
-    return target === term ? null : expand(target, state, depth + 1);
+    return target === null || target === term ? null : expand(target, state, depth + 1);
   }
   const i = term.indexOf(':');
   if (i > 0) {
     const prefix = term.slice(0, i);
     if (state.terms.has(prefix)) {
+      if (state.terms.get(prefix) === null) return null;
       const base = expand(state.terms.get(prefix), state, depth + 1);
       return base ? base + term.slice(i + 1) : null;
     }
@@ -54,12 +60,21 @@ const expand = (term, state, depth = 0) => {
   return `https://schema.org/${term}`;
 };
 
-// Keyword a node key denotes: itself when it is a keyword, or the keyword it is aliased to in the context.
+// Keyword a node key denotes: itself when it is a keyword, or the keyword it is aliased to in the context
+// (following alias chains, e.g. a -> t -> @type).
 const keywordOf = (key, state) => {
-  if (key.startsWith('@')) return key;
-  const target = state.terms.get(key);
-  return typeof target === 'string' && target.startsWith('@') ? target : null;
+  let cur = key;
+  for (let depth = 0; depth <= 8; depth += 1) {
+    if (cur.startsWith('@')) return cur;
+    const target = state.terms.get(cur);
+    if (typeof target !== 'string' || target === cur) return null;
+    cur = target;
+  }
+  return null;
 };
+
+// Node-bearing keywords whose values are (lists of) nodes or property maps of the same node.
+const TRAVERSED_KEYWORDS = new Set(['@graph', '@included', '@nest', '@reverse', '@list', '@set']);
 
 const schemaName = (iri) => (iri ? SCHEMA_IRI.exec(iri)?.[1] ?? null : null);
 
@@ -84,7 +99,7 @@ export const findReviewRatingTerms = (data) => {
         const name = schemaName(expand(k, state));
         if (name && BANNED_PROPS.has(name)) found.push({ kind: 'property', term: k, name });
       }
-      if (kw === null || kw === '@graph' || kw === '@included') visit(v, state);
+      if (kw === null || TRAVERSED_KEYWORDS.has(kw)) visit(v, state);
     }
   };
   visit(data, EMPTY_STATE);

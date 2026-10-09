@@ -29,6 +29,12 @@ const rejected = {
   'aliased @type keyword with {@id}': { '@context': ['https://schema.org', { t: { '@id': '@type' } }], t: ['Thing', 'AggregateRating'] },
   'node under @included': { '@context': 'https://schema.org', '@included': [{ '@type': 'Review' }] },
   'node under aliased @included': { '@context': { '@vocab': 'https://schema.org/', inc: '@included' }, inc: [{ '@type': 'AggregateRating' }] },
+  'transitive @type alias chain': { '@context': { t: '@type', a: 't', '@vocab': 'https://schema.org/' }, '@graph': [{ a: 'Review' }] },
+  'Review under @nest': { '@context': 'https://schema.org', '@nest': { '@type': 'Review' } },
+  'Review under @reverse property map': { '@context': 'https://schema.org', '@graph': [{ '@type': 'Thing', '@reverse': { review: { '@type': 'Person' } } }] },
+  'Review inside @list': { '@context': 'https://schema.org', itemListElement: { '@list': [{ '@type': 'Review' }] } },
+  'Review inside @set': { '@context': 'https://schema.org', about: { '@set': [{ '@type': 'AggregateRating' }] } },
+  'aliased @nest': { '@context': { n: '@nest', '@vocab': 'https://schema.org/' }, n: { '@type': 'Review' } },
   'context re-established after a null context': { '@context': 'https://schema.org', '@graph': [{ '@context': [null, 'https://schema.org'], '@type': 'Review' }] },
   'top-level array of nodes': [{ '@context': 'https://schema.org', '@type': 'AggregateRating' }],
 };
@@ -49,6 +55,9 @@ const allowed = {
   'schema.org IRI is case-sensitive (lowercase review type is not the type)': { '@context': 'https://schema.org', '@graph': [{ '@type': 'review' }] },
   'null context clears inherited schema.org vocabulary': { '@context': 'https://schema.org', '@graph': [{ '@context': null, '@type': 'Review', review: 'x' }] },
   'null context drops inherited prefixes': { '@context': { schema: 'https://schema.org/' }, '@graph': [{ '@context': null, '@type': 'schema:Review' }] },
+  'null term definition removes inherited review alias': { '@context': { r: 'https://schema.org/review' }, '@graph': [{ '@context': { r: null }, r: 'x' }] },
+  'null @id term definition removes inherited review alias': { '@context': { r: 'https://schema.org/review' }, '@graph': [{ '@context': { r: { '@id': null } }, r: 'x' }] },
+  'null definition of @type alias stops it being a type declaration': { '@context': { a: '@type', '@vocab': 'https://schema.org/' }, '@graph': [{ '@context': { a: null }, a: 'Review' }] },
   'Article + Person': { '@context': 'https://schema.org', '@graph': [...base, { '@type': 'Article', headline: 'h' }, { '@type': 'Person', name: 'n' }] },
 };
 for (const [name, data] of Object.entries(allowed)) {
