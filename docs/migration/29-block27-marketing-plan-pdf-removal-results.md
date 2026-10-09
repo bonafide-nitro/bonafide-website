@@ -16,6 +16,9 @@ Repository-only. No production, WordPress/cPanel, DNS, Search Console, hosting, 
 ## Stage-8 accounting
 I2 (`docs/migration/19-stage8-prelaunch-comparison.md`, master plan §7.7) is resolved by explicit business decision: **deliberate removal**. Docs 19/20 are preserved evidence and are not edited; this note supersedes the I2 "unresolved" entry. The PDF is not a page marker or strict-QA contract, so strict QA's finding count is unchanged.
 
+## Known limitation (accepted, non-blocking)
+The guard is filename/path-based. It does not detect a copy of the PDF placed under a different name, because the original binary (and therefore its content hash) was never committed to this repository and is unavailable; a hash-based check would require inventing evidence. Per the recorded `ZANETA_DECISION` on PR #73, this Codex P2 renamed-copy concern is accepted as a documented non-blocking limitation, and the rule is deliberately **not** broadened to ban unrelated PDFs in `public/wp-content/uploads/2026/02/`.
+
 ## Not authorized here — later live / post-cutover SEO action
 Search Console removal/deindex handling for this URL, if needed, is a later live/post-cutover action and is **not** authorized or performed in this Block.
 
