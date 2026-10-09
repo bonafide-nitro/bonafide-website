@@ -27,7 +27,7 @@ Each of the 15 `qa.config.json -> articleRoutes` pages was inspected against the
 | `/stability-kegs-nitro-coffee/` | historical commercial article summarised as originally positioned (exact copy, pricing and destinations not evidenced); images unrecovered |
 | `/coffee-on-tap-is-the-future/` | the known archive dates (published 2017-12-01, updated Oct 11, 2023) are not rendered on-page; the live update/interview destination is not evidenced; images unrecovered |
 
-Omitted as unevidenced (recorded, not invented): meta descriptions, images/alt text, publisher, external reference and video destinations, missing article dates.
+Omitted as unevidenced (recorded, not invented): meta descriptions, images/alt text, publisher, external reference and video destinations. Article dates are preserved in `src/lib/archive.mjs` and are not unevidenced; where a route's known dates are not rendered on-page, that is a rendering gap, not missing evidence.
 
 ## Placeholder count (`T5 placeholder-page`, strict QA)
 - Before: 35 (15 article + 20 non-article)
