@@ -12,8 +12,11 @@ const ABSOLUTE = /^[a-z][a-z0-9+.-]*:\/\//i;
 const isSchemaContextString = (s) => typeof s === 'string' && SCHEMA_CONTEXT.test(s.trim());
 
 // Merge an @context value (string | object | array) into a context state {vocab, terms}.
+const EMPTY_STATE = { vocab: undefined, terms: new Map() }; // no @context seen: bare terms default to schema.org
+const NULL_STATE = { vocab: null, terms: new Map() }; // @context: null: no vocabulary, bare terms mean nothing
 const applyContext = (state, ctx) => {
-  if (ctx == null) return state;
+  if (ctx === undefined) return state;
+  if (ctx === null) return NULL_STATE; // null context removes the active context (JSON-LD 1.1)
   if (Array.isArray(ctx)) return ctx.reduce(applyContext, state);
   if (typeof ctx === 'string') return isSchemaContextString(ctx) ? { ...state, vocab: 'https://schema.org/' } : state;
   if (typeof ctx !== 'object') return state;
@@ -51,6 +54,13 @@ const expand = (term, state, depth = 0) => {
   return `https://schema.org/${term}`;
 };
 
+// Keyword a node key denotes: itself when it is a keyword, or the keyword it is aliased to in the context.
+const keywordOf = (key, state) => {
+  if (key.startsWith('@')) return key;
+  const target = state.terms.get(key);
+  return typeof target === 'string' && target.startsWith('@') ? target : null;
+};
+
 const schemaName = (iri) => (iri ? SCHEMA_IRI.exec(iri)?.[1] ?? null : null);
 
 // Returns [{ kind: 'type' | 'property', term, name }] for every unsupported review/rating term in a parsed JSON-LD value.
@@ -60,17 +70,23 @@ export const findReviewRatingTerms = (data) => {
     if (Array.isArray(node)) return node.forEach((n) => visit(n, parent));
     if (!node || typeof node !== 'object') return;
     const state = applyContext(parent, node['@context']);
-    for (const t of [].concat(node['@type'] ?? [])) {
-      const name = schemaName(expand(t, state));
-      if (name && BANNED_TYPES.has(name)) found.push({ kind: 'type', term: t, name });
-    }
     for (const [k, v] of Object.entries(node)) {
-      if (k === '@context' || k === '@type') continue;
-      const name = schemaName(expand(k, state));
-      if (name && BANNED_PROPS.has(name)) found.push({ kind: 'property', term: k, name });
-      if (k === '@graph' || !k.startsWith('@')) visit(v, state);
+      const kw = keywordOf(k, state);
+      if (kw === '@context') continue;
+      if (kw === '@type') {
+        for (const t of [].concat(v ?? [])) {
+          const name = schemaName(expand(t, state));
+          if (name && BANNED_TYPES.has(name)) found.push({ kind: 'type', term: t, name });
+        }
+        continue;
+      }
+      if (kw === null) {
+        const name = schemaName(expand(k, state));
+        if (name && BANNED_PROPS.has(name)) found.push({ kind: 'property', term: k, name });
+      }
+      if (kw === null || kw === '@graph' || kw === '@included') visit(v, state);
     }
   };
-  visit(data, { vocab: undefined, terms: new Map() });
+  visit(data, EMPTY_STATE);
   return found;
 };

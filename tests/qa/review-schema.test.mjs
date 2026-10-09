@@ -25,6 +25,11 @@ const rejected = {
   'term alias via prefixed @id': { '@context': { schema: 'https://schema.org/', rev: { '@id': 'schema:aggregateRating' } }, '@graph': [...base, { '@type': 'Organization', rev: {} }] },
   'scoped node-level context': { '@context': 'https://schema.org', '@graph': [...base, { '@context': { schema: 'https://schema.org/' }, '@type': 'schema:Review' }] },
   'deeply nested in a property value': { '@context': 'https://schema.org', '@graph': [...base, { '@type': 'Product', offers: { '@type': 'Offer', itemReviewed: { '@type': 'Thing', review: { '@type': 'schema:Review' } } } }] },
+  'aliased @type keyword': { '@context': { '@vocab': 'https://schema.org/', a: '@type' }, '@graph': [{ a: 'Review' }] },
+  'aliased @type keyword with {@id}': { '@context': ['https://schema.org', { t: { '@id': '@type' } }], t: ['Thing', 'AggregateRating'] },
+  'node under @included': { '@context': 'https://schema.org', '@included': [{ '@type': 'Review' }] },
+  'node under aliased @included': { '@context': { '@vocab': 'https://schema.org/', inc: '@included' }, inc: [{ '@type': 'AggregateRating' }] },
+  'context re-established after a null context': { '@context': 'https://schema.org', '@graph': [{ '@context': [null, 'https://schema.org'], '@type': 'Review' }] },
   'top-level array of nodes': [{ '@context': 'https://schema.org', '@type': 'AggregateRating' }],
 };
 for (const [name, data] of Object.entries(rejected)) {
@@ -42,6 +47,8 @@ const allowed = {
   'Review on a lookalike host': { '@context': 'https://schema.org', '@graph': [{ '@type': 'https://schema.org.evil.example/Review' }] },
   'undefined prefix': { '@context': 'https://schema.org', '@graph': [{ '@type': 'nope:Review' }] },
   'schema.org IRI is case-sensitive (lowercase review type is not the type)': { '@context': 'https://schema.org', '@graph': [{ '@type': 'review' }] },
+  'null context clears inherited schema.org vocabulary': { '@context': 'https://schema.org', '@graph': [{ '@context': null, '@type': 'Review', review: 'x' }] },
+  'null context drops inherited prefixes': { '@context': { schema: 'https://schema.org/' }, '@graph': [{ '@context': null, '@type': 'schema:Review' }] },
   'Article + Person': { '@context': 'https://schema.org', '@graph': [...base, { '@type': 'Article', headline: 'h' }, { '@type': 'Person', name: 'n' }] },
 };
 for (const [name, data] of Object.entries(allowed)) {
