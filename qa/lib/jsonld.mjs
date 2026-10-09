@@ -12,15 +12,15 @@ const ABSOLUTE = /^[a-z][a-z0-9+.-]*:\/\//i;
 const isSchemaContextString = (s) => typeof s === 'string' && SCHEMA_CONTEXT.test(s.trim());
 
 // Merge an @context value (string | object | array) into a context state {vocab, terms}.
-const EMPTY_STATE = { vocab: undefined, terms: new Map() }; // no @context seen: bare terms default to schema.org
-const NULL_STATE = { vocab: null, terms: new Map() }; // @context: null: no vocabulary, bare terms mean nothing
+const EMPTY_STATE = { vocab: undefined, terms: new Map(), meta: new Map() }; // no @context seen: bare terms default to schema.org
+const NULL_STATE = { vocab: null, terms: new Map(), meta: new Map() }; // @context: null: no vocabulary, bare terms mean nothing
 const applyContext = (state, ctx) => {
   if (ctx === undefined) return state;
   if (ctx === null) return NULL_STATE; // null context removes the active context (JSON-LD 1.1)
   if (Array.isArray(ctx)) return ctx.reduce(applyContext, state);
   if (typeof ctx === 'string') return isSchemaContextString(ctx) ? { ...state, vocab: 'https://schema.org/' } : state;
   if (typeof ctx !== 'object') return state;
-  const next = { vocab: state.vocab, terms: new Map(state.terms) };
+  const next = { vocab: state.vocab, terms: new Map(state.terms), meta: new Map(state.meta) };
   if (typeof ctx['@vocab'] === 'string') next.vocab = ctx['@vocab'];
   if (ctx['@vocab'] === null) next.vocab = null;
   for (const [k, v] of Object.entries(ctx)) {
@@ -28,10 +28,16 @@ const applyContext = (state, ctx) => {
     // null (or {"@id": null}) explicitly decouples the term from any inherited IRI (JSON-LD 1.1).
     if (v === null || (typeof v === 'object' && !Array.isArray(v) && v['@id'] === null)) {
       next.terms.set(k, null);
+      next.meta.delete(k);
       continue;
     }
-    const id = typeof v === 'string' ? v : v && typeof v === 'object' && typeof v['@id'] === 'string' ? v['@id'] : null;
+    const def = v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+    // @reverse term definitions name the (banned) property IRI just like @id does.
+    const id = typeof v === 'string' ? v : def && typeof def['@id'] === 'string' ? def['@id'] : def && typeof def['@reverse'] === 'string' ? def['@reverse'] : null;
     if (id) next.terms.set(k, id);
+    // Container mapping and property-scoped @context belong to the term definition (JSON-LD 1.1).
+    if (def) next.meta.set(k, { container: [].concat(def['@container'] ?? []), context: def['@context'] });
+    else next.meta.delete(k);
   }
   return next;
 };
@@ -99,7 +105,23 @@ export const findReviewRatingTerms = (data) => {
         const name = schemaName(expand(k, state));
         if (name && BANNED_PROPS.has(name)) found.push({ kind: 'property', term: k, name });
       }
-      if (kw === null || TRAVERSED_KEYWORDS.has(kw)) visit(v, state);
+      if (kw !== null) {
+        if (TRAVERSED_KEYWORDS.has(kw)) visit(v, state);
+        continue;
+      }
+      const meta = state.meta.get(k);
+      const valueState = meta && meta.context !== undefined ? applyContext(state, meta.context) : state;
+      const containers = meta ? meta.container : [];
+      if (v && typeof v === 'object' && !Array.isArray(v) && containers.some((c) => ['@index', '@language', '@id', '@type'].includes(c)) && !containers.includes('@graph')) {
+        // Map container: the labels are indexes / languages / ids / types, never properties.
+        for (const [label, val] of Object.entries(v)) {
+          if (containers.includes('@type')) {
+            const name = schemaName(expand(label, valueState));
+            if (name && BANNED_TYPES.has(name)) found.push({ kind: 'type', term: label, name });
+          }
+          visit(val, valueState);
+        }
+      } else visit(v, valueState);
     }
   };
   visit(data, EMPTY_STATE);

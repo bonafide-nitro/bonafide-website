@@ -36,6 +36,10 @@ const rejected = {
   'Review inside @set': { '@context': 'https://schema.org', about: { '@set': [{ '@type': 'AggregateRating' }] } },
   'aliased @nest': { '@context': { n: '@nest', '@vocab': 'https://schema.org/' }, n: { '@type': 'Review' } },
   'context re-established after a null context': { '@context': 'https://schema.org', '@graph': [{ '@context': [null, 'https://schema.org'], '@type': 'Review' }] },
+  '@reverse term definition': { '@context': { '@vocab': 'https://schema.org/', r: { '@reverse': 'https://schema.org/review' } }, '@graph': [{ '@type': 'Thing', r: { '@type': 'Person' } }] },
+  'property-scoped context introduces schema.org vocab': { '@context': { '@vocab': 'https://example.com/', x: { '@id': 'https://example.com/x', '@context': { '@vocab': 'https://schema.org/' } } }, x: { '@type': 'Review' } },
+  'Review under an @index map value': { '@context': { '@vocab': 'https://schema.org/', item: { '@container': '@index' } }, item: { a: { '@type': 'Review' } } },
+  'banned type as @type map label': { '@context': { '@vocab': 'https://schema.org/', item: { '@container': '@type' } }, '@graph': [...base, { '@type': 'Thing', item: { Review: { name: 'x' } } }] },
   'top-level array of nodes': [{ '@context': 'https://schema.org', '@type': 'AggregateRating' }],
 };
 for (const [name, data] of Object.entries(rejected)) {
@@ -43,6 +47,8 @@ for (const [name, data] of Object.entries(rejected)) {
 }
 
 const allowed = {
+  'index-map labels are not properties': { '@context': { '@vocab': 'https://schema.org/', item: { '@container': '@index' } }, '@graph': [{ '@type': 'Thing', item: { review: { '@type': 'Thing' }, aggregateRating: { name: 'x' } } }] },
+  'language-map labels are not properties': { '@context': { '@vocab': 'https://schema.org/', name: { '@container': '@language' } }, name: { review: 'x' } },
   'standard site graph': { '@context': 'https://schema.org', '@graph': base },
   'prefixed unrelated terms': { '@context': { schema: 'https://schema.org/' }, '@graph': [{ '@type': 'schema:Organization', 'schema:name': 'x' }] },
   'text containing the words review/rating': { '@context': 'https://schema.org', '@graph': [{ '@type': 'WebPage', name: 'Review Rating guide', description: 'AggregateRating Review' }] },
