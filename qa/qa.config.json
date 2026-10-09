@@ -1,5 +1,7 @@
 {
-  "allowedScriptHosts": ["www.googletagmanager.com"],
+  "allowedScriptHosts": [
+    "www.googletagmanager.com"
+  ],
   "articleRoutes": [
     "/a-touch-of-vanilla-to-your-nitro-coffee/",
     "/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/",
@@ -17,6 +19,27 @@
     "/stability-kegs-nitro-coffee/",
     "/coffee-on-tap-is-the-future/"
   ],
+  "articleScaffold": {
+    "_note": "Block 28 (Issue #74). Deterministic article scaffold contract. 'cleared' = article routes whose scaffold marker was removed as evidence-complete; 'remaining' = routes that intentionally stay scaffolded with the recorded blocker. cleared + remaining must equal articleRoutes, and each page's built scaffold marker must match. Deleting a marker without moving the route to 'cleared' (or vice versa) fails tests. Missing meta descriptions/images are never invented.",
+    "cleared": [],
+    "remaining": {
+      "/a-touch-of-vanilla-to-your-nitro-coffee/": "body copy is a rewrite from the meaning listed in Issue #32, not preserved exact copy; page images unrecovered",
+      "/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/": "body is a paraphrase (exact copy not preserved); no on-page dates; external reference destinations not evidenced; images unrecovered",
+      "/how-ambient-stable-coffee-kegs-help-you-save-more-money/": "live page has a video embed whose exact destination is not evidenced; body copy is a rewrite from Issue #32; images unrecovered",
+      "/hot-nitro-coffee/": "body is a paraphrase (exact copy not preserved); on-page author/date semantics not captured; images unrecovered",
+      "/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/": "body is a conservative paraphrase of listed themes (exact copy not preserved); images unrecovered",
+      "/what-is-nitro-cold-brew-coffee/": "body copy is a rewrite from Issue #32 (exact copy not preserved); images unrecovered (ranking image What-is-nitro-Coffee-Explained-simple-Bona-Fide.jpg is a missing T7 binary)",
+      "/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/": "depends on T7 binary Bag-In-Box-And-Pouch-Shopify-Glass-Cold-Coffee.jpg at its exact upload path (not supplied) plus alt text",
+      "/nitro-coffee-health-benefits/": "body is a conservative paraphrase of broad historical statements (exact copy not preserved); images unrecovered",
+      "/is-coffee-healthy/": "body is a conservative paraphrase of listed themes (exact copy not preserved); images unrecovered",
+      "/coffee-trends-dominate-2018/": "body is a summary of the historical article (exact copy not preserved); images unrecovered",
+      "/coffee-doesnt-produce-cancer-says-leading-american-scientist/": "third-party editorial is summarised, not reproduced; no external citation URL evidenced; images unrecovered",
+      "/nitro-coffee-future/": "body copy is a rewrite from Issue #32 (exact copy not preserved); images unrecovered",
+      "/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/": "externally sourced/video material has no evidenced destinations; images unrecovered",
+      "/stability-kegs-nitro-coffee/": "historical commercial article summarised as originally positioned (exact copy, pricing and destinations not evidenced); images unrecovered",
+      "/coffee-on-tap-is-the-future/": "the known archive dates (published 2017-12-01, updated Oct 11, 2023) are not rendered on-page; the live update/interview destination is not evidenced; images unrecovered"
+    }
+  },
   "templateSlugs": [
     "thank-you",
     "my-bookings",
