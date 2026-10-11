@@ -141,6 +141,12 @@ const EXPECTED = {
     'https://www.nitrocoffee.store/collections/nitro-tea/products/organic-passion-fruit-nitro-tea-pet-5-gal',
     'https://www.nitrocoffee.store/products/orgainc-nitro-hazelnut-creme-coffee-pet-5-gal-keg',
     'https://www.nitrocoffee.store/collections/pet-nitro-coffee-keg/products/organic-nitro-caramel-coffee-pet-5-gal-keg',
+    'https://www.nitrocoffee.store/collections/nitro-coffee/products/caveman-organic-guatemala-pet-5-gal-keg',
+    'https://www.nitrocoffee.store/collections/nitro-coffee/products/girls-run-the-world-coffee-nitro-pet-5-gal-keg',
+    'https://www.nitrocoffee.store/collections/nitro-coffee/products/jittery-johns-coffee-company-nitro-pet-5-gal-keg',
+    'https://www.nitrocoffee.store/collections/nitro-coffee/products/thai-treasure-coffee-nitro-pet-5-gal-keg',
+    'https://www.nitrocoffee.store/collections/nitro-coffee/products/cult-artisan-beverage-co-uganda-white-nile-nitro-pet-5-gal-keg',
+    'https://www.nitrocoffee.store/collections/nitro-coffee/products/thanksgiving-coffee-compnay-nitro-pet-5-gal-keg',
   ],
   '/products/': [
     'https://www.nitrocoffee.store/',
@@ -177,7 +183,7 @@ t('every page renders exactly its evidenced commerce hrefs (no more, no fewer, b
 
 t('/products/ and /products-2/ keep distinct inventories and counts', () => {
   assert.equal(EXPECTED['/products/'].length, 13);
-  assert.equal(EXPECTED['/products-2/'].length, 12);
+  assert.equal(EXPECTED['/products-2/'].length, 18); // Block 34: +6 Alliance hrefs
   assert.notDeepEqual([...EXPECTED['/products/']].sort(), [...EXPECTED['/products-2/']].sort());
   assert.ok(!commerceHrefs(fs.readFileSync('dist/products-2/index.html', 'utf8')).some((u) => /amazon|amzn/i.test(u)));
 });

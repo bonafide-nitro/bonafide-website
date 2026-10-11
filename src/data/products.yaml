@@ -2,8 +2,8 @@
 # `views` decides which page renders a SKU: retail -> /products/, wholesale -> /products-2/.
 # The two pages are separate launch URLs and are never merged, aliased or substituted.
 # Source: docs/migration/07-block4-public-source-capture.md (sanitized public rendered-page capture).
-# Deliberately NOT here (not evidenced, never invented): Amazon hrefs, unresolved store hrefs,
-# the retail Vanilla store href, Alliance store hrefs, Decaf Mexico store href, image alt text
+# Deliberately NOT here (not evidenced, never invented): Amazon hrefs (Block 34 records the 13 snapshot URLs as
+# unmapped evidence in qa.config.json only), the retail Vanilla store href (snapshot target is suspect), Decaf Mexico store href, image alt text
 # other than where already recorded. `amazonCta: true` records only that a retail Amazon CTA
 # label exists on the launch page; the href is migration-remaining.
 # `links.storeViews` limits a store link to the views where it is evidenced.
@@ -218,7 +218,9 @@
   nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
   description: "Single-origin Guatemala Organic; creamy, cilantro and lime, medium body, honey and fruit finish. Vegan / Paleo."
   pricing: { retail: null, wholesale: 125.00 }
-  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  # /products-2/ ONLY — Alliance is wholesale-only. Store href: owner-supplied saved /products-2/ snapshot (Issue #86 ZANETA_DECISION, Block 34); preserved byte-for-byte, not independently verified as operational.
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/caveman-organic-guatemala-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Caveman-Coffee-Comapany-Nitro-by-Bona-Fide.png
   views: [wholesale]
 
@@ -231,7 +233,9 @@
   nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
   description: "Medium roast with pink grapefruit and toasted almond; Gorongosa Green from Gorongosa National Park plus sustainably sourced Arabica."
   pricing: { retail: null, wholesale: 125.00 }
-  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  # /products-2/ ONLY — Alliance is wholesale-only. Store href: owner-supplied saved /products-2/ snapshot (Issue #86 ZANETA_DECISION, Block 34); preserved byte-for-byte, not independently verified as operational.
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/girls-run-the-world-coffee-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/ourGorongosa-Coffee-Nitro-by-Bona-Fide.png
   views: [wholesale]
 
@@ -244,7 +248,9 @@
   nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 120mg"
   description: "Hair Raiser Organic dark French roast with French chicory; earthy and nutty, in the Café au Lait / New Orleans tradition."
   pricing: { retail: null, wholesale: 135.00 }
-  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  # /products-2/ ONLY — Alliance is wholesale-only. Store href: owner-supplied saved /products-2/ snapshot (Issue #86 ZANETA_DECISION, Block 34); preserved byte-for-byte, not independently verified as operational.
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/jittery-johns-coffee-company-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Jittery-Johns-Coffee-Comapany-Nitro-by-Bona-Fide.png
   views: [wholesale]
 
@@ -257,7 +263,9 @@
   nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
   description: "Sweet crema with honey, nut and citrus hints; Thai coffee from Northern Thailand high-mountain farmland."
   pricing: { retail: null, wholesale: 125.00 }
-  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  # /products-2/ ONLY — Alliance is wholesale-only. Store href: owner-supplied saved /products-2/ snapshot (Issue #86 ZANETA_DECISION, Block 34); preserved byte-for-byte, not independently verified as operational.
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/thai-treasure-coffee-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Thai-Treasures-Coffee-Nitro-by-Bona-Fide.png
   views: [wholesale]
 
@@ -270,7 +278,9 @@
   nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 110mg"
   description: "Semi-sweet chocolate, pear, prune and white grape; medium roast."
   pricing: { retail: null, wholesale: 125.00 }
-  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  # /products-2/ ONLY — Alliance is wholesale-only. Store href: owner-supplied saved /products-2/ snapshot (Issue #86 ZANETA_DECISION, Block 34); preserved byte-for-byte, not independently verified as operational.
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/cult-artisan-beverage-co-uganda-white-nile-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/CULT-Coffee-Comapany-Nitro-by-Bona-Fide.png
   views: [wholesale]
 
@@ -283,6 +293,8 @@
   nutrition: "Cal: 2, Protein: 0.3g, Fat: 0g, Sugar: 0, Caffeine: 120mg"
   description: "Fair Trade / Organic blend of Nicaraguan, Guatemalan and Ethiopian coffees; buttery mouthfeel, plum and a long finish."
   pricing: { retail: null, wholesale: 125.00 }
-  # /products-2/ ONLY — Alliance is wholesale-only; store hrefs not safely captured (migration-remaining)
+  # /products-2/ ONLY — Alliance is wholesale-only. Store href: owner-supplied saved /products-2/ snapshot (Issue #86 ZANETA_DECISION, Block 34); preserved byte-for-byte, not independently verified as operational.
+  links:
+    store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/thanksgiving-coffee-compnay-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Thanksgiving-Coffee-Company-Nitro-by-Bona-Fide.png
   views: [wholesale]

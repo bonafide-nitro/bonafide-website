@@ -140,3 +140,7 @@ Repository-only. `src/lib/article-schema.mjs` emits `Article` + `Person` on the 
 
 ## Block 30 update (Issue #80) — decision I7/D7
 Homepage Review/AggregateRating schema is resolved as **omitted**; QA T6 now rejects unsupported review/rating JSON-LD on every page (`review-rating-schema-unsupported`, invariant). See `docs/migration/32-block30-review-schema-results.md`. `/` keeps its scaffold marker for the separate, unresolved testimonial-content blocker. Stage 8 remains incomplete.
+
+## Block 34 (Issue #86) — commerce evidence from the owner snapshot
+
+Adds the 6 labelled Alliance store hrefs to `/products-2/` (12 -> 18 of 22) and records the 13 `/products/` Amazon URLs as unmapped evidence in `commerceInventory` (not rendered; per-product association unproven). Strict QA is still 42 blocking findings: `commerce-inventory-missing` 3 -> 2, plus one `commerce-destination-missing`. No blocker is marked resolved; the suspect `/products/` Vanilla link and differing vanilla/hazelnut variants are left unchanged. See `docs/migration/34-block34-commerce-evidence-results.md`.

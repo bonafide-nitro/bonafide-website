@@ -47,10 +47,24 @@
     "kegerators"
   ],
   "commerceInventory": {
-    "_note": "Exact Amazon/store destination URL sets for /products/ (13 Amazon, 16 store) and /products-2/ (22 store). Block 4 (Issue #25, ZANETA_DECISION): the exact Amazon hrefs and the remaining store/Alliance hrefs could NOT be safely captured and are not invented. Populate ONLY from an approved source before strict QA/cutover. Empty = migration-remaining (blocks strict). Safely observed store hrefs are listed in docs/migration/08-block4-source-capture-results.md.",
+    "_note": "Exact Amazon/store destination URL sets for /products/ (13 Amazon, 16 store) and /products-2/ (22 store). Block 4 (Issue #25, ZANETA_DECISION): the exact Amazon hrefs and the remaining store/Alliance hrefs could NOT be safely captured and are not invented. Block 34 (Issue #86 ZANETA_DECISION): the 13 /products/ Amazon URLs are recorded in saved-snapshot document order (SHA256 49505e0419d977bcebc3c86d1121d72d099bac0bf73499b06674fcec2feddb82); their per-product association is NOT proven, so they are not yet rendered. The store lists stay empty because the evidenced sets (12 on /products/, 18 on /products-2/) are below the 16/22 historical minimums. Populate ONLY from an approved source before strict QA/cutover. Empty = migration-remaining (blocks strict). Safely observed store hrefs are listed in docs/migration/08-block4-source-capture-results.md.",
     "pages": {
       "/products/": {
-        "amazon": [],
+        "amazon": [
+          "https://www.amazon.com/Bona-Craft-Draft-Nitro-Coffee/dp/B01N1001H9",
+          "https://www.amazon.com/dp/B0BQN58DQR",
+          "https://www.amazon.com/Nitro-Cold-Espresso-Coffee-Organic/dp/B0BQ7JCS18",
+          "https://www.amazon.com/dp/B0BQJNJTVY",
+          "https://www.amazon.com/dp/B073WMK2FL",
+          "https://www.amazon.com/dp/B0BQN2SQ2M",
+          "https://www.amazon.com/dp/B01NCV8CAE",
+          "https://www.amazon.com/dp/B0BQN1P82W",
+          "https://www.amazon.com/dp/B071J91343",
+          "https://www.amazon.com/dp/B0BQN3876K",
+          "https://www.amazon.com/Bona-Fide-Brewing-Company-Hibiscus/dp/B074JJ5CST",
+          "https://www.amazon.com/dp/B0BQJNW91V",
+          "https://www.amazon.com/dp/B0BQMZKWM1"
+        ],
         "store": []
       },
       "/products-2/": {
