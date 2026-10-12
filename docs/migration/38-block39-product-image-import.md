@@ -12,7 +12,7 @@ Espresso, Ethiopia, Peru, Guatemala, Decaf Mexico, Vanilla, Hibiscus, Mango, Haz
 - `ProductCard.astro` now renders an image when the product records an original `alt` (an empty string is a recorded, genuinely observed empty alt) and the binary exists at the exact path.
 - Every product now records the observed alt from the manifest. Non-empty alt: Hair Raiser, Espresso, Ethiopia, Vanilla (both records), Hazelnut on `/products-2/`. All others are the genuine empty alt (nothing invented).
 - Original per-page differences are kept in `viewOverrides`: Hazelnut has an empty alt on `/products/` but a non-empty one on `/products-2/`; Passion Fruit uses the `2022/05` upload on `/products/` and the `2026/07` upload on `/products-2/`.
-- `/products/` (12 cards) and `/products-2/` (18 cards) remain separate pages; prices, hrefs, commerce mappings and scaffold markers are unchanged.
+- `/products/` (12 product images) and `/products-2/` (19 product images, Vanilla appears for two records) remain separate pages; prices, hrefs, commerce mappings and scaffold markers are unchanged.
 
 ## Deliberately not done
 The manifest also records page-level images (header logo, product-page banners, bullets banners, equipment/machine images, Amazon banner, Classic Blend, serving photo). Their *section position* on the original pages is not evidenced in the manifest, so they are **not imported and not placed**; they remain in the owner's archive for a later Block that supplies placement evidence. Scaffold markers are not removed: full page/commerce/content parity is not evidenced.
