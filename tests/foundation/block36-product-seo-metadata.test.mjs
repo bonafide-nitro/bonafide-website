@@ -23,7 +23,8 @@ for (const path of ['/products/', '/products-2/']) {
   t(`${path}: own single canonical, no cross-canonical, not noindex`, () => {
     const h = html(path);
     assert.deepEqual(all(h, /<link rel="canonical" href="([^"]+)"/g).map((m) => m[1]), [`https://bonafidenitro.com${path}`]);
-    assert.ok(!/name="robots"/.test(h));
+    // Only a noindex directive is rejected; a later Block may restore the evidenced `index, follow, ...` robots tag.
+    for (const m of all(h, /<meta[^>]+name="robots"[^>]*>/g)) assert.ok(!/noindex/i.test(m[0]), m[0]);
   });
 
   t(`${path}: no unverified og:image / image reference was invented`, () => {
