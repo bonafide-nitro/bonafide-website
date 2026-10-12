@@ -42,7 +42,7 @@ t('Alliance hrefs are not reused across Alliance products and the Alliance regis
   assert.ok(!loadCommerce().unresolved.some((u) => u.id === 'products-2-alliance-store'));
 });
 
-test('the 13 /products/ Amazon URLs are recorded in order as unmapped evidence, not guessed into product cards', () => {
+test('the 13 /products/ Amazon URLs stay recorded in snapshot order (mapped to products in Block 35)', () => {
   const cfg = JSON.parse(fs.readFileSync('qa/qa.config.json', 'utf8'));
   const am = cfg.commerceInventory.pages['/products/'].amazon;
   assert.equal(am.length, 13);
@@ -51,22 +51,20 @@ test('the 13 /products/ Amazon URLs are recorded in order as unmapped evidence, 
   for (const u of am) assert.equal(new URL(u).hostname, 'www.amazon.com');
   assert.deepEqual(cfg.commerceInventory.pages['/products/'].store, []);
   assert.deepEqual(cfg.commerceInventory.pages['/products-2/'].store, []);
-  for (const p of loadProducts()) assert.equal(p.links?.amazon, undefined, p.id);
 });
 
-t('no Amazon href is rendered on any page; /products-2/ stays Amazon-free', () => {
-  for (const f of ['dist/products/index.html', 'dist/products-2/index.html']) assert.ok(!hrefs(f).some((u) => /amazon|amzn/i.test(u)), f);
+t('/products-2/ stays Amazon-free (Amazon is rendered on /products/ only, Block 35)', () => {
+  assert.ok(!hrefs('dist/products-2/index.html').some((u) => /amazon|amzn/i.test(u)));
 });
 
-t('strict QA: Amazon inventory is no longer "missing" but its 13 URLs are honestly reported as not rendered', () => {
+t('strict QA: the 13 Amazon URLs are all rendered; only the store shortfalls remain (Block 35)', () => {
   const strict = runQa({ ...loadInputs(), distDir: 'dist', mode: 'strict' });
   const f = strict.findings.filter((x) => x.path === '/products/' || x.path === '/products-2/');
-  const msg = (code, path) => f.filter((x) => x.code === code && x.path === path);
-  assert.equal(msg('commerce-destination-missing', '/products/').length, 1);
-  assert.match(msg('commerce-destination-missing', '/products/')[0].message, /^13 preserved/);
-  assert.equal(msg('amazon-links-min', '/products/').length, 1);
-  assert.equal(msg('store-links-min', '/products-2/').length, 1);
-  assert.match(msg('store-links-min', '/products-2/')[0].message, /found 18/);
+  const n = (code, path) => f.filter((x) => x.code === code && x.path === path).length;
+  assert.equal(n('commerce-destination-missing', '/products/'), 0);
+  assert.equal(n('amazon-links-min', '/products/'), 0);
+  assert.equal(n('store-links-min', '/products-2/'), 1);
+  assert.match(f.find((x) => x.code === 'store-links-min' && x.path === '/products-2/').message, /found 18/);
   assert.equal(strict.passed, false);
   assert.equal(runQa({ ...loadInputs(), distDir: 'dist', mode: 'foundation' }).blocking.length, 0);
 });

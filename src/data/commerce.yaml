@@ -15,7 +15,6 @@ links:
 # Destinations that are required but NOT evidenced. Metadata only: no href, never rendered as a link.
 # Counts/reasons follow docs/migration/08-block4-source-capture-results.md and qa/qa.config.json.
 unresolved:
-  - { id: products-amazon, page: /products/, kind: amazon, count: 13, reason: "Amazon hrefs not exposed by the source capture; only the CTA labels exist. Block 34: the 13 snapshot URLs are recorded in qa.config.json commerceInventory, but their per-product anchor association is not proven, so none is rendered." }
   - { id: products-retail-vanilla-store, page: /products/, kind: store, count: 1, reason: "Retail Organic Nitro Vanilla store href not resolved by the capture." }
   - { id: products-decaf-mexico-store, page: both, kind: store, count: 1, reason: "Decaf Mexico store href not captured (special-request SKU)." }
   - { id: howtobuy-distributors, page: /howtobuy/, kind: external, count: null, reason: "Distributor/partner outbound hrefs not in the capture (names render as text)." }
