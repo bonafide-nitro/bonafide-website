@@ -6,7 +6,7 @@ import GoogleTagManager from '../components/GoogleTagManager.astro';
 const gtmId = import.meta.env.PUBLIC_GTM_ID; // public build-time config; unset/invalid => no GTM markup
 // `scaffold` emits the QA marker: strict migration QA fails on it. Only pages that are
 // NOT yet genuinely complete against their preservation contract may set it.
-const { title, canonicalPath, breadcrumbs = [], scaffold = false, noindex = false } = Astro.props;
+const { title, description, canonicalPath, breadcrumbs = [], scaffold = false, noindex = false } = Astro.props; // description: optional, emitted only when a page supplies evidenced text
 const nav = loadNavigation();
 const site = loadSite();
 const abs = (p) => new URL(p, Astro.site).href;
@@ -31,6 +31,7 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    {description && <meta name="description" content={description} />}
     {scaffold && <meta name="bonafide-qa" content="scaffold-placeholder" />} <!-- QA marker: strict migration QA fails on this -->
     {noindex && <meta name="robots" content="noindex" />}
     {canonicalPath && <link rel="canonical" href={abs(canonicalPath)} />}
