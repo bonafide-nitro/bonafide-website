@@ -60,11 +60,11 @@ t('/products-2/: no Amazon, no link from any other page, 19 price blocks, 6 alli
   assert.equal(productsForView(loadProducts(), 'wholesale').filter((x) => x.line === 'alliance').length, 6);
 });
 
-t('retail view: 12 SKUs; retail never renders alliance; no invented Amazon hrefs', () => {
+t('retail view: 12 SKUs; retail never renders alliance; Amazon hrefs only the 13 evidenced (Block 35)', () => {
   const items = productsForView(loadProducts(), 'retail');
   assert.equal(items.length, 12);
   assert.ok(items.every((p) => p.line !== 'alliance'));
-  assert.ok(!hrefs(page('/products/')).some((h) => /amazon|amzn/i.test(h)));
+  assert.equal(hrefs(page('/products/')).filter((h) => /amazon|amzn/i.test(h)).length, 13);
 });
 
 t('no page references an /wp-content/uploads/ path whose binary is not in the repo (QA T7)', () => {

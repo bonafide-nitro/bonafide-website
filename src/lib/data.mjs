@@ -37,6 +37,16 @@ const storeHref = z.string().superRefine((v, ctx) => {
   if (u.hash) ctx.addIssue({ code: 'custom', message: 'no fragments' });
 });
 
+// Block 35 (Issue #88): retail Amazon destinations, evidenced per style by the owner-supplied original /products/ page.
+const AMAZON_HOSTS = ['www.amazon.com'];
+const amazonHref = z.string().superRefine((v, ctx) => {
+  let u;
+  try { u = new URL(v); } catch { return ctx.addIssue({ code: 'custom', message: 'not a URL' }); }
+  if (u.protocol !== 'https:') ctx.addIssue({ code: 'custom', message: 'commerce links must be https://' });
+  if (!AMAZON_HOSTS.includes(u.hostname)) ctx.addIssue({ code: 'custom', message: `host ${u.hostname} is not the approved Amazon host` });
+  if (u.search || u.hash) ctx.addIssue({ code: 'custom', message: 'no tracking/affiliate parameters or fragments' });
+});
+
 const productSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -49,7 +59,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   styles: z.array(z.enum(['nitro', 'still'])).optional(),
   pricing: z.object({ retail: z.number().nullable(), wholesale: z.number().nullable() }),
-  links: z.object({ store: storeHref.optional(), storeViews: z.array(z.enum(['retail', 'wholesale'])).optional(), amazon: z.string().url().optional() }).optional(),
+  links: z.object({ store: storeHref.optional(), storeViews: z.array(z.enum(['retail', 'wholesale'])).optional(), amazon: z.object({ nitro: amazonHref.optional(), still: amazonHref.optional() }).strict().optional() }).optional(),
   amazonCta: z.boolean().optional(),
   specialRequest: z.boolean().optional(),
   image: urlPath.optional(),

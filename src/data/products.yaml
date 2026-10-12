@@ -2,10 +2,10 @@
 # `views` decides which page renders a SKU: retail -> /products/, wholesale -> /products-2/.
 # The two pages are separate launch URLs and are never merged, aliased or substituted.
 # Source: docs/migration/07-block4-public-source-capture.md (sanitized public rendered-page capture).
-# Deliberately NOT here (not evidenced, never invented): Amazon hrefs (Block 34 records the 13 snapshot URLs as
-# unmapped evidence in qa.config.json only), the retail Vanilla store href (snapshot target is suspect), Decaf Mexico store href, image alt text
-# other than where already recorded. `amazonCta: true` records only that a retail Amazon CTA
-# label exists on the launch page; the href is migration-remaining.
+# Deliberately NOT here (not evidenced, never invented): the retail Vanilla store href (original-page target is the
+# Jittery John's product, flagged as suspect), the Decaf Mexico store href, image alt text other than where already recorded.
+# `links.amazon.{nitro,still}` (Block 35, Issue #88) are the per-style Amazon hrefs read from the owner-supplied original
+# /products/ page (DOM order: Nitro Style then Still (Flat) Style under each product heading); retail view only.
 # `links.storeViews` limits a store link to the views where it is evidenced.
 # `image` paths are the same-path launch URLs; binaries are not in the repo yet (migration-remaining),
 # so pages do not reference them (QA T7 requires referenced uploads to exist).
@@ -22,7 +22,9 @@
   pricing: { retail: null, wholesale: 195.00 }
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/hair-raiser%C2%AE-organic-nitro-coffee"
-  amazonCta: true
+    amazon:
+      nitro: "https://www.amazon.com/Bona-Craft-Draft-Nitro-Coffee/dp/B01N1001H9"
+      still: "https://www.amazon.com/dp/B0BQN58DQR"
   image: /wp-content/uploads/2017/10/Hair-Raiser-Nitro-Coffee-for-website.png
   alt: Hair Raiser Nitro Coffee by Bona Fide
   views: [retail, wholesale]
@@ -40,7 +42,9 @@
   pricing: { retail: null, wholesale: 195.00 }
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/organic-espresso-nitro-pet-5-gal-1"
-  amazonCta: true
+    amazon:
+      nitro: "https://www.amazon.com/Nitro-Cold-Espresso-Coffee-Organic/dp/B0BQ7JCS18"
+      still: "https://www.amazon.com/dp/B0BQJNJTVY"
   image: /wp-content/uploads/2019/05/Esspreso-Nitro-Coffee-for-website.png
   views: [retail, wholesale]
 
@@ -56,7 +60,9 @@
   pricing: { retail: null, wholesale: 195.00 }
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/organic-ethiopia-yirgacheffe-nitro-coffee-5-gal-pet-keg"
-  amazonCta: true
+    amazon:
+      nitro: "https://www.amazon.com/dp/B073WMK2FL"
+      still: "https://www.amazon.com/dp/B0BQN2SQ2M"
   image: /wp-content/uploads/2017/10/Ethiopia-Nitro-Coffeemfor-website.png
   views: [retail, wholesale]
 
@@ -72,7 +78,9 @@
   pricing: { retail: null, wholesale: 195.00 }
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/organic-peru-nitro-coffee-5-gal-pet-keg"
-  amazonCta: true
+    amazon:
+      nitro: "https://www.amazon.com/dp/B01NCV8CAE"
+      still: "https://www.amazon.com/dp/B0BQN1P82W"
   image: /wp-content/uploads/2022/05/Peru-Nitro-Coffee-for-website.png
   views: [retail, wholesale]
 
@@ -88,7 +96,9 @@
   pricing: { retail: null, wholesale: 195.00 }
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/guatemala-organic-nitro-coffee"
-  amazonCta: true
+    amazon:
+      nitro: "https://www.amazon.com/dp/B071J91343"
+      still: "https://www.amazon.com/dp/B0BQN3876K"
   image: /wp-content/uploads/2022/05/Guatemala-Nitro-Coffee-for-website.png
   views: [retail, wholesale]
 
@@ -132,6 +142,8 @@
   pricing: { retail: null, wholesale: 195.00 }
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-tea/products/organic-hibiscus-nitro-tea"
+    amazon:
+      nitro: "https://www.amazon.com/Bona-Fide-Brewing-Company-Hibiscus/dp/B074JJ5CST"
   image: /wp-content/uploads/2022/05/Hibiscuis-Nitro-Tea-for-website.png
   views: [retail, wholesale]
 
@@ -206,6 +218,9 @@
   pricing: { retail: 149.00, wholesale: 120.00 }
   links:
     store: "https://www.nitrocoffee.store/collections/pet-nitro-coffee-keg/products/organic-nitro-caramel-coffee-pet-5-gal-keg"
+    amazon:
+      nitro: "https://www.amazon.com/dp/B0BQJNW91V"
+      still: "https://www.amazon.com/dp/B0BQMZKWM1"
   image: /wp-content/uploads/2022/05/Caramel-Coffee-Nitro-by-Bona-Fide.png
   views: [retail, wholesale]
 

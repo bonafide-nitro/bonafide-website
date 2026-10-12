@@ -5,6 +5,7 @@ const { product: p, view } = Astro.props;
 const name = view === 'wholesale' && p.wholesaleName ? p.wholesaleName : p.name;
 const price = view === 'wholesale' ? p.pricing.wholesale : p.pricing.retail;
 const store = p.links?.store && (p.links.storeViews ?? ['retail', 'wholesale']).includes(view) ? p.links.store : null;
+const amazon = view === 'retail' ? Object.values(p.links?.amazon ?? {}) : [];
 const fmt = (n) => `$${n.toFixed(2)}`;
 ---
 <li class="card">
@@ -17,6 +18,6 @@ const fmt = (n) => `$${n.toFixed(2)}`;
   {view === 'retail' && p.styles && <p>Nitro Style + Still (Flat) Style</p>}
   <p>
     {store && <a class="cta" href={store}>Buy on the Bona Fide webstore</a>}
-    {view === 'retail' && p.amazonCta && (p.styles ?? [null]).map(() => <span class="cta cta-label">Buy Securely On Amazon.com</span>)}
+    {amazon.map((href) => <a class="cta" href={href}>Buy Securely On Amazon.com</a>)}
   </p>
 </li>

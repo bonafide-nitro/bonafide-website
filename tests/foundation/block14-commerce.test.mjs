@@ -162,6 +162,20 @@ const EXPECTED = {
     'https://www.nitrocoffee.store/collections/better-than-cold-brew-bag-in-box-coffee-and-tea-collection',
     'https://www.nitrocoffee.store/products/orgainc-nitro-hazelnut-creme-coffee-pet-5-gal-keg',
     'https://www.nitrocoffee.store/collections/pet-nitro-coffee-keg/products/organic-nitro-caramel-coffee-pet-5-gal-keg',
+    // Block 35 (Issue #88): the 13 Amazon hrefs, each proven to its product/style by the original /products/ page.
+    'https://www.amazon.com/Bona-Craft-Draft-Nitro-Coffee/dp/B01N1001H9',
+    'https://www.amazon.com/dp/B0BQN58DQR',
+    'https://www.amazon.com/Nitro-Cold-Espresso-Coffee-Organic/dp/B0BQ7JCS18',
+    'https://www.amazon.com/dp/B0BQJNJTVY',
+    'https://www.amazon.com/dp/B073WMK2FL',
+    'https://www.amazon.com/dp/B0BQN2SQ2M',
+    'https://www.amazon.com/dp/B01NCV8CAE',
+    'https://www.amazon.com/dp/B0BQN1P82W',
+    'https://www.amazon.com/dp/B071J91343',
+    'https://www.amazon.com/dp/B0BQN3876K',
+    'https://www.amazon.com/Bona-Fide-Brewing-Company-Hibiscus/dp/B074JJ5CST',
+    'https://www.amazon.com/dp/B0BQJNW91V',
+    'https://www.amazon.com/dp/B0BQMZKWM1',
   ],
   '/stability-kegs-nitro-coffee/': [
     'https://www.nitrocoffee.store/',
@@ -182,21 +196,24 @@ t('every page renders exactly its evidenced commerce hrefs (no more, no fewer, b
 });
 
 t('/products/ and /products-2/ keep distinct inventories and counts', () => {
-  assert.equal(EXPECTED['/products/'].length, 13);
+  assert.equal(EXPECTED['/products/'].length, 26); // 13 store + 13 Amazon (Block 35)
   assert.equal(EXPECTED['/products-2/'].length, 18); // Block 34: +6 Alliance hrefs
   assert.notDeepEqual([...EXPECTED['/products/']].sort(), [...EXPECTED['/products-2/']].sort());
   assert.ok(!commerceHrefs(fs.readFileSync('dist/products-2/index.html', 'utf8')).some((u) => /amazon|amzn/i.test(u)));
 });
 
-t('no Amazon href is rendered anywhere (labels only; hrefs unresolved)', () => {
-  for (const f of walk('dist').filter((x) => x.endsWith('.html'))) assert.ok(!/href="[^"]*(amazon\.|amzn\.)/i.test(fs.readFileSync(f, 'utf8')), f);
+t('Amazon hrefs are rendered only on /products/ (Block 35)', () => {
+  for (const f of walk('dist').filter((x) => x.endsWith('.html'))) {
+    const has = /href="[^"]*(amazon\.|amzn\.)/i.test(fs.readFileSync(f, 'utf8'));
+    assert.equal(has, f === path.join('dist', 'products', 'index.html'), f);
+  }
 });
 
 t('every rendered commerce href is https on the approved store host', () => {
   for (const hs of Object.values(EXPECTED)) for (const h of hs) {
     const u = new URL(h);
     assert.equal(u.protocol, 'https:');
-    assert.ok(['nitrocoffee.store', 'www.nitrocoffee.store'].includes(u.hostname), h);
+    assert.ok(['nitrocoffee.store', 'www.nitrocoffee.store', 'www.amazon.com'].includes(u.hostname), h);
     assert.ok([...u.searchParams.keys()].every((k) => k === 'variant'), h);
   }
 });
@@ -206,15 +223,16 @@ test('registry hrefs and product store hrefs are all covered by the evidenced se
   const c = loadCommerce();
   for (const [id, l] of Object.entries(c.links)) assert.ok(evidenced.has(l.href), id);
   for (const p of loadProducts()) if (p.links?.store) assert.ok(evidenced.has(p.links.store), p.id);
+  for (const p of loadProducts()) for (const h of Object.values(p.links?.amazon ?? {})) assert.ok(evidenced.has(h), p.id);
   assert.equal(commerceHref('webstore-root-www'), 'https://www.nitrocoffee.store/');
   assert.throws(() => commerceHref('not-registered'), /unknown commerce link id/);
 });
 
 test('unresolved destinations are metadata only: no href, and they are never invented', () => {
   const c = loadCommerce();
-  assert.ok(c.unresolved.length >= 4);
+  assert.ok(c.unresolved.length >= 3);
   for (const u of c.unresolved) assert.ok(!('href' in u), u.id);
-  assert.ok(c.unresolved.some((u) => u.id === 'products-amazon' && u.count === 13));
+  assert.ok(!c.unresolved.some((u) => u.id === 'products-amazon'), 'Block 35 resolved the Amazon register entry');
 });
 
 test('commerce schema rejects http, foreign hosts, tracking parameters, fragments and unresolved hrefs', async () => {
@@ -265,7 +283,7 @@ t('strict QA still reports the unresolved commerce inventory; foundation has 0 i
   const strict = runQa({ ...inputs, distDir: 'dist', mode: 'strict' });
   assert.equal(strict.passed, false);
   const codes = strict.findings.map((f) => f.code ?? f.rule ?? JSON.stringify(f)).join(' ');
-  for (const code of ['commerce-inventory-missing', 'amazon-links-min', 'store-links-min']) assert.ok(codes.includes(code), code);
+  for (const code of ['commerce-inventory-missing', 'store-links-min']) assert.ok(codes.includes(code), code);
   assert.ok(foundation.migrationRemaining.length > 0);
 });
 
