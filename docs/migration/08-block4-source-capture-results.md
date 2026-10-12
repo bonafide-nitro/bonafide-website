@@ -23,8 +23,8 @@ Not downloaded (no network). Evidenced same-path URLs are tracked as follows; **
 
 ## Copy provenance / gaps
 - Titles, H1s, product names, nutrition, prices, tasting notes, shelf-life, Alliance details, distributor lists and metrics are transcribed from doc 07. Where doc 07 gives *meaning* rather than verbatim text (homepage sections, several product-page paragraphs, howtobuy prose) the copy is a faithful paraphrase — flag for Santiago's review against the live page.
-- The 212-character `/products/` meta description is **not reproduced**: only its first words are in the repo. Not invented; migration-remaining.
-- `/products-2/` also has a meta description that must survive unchanged at launch (doc 03 / Tier-1 map); `Base` has no description prop and none is emitted. Not captured, not invented; migration-remaining, gating the scaffold marker on `/products-2/` as well.
+- The exact 212-character original Yoast meta description is now emitted unchanged on `/products/` (Block 36 / Issue #90), via the optional `description` prop on `Base`. No longer migration-remaining.
+- `/products-2/` emits the same exact description (identical to `/products/` in the original WordPress pages) via the same prop; `Base` emits a description only when one is supplied, so no other page gets one. No longer migration-remaining; the scaffold marker on `/products-2/` stays for the commerce, image and alt-text blockers.
 - Homepage testimonial body text is not in the capture; the section is omitted.
 - Product-page og/twitter tags are not emitted (not part of this Block's evidence set beyond noted values).
 
