@@ -64,6 +64,7 @@ const productSchema = z.object({
   specialRequest: z.boolean().optional(),
   image: urlPath.optional(),
   alt: z.string().optional(),
+  viewOverrides: z.object({ retail: z.object({ image: urlPath.optional(), alt: z.string().optional() }).strict().optional(), wholesale: z.object({ image: urlPath.optional(), alt: z.string().optional() }).strict().optional() }).strict().optional(),
   views: z.array(z.enum(['retail', 'wholesale'])).min(1),
 });
 

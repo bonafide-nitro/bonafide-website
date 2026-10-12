@@ -10,8 +10,9 @@
 # /products/ page (DOM order: Nitro Style then Still (Flat) Style under each product heading); retail view only.
 # `links.storeViews` limits a store link to the views where it is evidenced.
 # `image` paths are the same-path launch URLs. Block 37 (Issue #92): ProductCard renders an image only when `alt` is
-# recorded here AND the binary exists in public/ at that exact path (currently Hair Raiser only); all other cards stay
-# text-only until both binary and original alt text are evidenced (QA T7 requires referenced uploads to exist).
+# recorded here (an empty string is a recorded original empty alt) AND the binary exists in public/ at that exact path.
+# Block 39 (Issue #95): the original images and their per-page alt (docs/migration/38-block39-product-image-import.md) are
+# recorded for every product; `viewOverrides.<view>` carries the few places where the original /products/ differs from /products-2/.
 
 - id: hair-raiser-organic
   name: "Hair Raiser® Organic"
@@ -87,6 +88,7 @@
       nitro: "https://www.amazon.com/dp/B01NCV8CAE"
       still: "https://www.amazon.com/dp/B0BQN1P82W"
   image: /wp-content/uploads/2022/05/Peru-Nitro-Coffee-for-website.png
+  alt: ""
   views: [retail, wholesale]
 
 - id: guatemala-organic
@@ -105,6 +107,7 @@
       nitro: "https://www.amazon.com/dp/B071J91343"
       still: "https://www.amazon.com/dp/B0BQN3876K"
   image: /wp-content/uploads/2022/05/Guatemala-Nitro-Coffee-for-website.png
+  alt: ""
   views: [retail, wholesale]
 
 - id: decaf-mexico
@@ -118,6 +121,7 @@
   pricing: { retail: null, wholesale: 195.00 }
   specialRequest: true
   image: /wp-content/uploads/2022/05/Decaf-Mexico-Nitro-Coffee-for-website.png
+  alt: ""
   views: [retail, wholesale]
 
 - id: vanilla-nitro-main
@@ -151,6 +155,7 @@
     amazon:
       nitro: "https://www.amazon.com/Bona-Fide-Brewing-Company-Hibiscus/dp/B074JJ5CST"
   image: /wp-content/uploads/2022/05/Hibiscuis-Nitro-Tea-for-website.png
+  alt: ""
   views: [retail, wholesale]
 
 - id: mango-tea
@@ -166,6 +171,7 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-tea/products/mango-nitro-tea"
   image: /wp-content/uploads/2022/05/Mango-Nitro-Tea-for-website-organic.png
+  alt: ""
   views: [retail, wholesale]
 
 - id: passion-fruit-tea
@@ -181,6 +187,9 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-tea/products/organic-passion-fruit-nitro-tea-pet-5-gal"
   image: /wp-content/uploads/2026/07/Pasion-Fruit-Nitro-tea-for-website-new.png
+  alt: ""
+  viewOverrides:
+    retail: { image: /wp-content/uploads/2022/05/Pasion-Fruit-Nitro-tea-for-website-new.png } # original /products/ uses the 2022/05 upload
   views: [retail, wholesale]
 
 - id: hazelnut-creme-coffee
@@ -196,6 +205,8 @@
     store: "https://www.nitrocoffee.store/products/orgainc-nitro-hazelnut-creme-coffee-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Hazelnut-Nitro-by-Bona-Fide.png
   alt: Bona-Fide-Nitro-Coffee-And-Tea-hazelnut-creme
+  viewOverrides:
+    retail: { alt: "" } # original /products/ shows the same image with empty alt
   views: [retail, wholesale]
 
 - id: vanilla-coffee
@@ -230,6 +241,7 @@
       nitro: "https://www.amazon.com/dp/B0BQJNW91V"
       still: "https://www.amazon.com/dp/B0BQMZKWM1"
   image: /wp-content/uploads/2022/05/Caramel-Coffee-Nitro-by-Bona-Fide.png
+  alt: ""
   views: [retail, wholesale]
 
 - id: caveman-coffee-nitro
@@ -245,6 +257,7 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/caveman-organic-guatemala-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Caveman-Coffee-Comapany-Nitro-by-Bona-Fide.png
+  alt: ""
   views: [wholesale]
 
 - id: gorongosa-coffee-nitro
@@ -260,6 +273,7 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/girls-run-the-world-coffee-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/ourGorongosa-Coffee-Nitro-by-Bona-Fide.png
+  alt: ""
   views: [wholesale]
 
 - id: jittery-johns-nitro
@@ -275,6 +289,7 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/jittery-johns-coffee-company-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Jittery-Johns-Coffee-Comapany-Nitro-by-Bona-Fide.png
+  alt: ""
   views: [wholesale]
 
 - id: thai-treasures-espresso-nitro
@@ -290,6 +305,7 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/thai-treasure-coffee-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Thai-Treasures-Coffee-Nitro-by-Bona-Fide.png
+  alt: ""
   views: [wholesale]
 
 - id: cult-uganda-white-nile-nitro
@@ -305,6 +321,7 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/cult-artisan-beverage-co-uganda-white-nile-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/CULT-Coffee-Comapany-Nitro-by-Bona-Fide.png
+  alt: ""
   views: [wholesale]
 
 - id: thanksgiving-coffee-nitro
@@ -320,4 +337,5 @@
   links:
     store: "https://www.nitrocoffee.store/collections/nitro-coffee/products/thanksgiving-coffee-compnay-nitro-pet-5-gal-keg"
   image: /wp-content/uploads/2022/05/Thanksgiving-Coffee-Company-Nitro-by-Bona-Fide.png
+  alt: ""
   views: [wholesale]
