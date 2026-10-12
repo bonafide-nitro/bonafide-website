@@ -7,8 +7,9 @@
 # `links.amazon.{nitro,still}` (Block 35, Issue #88) are the per-style Amazon hrefs read from the owner-supplied original
 # /products/ page (DOM order: Nitro Style then Still (Flat) Style under each product heading); retail view only.
 # `links.storeViews` limits a store link to the views where it is evidenced.
-# `image` paths are the same-path launch URLs; binaries are not in the repo yet (migration-remaining),
-# so pages do not reference them (QA T7 requires referenced uploads to exist).
+# `image` paths are the same-path launch URLs. Block 37 (Issue #92): ProductCard renders an image only when `alt` is
+# recorded here AND the binary exists in public/ at that exact path (currently Hair Raiser only); all other cards stay
+# text-only until both binary and original alt text are evidenced (QA T7 requires referenced uploads to exist).
 
 - id: hair-raiser-organic
   name: "Hair Raiser® Organic"

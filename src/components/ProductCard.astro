@@ -1,4 +1,5 @@
 ---
+import fs from 'node:fs';
 // One product card. `view` decides which facts render: retail shows Nitro/Still styles, the
 // retail-only Amazon CTA label and retail price; wholesale shows the wholesale price only.
 const { product: p, view } = Astro.props;
@@ -6,10 +7,14 @@ const name = view === 'wholesale' && p.wholesaleName ? p.wholesaleName : p.name;
 const price = view === 'wholesale' ? p.pricing.wholesale : p.pricing.retail;
 const store = p.links?.store && (p.links.storeViews ?? ['retail', 'wholesale']).includes(view) ? p.links.store : null;
 const amazon = view === 'retail' ? Object.values(p.links?.amazon ?? {}) : [];
+// Block 37: an image renders only when the product records original alt text AND the binary exists at the exact
+// case-sensitive path under public/. Anything else stays text-only (never a missing or unevidenced image).
+const image = p.image && p.alt && fs.existsSync(`public${p.image}`) ? p.image : null;
 const fmt = (n) => `$${n.toFixed(2)}`;
 ---
 <li class="card">
   <h3>{name}</h3>
+  {image && <img src={image} alt={p.alt} loading="lazy" decoding="async" />}
   <p class="muted">{p.nutrition}</p>
   <p>{p.description}</p>
   {p.specialRequest && <p><em>Special request</em></p>}

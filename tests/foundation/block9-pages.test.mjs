@@ -92,7 +92,7 @@ t('/stability-kegs-nitro-coffee/: distinct static 200, exact title/H1, evidenced
   assert.equal(canonical(h), 'https://bonafidenitro.com/stability-kegs-nitro-coffee/');
   assert.ok(!h.includes('noindex') && !/http-equiv="refresh"/i.test(h));
   for (const s of ['By John Goerke', 'datetime="2017-12-01"', 'datetime="2018-11-16"', 'News Nitro Coffee and Nitro Tea', 'historical article', 'shelf-stable', 'keg deposits', 'predictable cost of goods sold', 'tap and pour', 'no coffee preparation on site']) assert.ok(h.includes(s), s);
-  assert.ok(!/\d\s?%|\$\s?\d|€|guarantee/i.test(h.replace(/<script[\s\S]*?<\/script>/g, '')), 'no invented price/GP figure or guarantee');
+  assert.ok(!/\d\s?%|\$\s?\d|€|guarantee/i.test(h.replace(/<(?:script|style)\b[^>]*>[\s\S]*?<\/(?:script|style)>/gi, '')), 'no invented price/GP figure or guarantee');
   assert.ok(!/<form\b|<img\b|<iframe/i.test(h));
 });
 
