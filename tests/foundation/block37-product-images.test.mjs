@@ -42,6 +42,6 @@ t('retail/wholesale separation and prices are unchanged', () => {
 
 t('card images are constrained to the card width (no overflow)', () => {
   for (const page of ['products', 'products-2']) {
-    assert.match(fs.readFileSync(`dist/${page}/index.html`, 'utf8'), /\.card img(?:\[data-astro-cid-[^\]]+\])?\s*\{\s*max-width:\s*100%;\s*height:\s*auto;?\s*\}/);
+    assert.match(fs.readFileSync(`dist/${page}/index.html`, 'utf8'), /\.card(?:\[data-astro-cid-[^\]]+\])?\s+img(?:\[data-astro-cid-[^\]]+\])?\s*\{\s*max-width:\s*100%;\s*height:\s*auto;?\s*\}/);
   }
 });
