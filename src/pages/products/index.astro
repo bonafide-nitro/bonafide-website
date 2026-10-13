@@ -2,6 +2,8 @@
 import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 import ProductCard from '../../components/ProductCard.astro';
+import PageImage from '../../components/PageImage.astro';
+import { MEDIA } from '../../lib/page-media.mjs';
 import { loadProducts } from '../../lib/data.mjs';
 import { productsForView } from '../../lib/products.mjs';
 const items = productsForView(loadProducts(), 'retail');
@@ -11,9 +13,10 @@ const specialty = items.filter((p) => p.line === 'specialty');
 ---
 <!-- scaffold: the 13 Amazon hrefs are mapped (Block 35); the remaining store hrefs (16 required) are not yet
      captured. The marker is NOT removable on commerce completion alone: it also stays until product
-     image binaries, <img> rendering + alt text, the 5 page-level assets (2 banner + 3 equipment) and
-     (the 212-char meta description is now emitted, Block 36) (docs/migration/08-block4-source-capture-results.md). -->
-<Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" description="Nitro cold brew coffee kegs on tap are becoming a necessity for coffee shops. We have them in stock. Ready to be delivered to your office, restaurant, coffee shop, or cafe. Buy our nitro coffee kegs online today." canonicalPath="/products/" breadcrumbs={[{ name: 'Products', path: '/products/' }]} scaffold>
+     the rest of the page content is preserved (Block 40 placed the evidenced page-level images; the 212-char meta
+     description is emitted, Block 36) (docs/migration/08-block4-source-capture-results.md). -->
+<Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" description="Nitro cold brew coffee kegs on tap are becoming a necessity for coffee shops. We have them in stock. Ready to be delivered to your office, restaurant, coffee shop, or cafe. Buy our nitro coffee kegs online today." canonicalPath="/products/" breadcrumbs={[{ name: 'Products', path: '/products/' }]} logo={MEDIA.logo} scaffold>
+  <PageImage media={MEDIA.banner} class="page-img banner" eager />
   <h1>Best Nitro Cold Brew Coffee Kegs On The Market</h1>
   <p><strong>Try The Best Cold Brew On The Market</strong></p>
   <h2>Nitro Coffee And Tea Kegs That Last For Months</h2>
@@ -28,6 +31,8 @@ const specialty = items.filter((p) => p.line === 'specialty');
     <li>Distributor Inquiries Welcome!</li>
   </ul>
   <p>Bona Fide nitro coffee and tea kegs are a creamy, nitrogen-infused alternative for coffee shops, offices and homes, available through our <a href={commerceHref('webstore-root-apex')}>web store</a> and distributors. See <a href="/howtobuy/">How to Buy</a>.</p>
+  <PageImage media={MEDIA.goldKegs} class="page-img wide" />
+  <PageImage media={MEDIA.serving} />
 
   <h2>Our Cold Brew Nitro Coffee In Keg Products</h2>
   <p>Some varieties may not be available through every distributor. <a href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a> for variety and keg-style information.</p>
@@ -38,11 +43,13 @@ const specialty = items.filter((p) => p.line === 'specialty');
   <p>Craft Draft also applies to nitro tea: nitrogen infusion, preserved aromatics, 180+ day shelf-stable 5-gallon PET kegs and no preservatives.</p>
   <ul class="grid">{tea.map((p) => <ProductCard product={p} view="retail" />)}</ul>
 
+  <PageImage media={MEDIA.classicBlend} />
   <h2>Bag In Box</h2>
   <p>Prefer a smaller format? See the <a href={commerceHref('bag-in-box-collection')}>Bag In Box coffee and tea collection</a> and <a href="/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/">Bag-in-Box versus kegs</a>.</p>
 
   <h2>Are You Looking For Dispensing Equipment?</h2>
   <p>Countertop dispensers, with hot or cold machine options.</p>
+  <div class="figs"><PageImage media={MEDIA.coldMachine} /><PageImage media={MEDIA.hotTap} /></div>
   <p><a class="cta" href="/kegerators/">See dispensing equipment</a></p>
 
   <h2>Specialty Flavors PET Nitro Coffee</h2>
@@ -57,6 +64,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
 
   <h2>Coffee &amp; Tea For Office</h2>
   <p>Nitro coffee and tea for workplaces.</p>
+  <PageImage media={MEDIA.kegBik} />
   <h2>Coffee Shop Supply</h2>
   <p>Kegs and equipment for coffee shops.</p>
   <h2>Nitro Coffee For Home</h2>

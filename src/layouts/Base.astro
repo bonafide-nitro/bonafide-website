@@ -6,7 +6,7 @@ import GoogleTagManager from '../components/GoogleTagManager.astro';
 const gtmId = import.meta.env.PUBLIC_GTM_ID; // public build-time config; unset/invalid => no GTM markup
 // `scaffold` emits the QA marker: strict migration QA fails on it. Only pages that are
 // NOT yet genuinely complete against their preservation contract may set it.
-const { title, description, canonicalPath, breadcrumbs = [], scaffold = false, noindex = false } = Astro.props; // description: optional, emitted only when a page supplies evidenced text
+const { title, description, canonicalPath, breadcrumbs = [], scaffold = false, noindex = false, logo = null } = Astro.props; // description: optional, emitted only when a page supplies evidenced text
 const nav = loadNavigation();
 const site = loadSite();
 const abs = (p) => new URL(p, Astro.site).href;
@@ -54,10 +54,19 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
       .cta-label { color: var(--muted); border-style: dashed; }
       .price { font-weight: 700; }
       .muted { color: var(--muted); }
+      header.brand { background: var(--ink); padding: .5rem 1rem; }
+      header.brand img, .page-img { max-width: 100%; height: auto; }
+      img.banner, img.wide { display: block; width: 100%; }
+      img.amazon-badge { display: block; width: 100%; max-width: 12rem; margin-top: .25rem; }
+      .figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; align-items: start; justify-items: center; }
+      .figs img { max-width: min(100%, 30rem); }
+      .bullets { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; }
+      @media (max-width: 40rem) { .bullets { grid-template-columns: 1fr; justify-items: center; } }
     </style>
   </head>
   <body>
     <GoogleTagManager id={gtmId} position="body" />
+    {logo && <header class="brand"><a href="/"><img src={logo.src} alt={logo.alt} width={logo.width} height={logo.height} decoding="async" /></a></header>}
     <nav class="site" aria-label="Main">
       <ul>
         {nav.launch.map((i) => <li><a href={i.path}>{i.label}</a></li>)}

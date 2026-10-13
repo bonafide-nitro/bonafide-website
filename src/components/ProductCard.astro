@@ -1,5 +1,7 @@
 ---
 import fs from 'node:fs';
+import PageImage from './PageImage.astro';
+import { MEDIA } from '../lib/page-media.mjs';
 // One product card. `view` decides which facts render: retail shows Nitro/Still styles, the
 // retail-only Amazon CTA label and retail price; wholesale shows the wholesale price only.
 const { product: p, view } = Astro.props;
@@ -27,6 +29,6 @@ const fmt = (n) => `$${n.toFixed(2)}`;
   {view === 'retail' && p.styles && <p>Nitro Style + Still (Flat) Style</p>}
   <p>
     {store && <a class="cta" href={store}>Buy on the Bona Fide webstore</a>}
-    {amazon.map((href) => <a class="cta" href={href}>Buy Securely On Amazon.com</a>)}
+    {amazon.map((href) => <a class="cta" href={href}>Buy Securely On Amazon.com<PageImage media={MEDIA.amazon} class="page-img amazon-badge" /></a>)}
   </p>
 </li>

@@ -30,7 +30,7 @@ for (const path of ['/products/', '/products-2/']) {
   t(`${path}: no unverified og:image / image reference was invented`, () => {
     const h = html(path);
     assert.ok(!/og:image/.test(h));
-    assert.ok(!/Bona-Fide-Banner-Product-Page-1/.test(h));
+    assert.ok(!/<meta[^>]*Bona-Fide-Banner-Product-Page-1/.test(h)); // Block 40 renders the banner as an <img>; still no meta/og reference
     for (const m of all(h, /<img\b[^>]*\ssrc="([^"]+)"/g)) assert.ok(fs.existsSync(`dist${m[1]}`), `${m[1]} must exist in dist`);
   });
 }

@@ -1,0 +1,8 @@
+---
+// Block 40: one evidenced page-level image (see src/lib/page-media.mjs). Renders only when the binary exists at the exact
+// case-sensitive path under public/; never an unevidenced or missing image.
+import fs from 'node:fs';
+const { media: m, class: cls = 'page-img', eager = false } = Astro.props;
+const ok = m && typeof m.alt === 'string' && fs.existsSync(`public${m.src}`);
+---
+{ok && <img class={cls} src={m.src} alt={m.alt} width={m.width} height={m.height} loading={eager ? 'eager' : 'lazy'} decoding="async" />}

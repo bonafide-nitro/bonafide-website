@@ -6,12 +6,15 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { loadProducts } from '../../src/lib/data.mjs';
 import { ASSETS } from './block39-assets.mjs';
+import { MEDIA } from '../../src/lib/page-media.mjs';
 
 
 const built = fs.existsSync('dist/products/index.html');
 const t = (name, fn) => test(name, { skip: !built && 'dist/ not built' }, fn);
 const exactCase = (root, urlPath) => fs.readdirSync(path.join(root, path.posix.dirname(urlPath))).includes(path.posix.basename(urlPath));
-const imgs = (f) => [...fs.readFileSync(f, 'utf8').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]).filter((i) => i.includes('/wp-content/uploads/'));
+// Block 40 page-level images (banners, equipment, Amazon badge, logo...) are covered by block40-page-level-artwork.test.mjs.
+const pageLevel = Object.values(MEDIA).map((m) => m.src);
+const imgs = (f) => [...fs.readFileSync(f, 'utf8').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]).filter((i) => i.includes('/wp-content/uploads/') && !pageLevel.some((p) => i.includes(p)));
 // The minified build writes an empty alt as a bare `alt` attribute.
 const alt = (tag) => (/\balt(?=[\s>])/.test(tag) ? '' : tag.match(/\balt="([^"]*)"/)?.[1]);
 const src = (tag) => tag.match(/\bsrc="([^"]*)"/)?.[1];
@@ -64,8 +67,4 @@ for (const page of ['products', 'products-2']) {
 t('/products/ uses the original 2022/05 Passion Fruit upload; /products-2/ the 2026/07 one', () => {
   assert.ok(imgs('dist/products/index.html').some((i) => src(i) === '/wp-content/uploads/2022/05/Pasion-Fruit-Nitro-tea-for-website-new.png'));
   assert.ok(imgs('dist/products-2/index.html').some((i) => src(i) === '/wp-content/uploads/2026/07/Pasion-Fruit-Nitro-tea-for-website-new.png'));
-});
-
-t('page-level banners/logo/equipment images are not placed on product pages (position not evidenced)', () => {
-  for (const page of ['products', 'products-2']) assert.ok(!/Banner-Product-Page|Keg-BIK|Available-On-Amazon|Hot-Tap|doble-tap/.test(fs.readFileSync(`dist/${page}/index.html`, 'utf8')));
 });
