@@ -144,3 +144,7 @@ Homepage Review/AggregateRating schema is resolved as **omitted**; QA T6 now rej
 ## Block 34 (Issue #86) — commerce evidence from the owner snapshot
 
 Adds the 6 labelled Alliance store hrefs to `/products-2/` (12 -> 18 of 22) and records the 13 `/products/` Amazon URLs as unmapped evidence in `commerceInventory` (not rendered; per-product association unproven). Strict QA is still 42 blocking findings: `commerce-inventory-missing` 3 -> 2, plus one `commerce-destination-missing`. No blocker is marked resolved; the suspect `/products/` Vanilla link and differing vanilla/hazelnut variants are left unchanged. See `docs/migration/34-block34-commerce-evidence-results.md`.
+
+## Block 43 (Issue #103) — release-artifact preflight and cutover-readiness runbook
+
+Repository-only. Adds `npm run check:artifact` (`scripts/check-release-artifact.mjs`, wired into `test:build`): a read-only scan of `dist/` for non-static file types, WordPress runtime paths, obfuscation primitives and the recorded compromise markers, plus `--write-manifest` / `--verify-manifest` SHA-256 file-set integrity. QA rules are unchanged; strict QA is still 40 blocking findings. The pre-cutover procedure, external security gates and approvals are in `docs/migration/40-block43-cutover-readiness-runbook.md`. No security or clean-rollback gate is claimed complete.

@@ -12,10 +12,11 @@
     "build": "astro build",
     "preview": "astro preview",
     "check:dist": "node scripts/check-build-output.mjs",
+    "check:artifact": "node scripts/check-release-artifact.mjs",
     "build:htaccess": "node scripts/build-htaccess.mjs",
     "check:htaccess": "node scripts/build-htaccess.mjs --check",
     "test": "node --test \"tests/foundation/*.test.mjs\" \"tests/qa/*.test.mjs\"",
-    "test:build": "npm run build && npm run check:dist && npm run qa:foundation",
+    "test:build": "npm run build && npm run check:dist && npm run check:artifact && npm run qa:foundation",
     "qa": "node qa/cli.mjs --mode foundation",
     "qa:foundation": "node qa/cli.mjs --mode foundation",
     "qa:strict": "node qa/cli.mjs --mode strict"
