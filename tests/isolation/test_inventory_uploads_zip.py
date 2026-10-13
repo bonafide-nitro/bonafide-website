@@ -131,6 +131,19 @@ class InventoryTests(Base):
         with self.assertRaisesRegex(inv.InventoryError, "max-entries"):
             inv.inventory(self.path, TARGETS, max_entries=1)
 
+    def test_forged_eocd_entry_count_cannot_bypass_cap(self):
+        self.make([("a.jpg", b"x"), ("b.jpg", b"y")])
+        raw = bytearray(self.path.read_bytes())
+        eocd = raw.rfind(b"PK\\x05\\x06")
+        self.assertGreaterEqual(eocd, 0)
+        # Forged EOCD claims one record, but the directory contains two.
+        raw[eocd + 8:eocd + 12] = b"\\x01\\x00\\x01\\x00"
+        self.path.write_bytes(raw)
+        with self.assertRaisesRegex(inv.InventoryError, "max-entries"):
+            inv.inventory(self.path, TARGETS, max_entries=1)
+        with self.assertRaisesRegex(inv.InventoryError, "count mismatch"):
+            inv.inventory(self.path, TARGETS, max_entries=3)
+
     def test_undecodable_filename_is_inventory_error(self):
         self.make([("2018/06/aaaa.jpg", b"x")])
         data = self.path.read_bytes().replace(b"aaaa", b"\xff\xfe\xfd\xfc")
