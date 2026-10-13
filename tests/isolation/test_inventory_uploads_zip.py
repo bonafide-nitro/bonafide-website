@@ -99,6 +99,20 @@ class InventoryTests(Base):
         m = inv.inventory(self.path, TARGETS)["matches"]["t7Manifest"][0]
         self.assertEqual(m["matchType"], "none")
 
+    def test_nul_byte_name_flagged_not_truncated(self):
+        self.make([("2018/06/safe.jpgXevil.php", b"x")])
+        self.path.write_bytes(self.path.read_bytes().replace(b"jpgXevil", b"jpg\x00evil"))
+        r = inv.inventory(self.path, TARGETS)
+        self.assertEqual(r["flagCounts"].get("nul-byte"), 1)
+        self.assertNotEqual(r["files"][0]["path"], "2018/06/safe.jpg")
+
+    def test_bad_manifest_schema_is_inventory_error(self):
+        bad = Path(self.tmp.name) / "m.json"
+        for body in ('{"images": [{"group": "x"}]}', '{"images": [1]}', '{"images": {}}', '{"images": null}'):
+            bad.write_text(body)
+            with self.assertRaises(inv.InventoryError):
+                inv.load_targets(bad)
+
     def test_empty_zip(self):
         self.make([])
         r = inv.inventory(self.path, TARGETS)
@@ -152,6 +166,25 @@ class CliTests(Base):
     def test_cli_error_exit(self):
         self.path.write_bytes(b"junk")
         rc, _, err = self.run_cli(["--archive", str(self.path)])
+        self.assertEqual(rc, 2)
+        self.assertIn("error:", err)
+
+    def test_cli_refuses_output_equal_to_archive(self):
+        self.make([("2018/06/Kegerator-counter-top-Bona-Fide.jpg", b"x")])
+        before = self.path.read_bytes()
+        link = Path(self.tmp.name) / "alias.zip"
+        link.symlink_to(self.path)
+        for target in (self.path, link):
+            rc, _, err = self.run_cli(["--archive", str(self.path), "--output", str(target)])
+            self.assertEqual(rc, 2)
+            self.assertIn("same file", err)
+        self.assertEqual(self.path.read_bytes(), before)
+
+    def test_cli_bad_manifest_exit_2(self):
+        self.make([])
+        bad = Path(self.tmp.name) / "m.json"
+        bad.write_text('{"images": [{"group": "x"}]}')
+        rc, _, err = self.run_cli(["--archive", str(self.path), "--manifest", str(bad)])
         self.assertEqual(rc, 2)
         self.assertIn("error:", err)
 

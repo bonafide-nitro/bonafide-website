@@ -22,6 +22,7 @@ Usage:
 
 import argparse
 import json
+import os
 import posixpath
 import re
 import stat
@@ -92,10 +93,16 @@ def load_targets(manifest_path=MANIFEST_PATH):
     try:
         manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
         images = manifest["images"]
-    except (OSError, ValueError, KeyError) as exc:
-        raise InventoryError(f"cannot read T7 manifest {manifest_path}: {exc}")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise InventoryError(f"cannot read T7 manifest {manifest_path}: {exc!r}")
+    if not isinstance(images, list):
+        raise InventoryError(f"T7 manifest {manifest_path}: 'images' must be a list")
     targets = []
-    for img in images:
+    for i, img in enumerate(images):
+        if not isinstance(img, dict) or not isinstance(img.get("path"), str):
+            raise InventoryError(
+                f"T7 manifest {manifest_path}: images[{i}] must be an object with a string 'path'"
+            )
         p = img["path"]
         rel, _ = uploads_relative(p.lstrip("/"))
         targets.append({"manifestPath": p, "uploadsRelative": rel, "group": img.get("group", "")})
@@ -125,7 +132,8 @@ def inventory(archive, targets, max_entries=DEFAULT_MAX_ENTRIES):
         prefixes = Counter()
         flag_counts = Counter()
         for info in infos:
-            raw = info.filename
+            # orig_filename keeps bytes after a NUL that ZipInfo.filename truncates.
+            raw = info.orig_filename
             norm, flags, unsafe = classify_name(raw)
             is_dir = raw.endswith("/") or info.is_dir()
             mode = (info.external_attr >> 16) & 0xFFFF
@@ -250,9 +258,17 @@ def main(argv=None):
     ap.add_argument("--max-entries", type=int, default=DEFAULT_MAX_ENTRIES)
     args = ap.parse_args(argv)
     try:
-        report = inventory(args.archive, load_targets(args.manifest), args.max_entries)
+        targets = load_targets(args.manifest)
         if args.output:
             out = Path(args.output).resolve()
+            src = Path(args.archive)
+            same = out == src.resolve()
+            if not same and out.exists() and src.exists():
+                same = os.path.samefile(out, src)
+            if same:
+                raise InventoryError("--output must not be the same file as --archive")
+        report = inventory(args.archive, targets, args.max_entries)
+        if args.output:
             if REPO_ROOT in out.parents and "public" in out.relative_to(REPO_ROOT).parts[:1]:
                 raise InventoryError("refusing to write into public/")
             out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
