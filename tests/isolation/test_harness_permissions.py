@@ -25,7 +25,7 @@ def _repo_root():
 REPO_ROOT = _repo_root()
 SCRIPTS = REPO_ROOT / ".github" / "scripts"
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
-HARNESS_SCRIPTS = ("harness_automerge.py", "harness_guard.py", "harness_handoff.py",
+HARNESS_SCRIPTS = ("harness_automerge.py", "harness_correction_cap.py", "harness_guard.py", "harness_handoff.py",
                    "harness_requeue.py", "harness_watchdog.py")
 LEVEL = {"none": 0, "read": 1, "write": 2}
 
