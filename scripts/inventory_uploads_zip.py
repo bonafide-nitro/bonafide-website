@@ -143,7 +143,7 @@ def _check_entry_cap(archive, max_entries):
                 if end - fp.tell() < 46:
                     raise InventoryError("truncated ZIP central-directory record")
                 hdr = fp.read(46)
-                if hdr[:4] != b"PK\\x01\\x02":
+                if hdr[:4] != bytes((80, 75, 1, 2)):
                     raise InventoryError("invalid ZIP central-directory signature")
                 variable = sum(int.from_bytes(hdr[i:i + 2], "little") for i in (28, 30, 32))
                 if fp.tell() + variable > end:
