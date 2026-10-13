@@ -108,6 +108,31 @@ test('writing and verifying the same manifest file is a usage error and leaves t
   assert.equal(run('--verify-manifest', file).status, 1);
 });
 
+test('a valueless --dir is a usage error, never a fallback to local dist', () => {
+  const run = (...a) => spawnSync('node', ['scripts/check-release-artifact.mjs', ...a], { encoding: 'utf8' });
+  assert.equal(run('--dir').status, 2);
+  assert.equal(run('--dir', '').status, 2);
+  assert.equal(run('--dir', '--write-manifest', 'x.json').status, 2);
+});
+
+test('symlink and hard-link aliases of the baseline are rejected before it is overwritten', () => {
+  const dir = mk(CLEAN);
+  const file = path.join(os.tmpdir(), `b43-alias-${process.pid}.json`);
+  const sym = `${file}.sym`;
+  const hard = `${file}.hard`;
+  for (const f of [sym, hard]) fs.rmSync(f, { force: true });
+  const run = (...a) => spawnSync('node', ['scripts/check-release-artifact.mjs', '--dir', dir, ...a], { encoding: 'utf8' });
+  assert.equal(run('--write-manifest', file).status, 0);
+  const before = fs.readFileSync(file, 'utf8');
+  fs.symlinkSync(file, sym);
+  fs.linkSync(file, hard);
+  fs.writeFileSync(path.join(dir, 'robots.txt'), 'tampered');
+  for (const alias of [sym, hard]) {
+    assert.equal(run('--write-manifest', alias, '--verify-manifest', file).status, 2);
+    assert.equal(fs.readFileSync(file, 'utf8'), before);
+  }
+});
+
 test('the real built dist/ (when present) passes the preflight', { skip: !fs.existsSync('dist') }, () => {
   const findings = scanArtifact('dist', loadBaseline().preservationRules.forbiddenBuildStrings);
   assert.deepEqual(findings, []);

@@ -119,21 +119,34 @@ const arg = (name) => {
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const dir = path.resolve(arg('--dir') ?? 'dist');
-  if (!fs.existsSync(dir)) { console.error(`${dir} missing — run \`npm run build\` first`); process.exit(2); }
-  // A manifest flag present without a non-empty value is a usage error, never a silent skip.
+  // A flag present without a non-empty value is a usage error, never a silent skip or default.
   const flagValue = (name) => {
     if (!process.argv.includes(name)) return null;
     const v = arg(name);
     if (!v || v.startsWith('--')) { console.error(`${name} requires a non-empty file path`); process.exit(2); }
     return v;
   };
+  const dir = path.resolve(flagValue('--dir') ?? 'dist');
+  if (!fs.existsSync(dir)) { console.error(`${dir} missing — run \`npm run build\` first`); process.exit(2); }
   const writeTo = flagValue('--write-manifest');
   const verify = flagValue('--verify-manifest');
-  // Writing the manifest to the baseline being verified would make the artifact compare against itself.
-  if (writeTo && verify && path.resolve(writeTo) === path.resolve(verify)) {
-    console.error('--write-manifest and --verify-manifest must not name the same file');
-    process.exit(2);
+  // Read the verification baseline before any write, so a write path that aliases it
+  // (same path, symlink or hard link) cannot make the artifact compare against itself.
+  let baseline = null;
+  if (verify) {
+    if (writeTo && fs.existsSync(writeTo) && fs.existsSync(verify)) {
+      const a = fs.statSync(writeTo);
+      const b = fs.statSync(verify);
+      if (a.dev === b.dev && a.ino === b.ino) {
+        console.error('--write-manifest and --verify-manifest must not name the same file');
+        process.exit(2);
+      }
+    }
+    if (writeTo && path.resolve(writeTo) === path.resolve(verify)) {
+      console.error('--write-manifest and --verify-manifest must not name the same file');
+      process.exit(2);
+    }
+    baseline = JSON.parse(fs.readFileSync(verify, 'utf8'));
   }
   const findings = scanArtifact(dir, loadBaseline().preservationRules.forbiddenBuildStrings);
   for (const f of findings) console.error(`[${f.rule}] ${f.file}: ${f.detail}`);
@@ -145,7 +158,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const manifest = buildManifest(dir);
   if (writeTo) fs.writeFileSync(writeTo, `${JSON.stringify(manifest, null, 2)}\n`);
   if (verify) {
-    const d = diffManifest(JSON.parse(fs.readFileSync(verify, 'utf8')), manifest);
+    const d = diffManifest(baseline, manifest);
     for (const k of ['missing', 'extra', 'changed']) for (const p of d[k]) console.error(`[manifest-${k}] ${p}`);
     if (d.missing.length || d.extra.length || d.changed.length) failed = true;
   }
