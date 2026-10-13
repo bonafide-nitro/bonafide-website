@@ -109,14 +109,40 @@ def load_targets(manifest_path=MANIFEST_PATH):
     return targets
 
 
+def _check_entry_cap(archive, max_entries):
+    """Refuse before ZipFile materializes every ZipInfo, using the end-of-directory count."""
+    try:
+        with open(archive, "rb") as fp:
+            rec = zipfile._EndRecData(fp)  # EOCD (+ zip64 locator) only; no member data
+    except OSError:
+        return  # let ZipFile report open errors
+    if not rec:
+        return  # let ZipFile report BadZipFile
+    total = rec[zipfile._ECD_ENTRIES_TOTAL]
+    if total > max_entries:
+        raise InventoryError(
+            f"archive has {total} entries, above --max-entries {max_entries}; refusing"
+        )
+
+
+def _same_file(a, b):
+    a, b = Path(a), Path(b)
+    if a.resolve() == b.resolve():
+        return True
+    return a.exists() and b.exists() and os.path.samefile(a, b)
+
+
 def inventory(archive, targets, max_entries=DEFAULT_MAX_ENTRIES):
     archive = Path(archive)
     if not archive.is_file():
         raise InventoryError(f"archive not found or not a file: {archive}")
     try:
+        _check_entry_cap(archive, max_entries)
         zf = zipfile.ZipFile(archive, "r")
     except zipfile.BadZipFile as exc:
         raise InventoryError(f"not a valid ZIP archive: {exc}")
+    except UnicodeDecodeError as exc:
+        raise InventoryError(f"corrupt ZIP central directory (undecodable filename): {exc}")
     except OSError as exc:
         raise InventoryError(f"cannot open archive: {exc}")
 
@@ -261,12 +287,10 @@ def main(argv=None):
         targets = load_targets(args.manifest)
         if args.output:
             out = Path(args.output).resolve()
-            src = Path(args.archive)
-            same = out == src.resolve()
-            if not same and out.exists() and src.exists():
-                same = os.path.samefile(out, src)
-            if same:
+            if _same_file(out, args.archive):
                 raise InventoryError("--output must not be the same file as --archive")
+            if _same_file(out, args.manifest):
+                raise InventoryError("--output must not be the same file as --manifest")
         report = inventory(args.archive, targets, args.max_entries)
         if args.output:
             if REPO_ROOT in out.parents and "public" in out.relative_to(REPO_ROOT).parts[:1]:

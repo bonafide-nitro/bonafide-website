@@ -4,6 +4,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import stat
 import sys
 import tempfile
@@ -130,6 +131,23 @@ class InventoryTests(Base):
         with self.assertRaisesRegex(inv.InventoryError, "max-entries"):
             inv.inventory(self.path, TARGETS, max_entries=1)
 
+    def test_undecodable_filename_is_inventory_error(self):
+        self.make([("2018/06/aaaa.jpg", b"x")])
+        data = self.path.read_bytes().replace(b"aaaa", b"\xff\xfe\xfd\xfc")
+        # set UTF-8 flag (bit 11) in both local and central headers
+        data = data.replace(b"PK\x03\x04\x14\x00\x00\x00", b"PK\x03\x04\x14\x00\x00\x08")
+        data = data.replace(b"PK\x01\x02\x14\x03\x14\x00\x00\x00", b"PK\x01\x02\x14\x03\x14\x00\x00\x08")
+        self.path.write_bytes(data)
+        with self.assertRaises(inv.InventoryError):
+            inv.inventory(self.path, TARGETS)
+
+    def test_max_entries_checked_before_materializing(self):
+        from unittest import mock
+        self.make([("a.jpg", b"x"), ("b.jpg", b"x")])
+        with mock.patch.object(zipfile.ZipFile, "__init__", side_effect=AssertionError("parsed")):
+            with self.assertRaisesRegex(inv.InventoryError, "max-entries"):
+                inv.inventory(self.path, TARGETS, max_entries=1)
+
     def test_never_reads_members(self):
         from unittest import mock
         self.make([("a.jpg", b"x")])
@@ -179,6 +197,21 @@ class CliTests(Base):
             self.assertEqual(rc, 2)
             self.assertIn("same file", err)
         self.assertEqual(self.path.read_bytes(), before)
+
+    def test_cli_refuses_output_equal_to_manifest(self):
+        self.make([])
+        man = Path(self.tmp.name) / "m.json"
+        man.write_text('{"images": []}')
+        before = man.read_text()
+        link = Path(self.tmp.name) / "m-alias.json"
+        link.symlink_to(man)
+        hard = Path(self.tmp.name) / "m-hard.json"
+        os.link(man, hard)
+        for target in (man, link, hard):
+            rc, _, err = self.run_cli(["--archive", str(self.path), "--manifest", str(man), "--output", str(target)])
+            self.assertEqual(rc, 2)
+            self.assertIn("same file as --manifest", err)
+        self.assertEqual(man.read_text(), before)
 
     def test_cli_bad_manifest_exit_2(self):
         self.make([])
