@@ -129,6 +129,12 @@ def _output(**values):
 
 def run(repo, number, review_id, head):
     pr = _get(repo, f"pulls/{number}")
+    # The PR may have received a new commit after workflow validation. Never
+    # spend a correction slot or dispatch Claude against an outdated head.
+    if pr.get("state") == "open" and (pr.get("head") or {}).get("sha") != head:
+        print(f"PR #{number}, Codex review {review_id}: stale head; no correction dispatched.")
+        _output(action="stale", go="false")
+        return 0
     comments = [] if pr.get("state") != "open" else _comments(repo, number)
     verdict = decide(pr_state=pr.get("state"), comments=comments, review_id=review_id)
     if verdict == DISPATCH:
