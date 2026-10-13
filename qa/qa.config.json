@@ -93,8 +93,8 @@
       "/nitro-cold-brew-old/": "page images and meta description not evidenced; body is a conservative paraphrase of the topics listed in Issue #34 (exact copy not preserved)",
       "/nitro-cold-brew/": "ranking image binaries (All-about-nitro-cold-brew-coffee.jpg, Cold-brew-Nitro-Coffee.jpg and others) and alt text not supplied",
       "/privacy-policies/": "exact legal body copy, live title and meta description are not in any repository evidence; legal copy must not be invented",
-      "/products-2/": "exact commerce inventory (22 nitrocoffee.store hrefs incl. Alliance CTAs) unresolved; image binaries and alt text not preserved (meta description emitted unchanged, Block 36)",
-      "/products/": "exact store inventory (16 historical store hrefs; 12 evidenced; 13 Amazon hrefs resolved in Block 35) unresolved; image binaries and alt text not preserved (meta description emitted unchanged, Block 36)",
+      "/products-2/": "exact commerce inventory (22 historical nitrocoffee.store hrefs incl. Alliance CTAs; 18 rendered) unresolved. Meta description emitted unchanged (Block 36); product images with observed alt (Block 39) and page-level banners (Block 40) restored; page copy/section parity not verified",
+      "/products/": "exact store inventory (16 historical store hrefs; 13 rendered, 12 evidenced in Block 35; 13 Amazon hrefs resolved in Block 35) unresolved. Meta description emitted unchanged (Block 36); product images with observed alt (Block 39) and page-level banners (Block 40) restored; original sections not in the scaffold copy are not recreated; page copy/section parity not verified",
       "/terms-of-service/": "exact legal body copy, live title and meta description are not in any repository evidence; legal copy must not be invented"
     }
   }
