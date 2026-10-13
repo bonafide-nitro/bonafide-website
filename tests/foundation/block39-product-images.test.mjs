@@ -13,7 +13,7 @@ const PAGE_LEVEL = /Banner-Product-Page|Gold-Three-Kegs|Serving-Nitro|Classic-Bl
 const built = fs.existsSync('dist/products/index.html');
 const t = (name, fn) => test(name, { skip: !built && 'dist/ not built' }, fn);
 const exactCase = (root, urlPath) => fs.readdirSync(path.join(root, path.posix.dirname(urlPath))).includes(path.posix.basename(urlPath));
-const imgs = (f) => [...fs.readFileSync(f, 'utf8').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]).filter((i) => i.includes('/wp-content/uploads/'));
+const imgs = (f) => [...fs.readFileSync(f, 'utf8').matchAll(/<img\b[^>]*>/g)].map((m) => m[0]).filter((i) => i.includes('/wp-content/uploads/') && !i.includes('class="site-logo"')); // Block 41: sitewide header logo is not a product image
 // The minified build writes an empty alt as a bare `alt` attribute.
 const alt = (tag) => (/\balt(?=[\s>])/.test(tag) ? '' : tag.match(/\balt="([^"]*)"/)?.[1]);
 const src = (tag) => tag.match(/\bsrc="([^"]*)"/)?.[1];
