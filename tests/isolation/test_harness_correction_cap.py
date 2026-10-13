@@ -82,7 +82,8 @@ class TestRun(unittest.TestCase):
     def setUp(self):
         self.posted = []
         self.state, self.comments = "open", []
-        cap._get = lambda repo, path: {"state": self.state}
+        self.head = "c" * 40
+        cap._get = lambda repo, path: {"state": self.state, "head": {"sha": self.head}}
         cap._comments = lambda repo, number: list(self.comments)
         cap._post = lambda repo, number, body: self.posted.append(body)
         cap._output = lambda **values: setattr(self, "out", values)
@@ -102,6 +103,12 @@ class TestRun(unittest.TestCase):
         self.comments.append({"id": 50, "user": {"login": BOT}, "body": self.posted[0]})
         cap.run("o/r", 5, 4, "d" * 40)
         self.assertEqual(len(self.posted), 1)
+
+    def test_new_head_after_validation_does_not_consume_slot_or_post(self):
+        self.head = "d" * 40
+        cap.run("o/r", 5, 11, "c" * 40)
+        self.assertEqual((self.out["action"], self.out["go"]), ("stale", "false"))
+        self.assertEqual(self.posted, [])
 
     def test_closed_posts_nothing(self):
         self.state = "closed"
