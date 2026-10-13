@@ -75,6 +75,27 @@ test('CLI exits 1 on a finding, 0 on a clean tree, and verifies a manifest', () 
   assert.equal(run(path.join(os.tmpdir(), 'b43-does-not-exist')).status, 2);
 });
 
+test('symlinks are findings, are not followed, and cannot be manifested', () => {
+  const dir = mk(CLEAN);
+  const outside = mk({ 'secret.txt': 'outside' });
+  fs.symlinkSync(path.join(outside, 'secret.txt'), path.join(dir, 'link.txt'));
+  fs.symlinkSync(outside, path.join(dir, 'linkdir'));
+  const found = scanArtifact(dir, FORBIDDEN).filter((f) => f.rule === 'non-regular-entry').map((f) => f.file);
+  assert.deepEqual(found, ['link.txt', 'linkdir']);
+  assert.throws(() => buildManifest(dir), /non-regular/);
+  const r = spawnSync('node', ['scripts/check-release-artifact.mjs', '--dir', dir], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+});
+
+test('manifest flags without a non-empty value are usage errors (exit 2), never a silent skip', () => {
+  const dir = mk(CLEAN);
+  const run = (...a) => spawnSync('node', ['scripts/check-release-artifact.mjs', '--dir', dir, ...a], { encoding: 'utf8' });
+  assert.equal(run('--verify-manifest').status, 2);
+  assert.equal(run('--verify-manifest', '').status, 2);
+  assert.equal(run('--write-manifest').status, 2);
+  assert.equal(run('--write-manifest', '--verify-manifest', 'x.json').status, 2);
+});
+
 test('the real built dist/ (when present) passes the preflight', { skip: !fs.existsSync('dist') }, () => {
   const findings = scanArtifact('dist', loadBaseline().preservationRules.forbiddenBuildStrings);
   assert.deepEqual(findings, []);

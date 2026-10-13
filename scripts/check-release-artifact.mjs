@@ -44,20 +44,29 @@ const WP_RUNTIME = [
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
-export const listFiles = (dir) => {
-  const out = [];
+// Walks without following links: Dirent reports a symlink as neither directory nor file, so
+// symlinks (and sockets, FIFOs, devices) land in `irregular` and are never read or hashed.
+export const walkTree = (dir) => {
+  const files = [];
+  const irregular = [];
   const walk = (d) => {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name);
+      const rel = path.relative(dir, p).split(path.sep).join('/');
       if (e.isDirectory()) walk(p);
-      else out.push(path.relative(dir, p).split(path.sep).join('/'));
+      else if (e.isFile()) files.push(rel);
+      else irregular.push(rel);
     }
   };
   walk(dir);
-  return out.sort(cmp);
+  return { files: files.sort(cmp), irregular: irregular.sort(cmp) };
 };
 
+export const listFiles = (dir) => walkTree(dir).files;
+
 export const buildManifest = (dir) => {
+  const { irregular } = walkTree(dir);
+  if (irregular.length) throw new Error(`non-regular entries (symlink/special) cannot be manifested: ${irregular.join(', ')}`);
   const files = listFiles(dir).map((p) => {
     const buf = fs.readFileSync(path.join(dir, p));
     return { path: p, bytes: buf.length, sha256: sha256(buf) };
@@ -79,7 +88,9 @@ export const diffManifest = (expected, actual) => {
 export const scanArtifact = (dir, forbiddenStrings = []) => {
   const findings = [];
   const add = (rule, file, detail) => findings.push({ rule, file, detail });
-  for (const rel of listFiles(dir)) {
+  const { files, irregular } = walkTree(dir);
+  for (const rel of irregular) add('non-regular-entry', rel, 'symlink or special file');
+  for (const rel of files) {
     const lower = rel.toLowerCase();
     const base = path.posix.basename(lower);
     const ext = base.includes('.') ? base.split('.').pop() : '';
@@ -110,13 +121,24 @@ const arg = (name) => {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const dir = path.resolve(arg('--dir') ?? 'dist');
   if (!fs.existsSync(dir)) { console.error(`${dir} missing — run \`npm run build\` first`); process.exit(2); }
+  // A manifest flag present without a non-empty value is a usage error, never a silent skip.
+  const flagValue = (name) => {
+    if (!process.argv.includes(name)) return null;
+    const v = arg(name);
+    if (!v || v.startsWith('--')) { console.error(`${name} requires a non-empty file path`); process.exit(2); }
+    return v;
+  };
+  const writeTo = flagValue('--write-manifest');
+  const verify = flagValue('--verify-manifest');
   const findings = scanArtifact(dir, loadBaseline().preservationRules.forbiddenBuildStrings);
-  const manifest = buildManifest(dir);
-  let failed = findings.length > 0;
   for (const f of findings) console.error(`[${f.rule}] ${f.file}: ${f.detail}`);
-  const writeTo = arg('--write-manifest');
+  let failed = findings.length > 0;
+  if (findings.some((f) => f.rule === 'non-regular-entry')) {
+    console.log(`FAIL: ${findings.length} finding(s); manifest not written or verified because the tree has non-regular entries`);
+    process.exit(1);
+  }
+  const manifest = buildManifest(dir);
   if (writeTo) fs.writeFileSync(writeTo, `${JSON.stringify(manifest, null, 2)}\n`);
-  const verify = arg('--verify-manifest');
   if (verify) {
     const d = diffManifest(JSON.parse(fs.readFileSync(verify, 'utf8')), manifest);
     for (const k of ['missing', 'extra', 'changed']) for (const p of d[k]) console.error(`[manifest-${k}] ${p}`);
