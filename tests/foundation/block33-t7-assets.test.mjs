@@ -6,6 +6,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { ASSETS as BLOCK39_ASSETS } from './block39-assets.mjs';
 import { ASSETS as BLOCK40_ASSETS } from './block40-assets.mjs';
+import { ASSETS as BLOCK41_ASSETS } from './block41-assets.mjs';
 
 // [URL path, size, SHA-256] of the owner-supplied originals (Issue #84 verified T7 bundle).
 const ASSETS = [
@@ -53,10 +54,10 @@ test('every asset is byte-identical to the owner-supplied original and has the r
   }
 });
 
-test('only the 16 manifested originals plus the Block 39 product-page and Block 40 page-level originals exist under public/wp-content/uploads', () => {
+test('only the 16 manifested originals plus the Block 39 product-page, Block 40 page-level and Block 41 header-logo originals exist under public/wp-content/uploads', () => {
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
   const imgs = walk('public/wp-content/uploads').map((f) => '/' + path.relative('public', f).split(path.sep).join('/')).filter((f) => /\.(png|jpe?g)$/i.test(f));
-  assert.deepEqual(imgs.sort(), [...ASSETS, ...BLOCK39_ASSETS, ...BLOCK40_ASSETS].map((a) => a[0]).sort());
+  assert.deepEqual(imgs.sort(), [...ASSETS, ...BLOCK39_ASSETS, ...BLOCK40_ASSETS, ...BLOCK41_ASSETS].map((a) => a[0]).sort());
 });
 
 t('every asset is in dist/ at its exact path and byte-identical to the source', () => {

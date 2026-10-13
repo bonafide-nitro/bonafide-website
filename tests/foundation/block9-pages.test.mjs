@@ -3,7 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const page = (p) => fs.readFileSync(`dist${p}index.html`, 'utf8');
+// Block 41: the shared header logo is sitewide chrome, not page body content.
+const page = (p) => fs.readFileSync(`dist${p}index.html`, 'utf8').replace(/<header id="masthead"[\s\S]*?<\/header>/, '');
 const dec = (s) => s.replace(/&#38;|&amp;/g, '&').replace(/&#34;|&quot;/g, '"').replace(/&#39;|&#x27;/g, "'");
 const title = (h) => dec(h.match(/<title>([^<]*)<\/title>/)[1]);
 const h1s = (h) => [...h.matchAll(/<h1[^>]*>([^<]*)<\/h1>/g)].map((m) => dec(m[1]));

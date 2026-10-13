@@ -41,6 +41,10 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
       :root { --ink: #1c1712; --muted: #5b5147; --accent: #8a5a1f; --bg: #fffdf9; --card: #f6efe4; }
       * { box-sizing: border-box; }
       body { margin: 0; font: 16px/1.6 system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+      /* Header background is an implementation choice (the original markup does not evidence one): dark band so the white logo is readable. */
+      header.main-header { background: var(--ink); }
+      header.main-header .site-branding { padding: .5rem 1rem; }
+      header.main-header .site-logo { display: block; width: 250px; max-width: 100%; height: auto; }
       nav.site ul { display: flex; flex-wrap: wrap; gap: .25rem 1rem; list-style: none; margin: 0; padding: .75rem 1rem; background: var(--card); }
       a { color: var(--accent); }
       main { max-width: 64rem; margin: 0 auto; padding: 1rem; }
@@ -61,12 +65,17 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
   </head>
   <body>
     <GoogleTagManager id={gtmId} position="body" />
+    <header id="masthead" class="main-header header_layout_2 sticky-header sticky-scrolltop">
+      <div class="site-branding">
+        <a href="/" title="Bona Fide Nitro Coffee"><img src="/wp-content/uploads/2019/04/Bona-Fide-logo-White-color-big-tea-for-website-header-1.png" alt="Bona Fide Nitro Coffee" class="site-logo" width="250" height="108" /></a>
+      </div>
     <nav class="site" aria-label="Main">
       <ul>
         {nav.launch.map((i) => <li><a href={i.path}>{i.label}</a></li>)}
         {nav.external.map((i) => <li><a href={commerceHref(i.commerceId)}>{i.label}</a></li>)}
       </ul>
     </nav>
+    </header>
     <main>
       {canonicalPath && breadcrumbs.length > 0 && (
         <nav class="crumbs" aria-label="Breadcrumb">
