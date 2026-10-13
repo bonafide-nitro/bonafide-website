@@ -96,6 +96,18 @@ test('manifest flags without a non-empty value are usage errors (exit 2), never 
   assert.equal(run('--write-manifest', '--verify-manifest', 'x.json').status, 2);
 });
 
+test('writing and verifying the same manifest file is a usage error and leaves the baseline intact', () => {
+  const dir = mk(CLEAN);
+  const file = path.join(os.tmpdir(), `b43-same-${process.pid}.json`);
+  const run = (...a) => spawnSync('node', ['scripts/check-release-artifact.mjs', '--dir', dir, ...a], { encoding: 'utf8' });
+  assert.equal(run('--write-manifest', file).status, 0);
+  const before = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(path.join(dir, 'robots.txt'), 'tampered');
+  assert.equal(run('--write-manifest', file, '--verify-manifest', file).status, 2);
+  assert.equal(fs.readFileSync(file, 'utf8'), before);
+  assert.equal(run('--verify-manifest', file).status, 1);
+});
+
 test('the real built dist/ (when present) passes the preflight', { skip: !fs.existsSync('dist') }, () => {
   const findings = scanArtifact('dist', loadBaseline().preservationRules.forbiddenBuildStrings);
   assert.deepEqual(findings, []);

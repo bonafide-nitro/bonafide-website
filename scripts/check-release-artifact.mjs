@@ -130,6 +130,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   };
   const writeTo = flagValue('--write-manifest');
   const verify = flagValue('--verify-manifest');
+  // Writing the manifest to the baseline being verified would make the artifact compare against itself.
+  if (writeTo && verify && path.resolve(writeTo) === path.resolve(verify)) {
+    console.error('--write-manifest and --verify-manifest must not name the same file');
+    process.exit(2);
+  }
   const findings = scanArtifact(dir, loadBaseline().preservationRules.forbiddenBuildStrings);
   for (const f of findings) console.error(`[${f.rule}] ${f.file}: ${f.detail}`);
   let failed = findings.length > 0;
