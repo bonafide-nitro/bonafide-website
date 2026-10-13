@@ -110,19 +110,56 @@ def load_targets(manifest_path=MANIFEST_PATH):
 
 
 def _check_entry_cap(archive, max_entries):
-    """Refuse before ZipFile materializes every ZipInfo, using the end-of-directory count."""
+    """Count actual central-directory records, bounded, before ZipFile parses members.
+
+    The EOCD declared entry count is untrusted. Walk fixed 46-byte central
+    headers and seek past variable fields without reading member data or
+    materializing ZipInfo objects. Reject mismatches and malformed offsets.
+    """
+    if max_entries < 0:
+        raise InventoryError("--max-entries must be non-negative")
     try:
         with open(archive, "rb") as fp:
-            rec = zipfile._EndRecData(fp)  # EOCD (+ zip64 locator) only; no member data
+            rec = zipfile._EndRecData(fp)  # EOCD (+ zip64 locator); no member data
+            if not rec:
+                return  # ZipFile supplies the ordinary invalid-ZIP error
+            declared = rec[zipfile._ECD_ENTRIES_TOTAL]
+            size = rec[zipfile._ECD_SIZE]
+            offset = rec[zipfile._ECD_OFFSET]
+            # Matches zipfile.ZipFile._RealGetContents, including ZIP64 EOCD.
+            start = rec[zipfile._ECD_LOCATION] - size
+            if offset != 0xFFFFFFFF:
+                start = offset + (rec[zipfile._ECD_LOCATION] - size - offset)
+            end = start + size
+            if start < 0 or size < 0 or end > rec[zipfile._ECD_LOCATION]:
+                raise InventoryError("invalid ZIP central-directory bounds")
+            if declared > max_entries:
+                raise InventoryError(
+                    f"archive declares {declared} entries, above --max-entries {max_entries}; refusing"
+                )
+            fp.seek(start)
+            count = 0
+            while fp.tell() < end:
+                if end - fp.tell() < 46:
+                    raise InventoryError("truncated ZIP central-directory record")
+                hdr = fp.read(46)
+                if hdr[:4] != b"PK\\x01\\x02":
+                    raise InventoryError("invalid ZIP central-directory signature")
+                variable = sum(int.from_bytes(hdr[i:i + 2], "little") for i in (28, 30, 32))
+                if fp.tell() + variable > end:
+                    raise InventoryError("ZIP central-directory record exceeds declared bounds")
+                fp.seek(variable, 1)
+                count += 1
+                if count > max_entries:
+                    raise InventoryError(
+                        f"archive has more than --max-entries {max_entries} records; refusing"
+                    )
+            if count != declared:
+                raise InventoryError(
+                    f"ZIP central-directory count mismatch: declared {declared}, found {count}"
+                )
     except OSError:
-        return  # let ZipFile report open errors
-    if not rec:
-        return  # let ZipFile report BadZipFile
-    total = rec[zipfile._ECD_ENTRIES_TOTAL]
-    if total > max_entries:
-        raise InventoryError(
-            f"archive has {total} entries, above --max-entries {max_entries}; refusing"
-        )
+        return  # ZipFile supplies the ordinary open error
 
 
 def _same_file(a, b):
