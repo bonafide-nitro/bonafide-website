@@ -90,6 +90,7 @@ t('the Amazon banner sits inside each of the 13 mapped Amazon links on /products
     const imgs = m[2].match(/<img\b[^>]*>/g) ?? [];
     assert.equal(imgs.length, 1, m[1]);
     assert.equal(alt(imgs[0]), PAGE_MEDIA.amazon.alt);
+    assert.ok(/width="2000"/.test(imgs[0]) && /height="660"/.test(imgs[0]), 'intrinsic size of the committed JPEG');
     assert.ok(/Buy Securely On Amazon\.com/.test(m[2]), 'link text preserved');
   }
   assert.ok(!/amazon\.com/.test(html('products-2')));

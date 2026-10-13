@@ -18,7 +18,7 @@ Each matched the manifest SHA-256 and size and has the correct PNG/JPEG signatur
 
 `/products-2/` (wholesale): banner above the h1; `...Bullets.jpg` before and `...Bullets2.jpg` after the bullet list (both with alt `Banner-Product-Page-Bona-Fide-Product-Page-Bullets`). No Amazon, no other page-level image (none in the original).
 
-Images are responsive (`max-width:100%; height:auto` with intrinsic width/height to avoid layout shift) and lazy-loaded except the banners.
+Images are responsive (`max-width:100%; height:auto` with intrinsic width/height to avoid layout shift; the Amazon banner declares its true 2000x660 and is displayed at 199px wide via CSS) and lazy-loaded except the banners.
 
 ## Deliberately not done
 - Header logo `Bona-Fide-logo-White-color-big-tea-for-website-header-1.png`: it is part of the site-wide WordPress header, not product-page content; placing it would change every page. Not imported. Needs its own Block.

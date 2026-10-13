@@ -10,7 +10,7 @@ export const PAGE_MEDIA = {
   coldMachine: { src: `${U}2019/08/Bona-Fide-Cold-doble-tap-nitro-machine-compressed.png`, alt: 'Bona-Fide-Cold-doble-tap-nitro-machine-coffee-and-tea', width: 907, height: 1209 },
   hotTap: { src: `${U}2019/05/NEW-Hot-Tap-Bona-Fide-Nitro-Coffee-and-tea-for-website-compressed.png`, alt: 'NEW-Hot-Tap-Bona-Fide-Nitro-Coffee-and-tea-for-website-compressed', width: 671, height: 796 },
   kegBikSet: { src: `${U}2022/10/Bona-Fide-Keg-BIK-Set-Hot-Cold-Machine-New.png`, alt: 'Bona Fide Nitro Coffee And Tea Keg BIK Set Hot Cold Machine New', width: 898, height: 894 },
-  amazon: { src: `${U}2022/12/Bona-Fide-Available-On-Amazon.jpg`, alt: 'Bona Fide Cold brew Nitro Coffee Available On Amazon', width: 199, height: 66 },
+  amazon: { src: `${U}2022/12/Bona-Fide-Available-On-Amazon.jpg`, alt: 'Bona Fide Cold brew Nitro Coffee Available On Amazon', width: 2000, height: 660 },
   bullets: { src: `${U}2022/04/Banner-Product-Page-Bona-Fide-Product-Page-Bullets.jpg`, alt: 'Banner-Product-Page-Bona-Fide-Product-Page-Bullets', width: 152, height: 361 },
   bullets2: { src: `${U}2022/04/Banner-Product-Page-Bona-Fide-Product-Page-Bullets2.jpg`, alt: 'Banner-Product-Page-Bona-Fide-Product-Page-Bullets', width: 209, height: 482 },
 };
