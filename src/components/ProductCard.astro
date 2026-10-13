@@ -1,5 +1,6 @@
 ---
 import fs from 'node:fs';
+import { PAGE_MEDIA } from '../lib/page-media.mjs';
 // One product card. `view` decides which facts render: retail shows Nitro/Still styles, the
 // retail-only Amazon CTA label and retail price; wholesale shows the wholesale price only.
 const { product: p, view } = Astro.props;
@@ -14,6 +15,9 @@ const o = p.viewOverrides?.[view] ?? {};
 const src = o.image ?? p.image;
 const alt = o.alt ?? p.alt;
 const image = src && typeof alt === 'string' && fs.existsSync(`public${src}`) ? src : null;
+// Block 40: the original wraps the Amazon banner image inside every Amazon link.
+const az = PAGE_MEDIA.amazon;
+const azImage = fs.existsSync(`public${az.src}`);
 const fmt = (n) => `$${n.toFixed(2)}`;
 ---
 <li class="card">
@@ -27,6 +31,6 @@ const fmt = (n) => `$${n.toFixed(2)}`;
   {view === 'retail' && p.styles && <p>Nitro Style + Still (Flat) Style</p>}
   <p>
     {store && <a class="cta" href={store}>Buy on the Bona Fide webstore</a>}
-    {amazon.map((href) => <a class="cta" href={href}>Buy Securely On Amazon.com</a>)}
+    {amazon.map((href) => <a class="cta" href={href}>{azImage && <img src={az.src} alt={az.alt} width={az.width} height={az.height} loading="lazy" decoding="async" />} Buy Securely On Amazon.com</a>)}
   </p>
 </li>

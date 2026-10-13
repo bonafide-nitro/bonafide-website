@@ -8,6 +8,8 @@ import { loadProducts } from '../../src/lib/data.mjs';
 import { ASSETS } from './block39-assets.mjs';
 
 
+// Block 40 page-level originals (banners, bullets, equipment, serving, Classic Blend, Amazon banner).
+const PAGE_LEVEL = /Banner-Product-Page|Gold-Three-Kegs|Serving-Nitro|Classic-Blend|Keg-BIK|Available-On-Amazon|Hot-Tap|doble-tap/;
 const built = fs.existsSync('dist/products/index.html');
 const t = (name, fn) => test(name, { skip: !built && 'dist/ not built' }, fn);
 const exactCase = (root, urlPath) => fs.readdirSync(path.join(root, path.posix.dirname(urlPath))).includes(path.posix.basename(urlPath));
@@ -42,7 +44,8 @@ const ALT = {
 
 for (const page of ['products', 'products-2']) {
   t(`/${page}/ renders each product image with its original alt, and only those`, () => {
-    const found = imgs(`dist/${page}/index.html`);
+    // Block 40 page-level images and Amazon banners are asserted in block40-page-media.test.mjs.
+    const found = imgs(`dist/${page}/index.html`).filter((i) => !PAGE_LEVEL.test(src(i)));
     const expected = loadProducts().filter((p) => p.views.includes(page === 'products' ? 'retail' : 'wholesale')).length;
     assert.equal(found.length, expected, found.join('\n'));
     const keys = Object.keys(ALT[page]);
@@ -64,8 +67,4 @@ for (const page of ['products', 'products-2']) {
 t('/products/ uses the original 2022/05 Passion Fruit upload; /products-2/ the 2026/07 one', () => {
   assert.ok(imgs('dist/products/index.html').some((i) => src(i) === '/wp-content/uploads/2022/05/Pasion-Fruit-Nitro-tea-for-website-new.png'));
   assert.ok(imgs('dist/products-2/index.html').some((i) => src(i) === '/wp-content/uploads/2026/07/Pasion-Fruit-Nitro-tea-for-website-new.png'));
-});
-
-t('page-level banners/logo/equipment images are not placed on product pages (position not evidenced)', () => {
-  for (const page of ['products', 'products-2']) assert.ok(!/Banner-Product-Page|Keg-BIK|Available-On-Amazon|Hot-Tap|doble-tap/.test(fs.readFileSync(`dist/${page}/index.html`, 'utf8')));
 });
