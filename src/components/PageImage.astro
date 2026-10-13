@@ -1,0 +1,9 @@
+---
+import fs from 'node:fs';
+import { PAGE_MEDIA } from '../lib/page-media.mjs';
+// Block 40: renders one evidenced page-level original; nothing renders unless the binary exists at the exact path.
+const { id, eager = false } = Astro.props;
+const m = PAGE_MEDIA[id];
+const ok = m && fs.existsSync(`public${m.src}`);
+---
+{ok && <p class="page-media"><img src={m.src} alt={m.alt} width={m.width} height={m.height} loading={eager ? 'eager' : 'lazy'} decoding="async" /></p>}
