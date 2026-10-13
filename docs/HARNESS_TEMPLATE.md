@@ -45,6 +45,7 @@ Copy these files verbatim. When one changes, change it in
 | `.github/scripts/harness_guard.py` (called by the bridge workflow and `codex-feedback-to-claude.yml`) | One Claude session per Block: routes an Issue's label to its open PR, refuses a second session while one is working |
 | `.github/workflows/santiago-ready-label-trigger.yml` | Claude → `@codex review` (Handoff 2)* |
 | `.github/workflows/codex-feedback-to-claude.yml` | Codex findings → re-start Claude (Handoff 3) |
+| `.github/scripts/harness_correction_cap.py` (called by `codex-feedback-to-claude.yml`) | Caps automatic Codex → Claude corrections at 2 per PR (durable `CODEX_CORRECTION_DISPATCHED` bot comments); at the cap posts one `MANUAL_REVIEW_REQUIRED` and changes no labels; ignores closed/merged PRs |
 | `.github/workflows/codex-clean-verified.yml` + `.github/scripts/harness_automerge.py` | Clean Codex review → `VERIFIED` → automatic merge of that exact head once its checks pass |
 | `.github/workflows/harness-requeue.yml` + `.github/scripts/harness_requeue.py` | New task Issue → start Claude; `ZANETA_DECISION` → restart Claude. No manual label |
 | `.github/workflows/harness-watchdog.yml` + `.github/scripts/harness_watchdog.py` | Reports silent stalls |
@@ -182,3 +183,9 @@ started because recent account payments have failed or your spending limit
 needs to be increased" means GitHub stopped all workflows for billing; the
 watchdog cannot report that because it runs on Actions too. Fix billing, then
 re-run the failed runs (trafficdom #221, 2026-09-26).
+
+## Correction-round cap and manual override
+
+At most **2** automatic Codex-finding → Claude correction dispatches happen per PR, counted across new commit SHAs and Action reruns from `CODEX_CORRECTION_DISPATCHED` comments posted by `github-actions[bot]` (one per Codex review id). The marker is written before any label is cleared or added and before the Routine is fired. At the cap the PR is left for manual Santiago review and one `MANUAL_REVIEW_REQUIRED` comment is posted; further Codex findings start nothing.
+
+The cap is never reset implicitly. More rounds are a deliberately manual, owner-approved action: Žaneta's `ZANETA_DECISION` comment on the PR (or a `CHANGES_REQUESTED` comment from the authorized human) restarts Claude through `harness-requeue.yml`, which this cap does not touch.
