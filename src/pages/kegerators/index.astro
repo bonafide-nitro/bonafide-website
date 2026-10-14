@@ -2,10 +2,15 @@
 import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
-<!-- scaffold: kept until the /kegerators/ equipment images (e.g. Kegerator-counter-top-Bona-Fide.jpg, Bona-Fide-Cold-Dispenser-countertop-small-min-1.png and the three equipment images recorded in docs/migration/08) are supplied as binaries at their exact same-path URLs and alt text is captured. The first CTA destination currently returns 404 on the store (observed evidence, preserved as-is). -->
+<!-- scaffold: kept (Block 50). Two pinned originals are shown in one neutral figure with alt="" because no historical alt text, caption, position or equipment-group mapping is preserved (new accessibility handling, not recovered history). Still outstanding: the three equipment images recorded in docs/migration/08 (no pinned binaries) and their alt text, so the strict QA blocker stays. The first CTA destination currently returns 404 on the store (observed evidence, preserved as-is). -->
 <Base title="Kegerators - Bona Fide Nitro Coffee" canonicalPath="/kegerators/" breadcrumbs={[{ name: 'Kegerators', path: '/kegerators/' }]} scaffold>
   <h1>Equipment to Serve Nitro Cold Brew Coffee</h1>
   <p>A nitro coffee dispenser, machine or kegerator lets you serve nitro cold brew on demand from a keg. Bona Fide equipment covers four groups: a countertop cold nitro dispenser, a double-faucet cold dispenser, a hot nitro dispenser and the traditional keg cooler.</p>
+
+  <div class="equipment-images">
+    <img src="/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg" alt="" width="1920" height="1188" loading="lazy" style="max-width:100%;height:auto" />
+    <img src="/wp-content/uploads/2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png" alt="" width="591" height="768" loading="lazy" style="max-width:100%;height:auto" />
+  </div>
 
   <h2>Countertop cold nitro dispenser</h2>
   <p>A countertop nitro coffee dispenser with Lindr flash chilling serves cold nitro on demand from a Bag-in-Box (BIK compatible) or keg. It runs on a standard 110v setup and has a small countertop footprint, so it fits a counter without a walk-in cooler.</p>
