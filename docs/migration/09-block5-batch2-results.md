@@ -22,7 +22,7 @@ No image binaries were available to this session, and QA T7 requires every refer
 - `/nitro-cold-brew/`: `/wp-content/uploads/2018/06/All-about-nitro-cold-brew-coffee.jpg`, `/wp-content/uploads/2018/06/Cold-brew-Nitro-Coffee.jpg`; the master-plan ranking images `Kegerator-counter-top-Bona-Fide.jpg`, `Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap.jpg`, `Bona-Fide-Cold-Dispenser-countertop-small-min-1.png` and the 2023 `Nitro-Coffee-Explain-Graphic-*` set (upload directories/exact filenames not evidenced in the repo — not invented).
 - `/kegerators/`: `Kegerator-counter-top-Bona-Fide.jpg`, `Bona-Fide-Cold-Dispenser-countertop-small-min-1.png` (upload directories not evidenced) and the three equipment images already recorded in doc 08.
 - `/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/`: `/wp-content/uploads/2024/11/Bag-In-Box-And-Pouch-Shopify-Glass-Cold-Coffee.jpg`.
-- `/about/`: `/wp-content/uploads/2022/04/Bona-Fide-Facilities-1.jpg`; facilities images 2–8 (paths not evidenced).
+- `/about/`: `/wp-content/uploads/2022/04/Bona-Fide-Facilities-1.jpg`; facilities images 2–8 were not evidenced at Block 5 time; superseded — Block 47 (#111) later merged eight verified 2022 JPGs `Bona-Fide-Facilities-{1..8}.jpg`, see doc 43.
 - `/hot-nitro-coffee/`, `/healthy-benefits-…/`: no image path evidenced; full inventory unknown.
 
 ## Other gaps
