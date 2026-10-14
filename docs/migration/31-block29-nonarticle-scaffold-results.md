@@ -12,7 +12,7 @@ The 20 non-article routes still triggering `T5 placeholder-page` were identified
 | Route | Exact blocker |
 | --- | --- |
 | `/` | homepage testimonial section and Review/rating schema are not preserved: decision I7 (self-serving review markup) is an unresolved business decision; hero imagery not recovered |
-| `/about/` | facilities images 2-8 have no evidenced paths and no image binaries or alt text are preserved (only Bona-Fide-Facilities-1.jpg path is evidenced) |
+| `/about/` | facilities gallery not rendered: the eight original Bona-Fide-Facilities-{1..8}.jpg binaries are present (Block 47, #111) but gallery order, which variants (2022 JPG vs older PNG) were displayed, and original alt text are not evidenced |
 | `/blog/` | post excerpts, categories and card images are not preserved |
 | `/book-appointment/` | exact live Calendly URL is not in repository evidence; supplied only via PUBLIC_CALENDLY_URL, which a human must configure |
 | `/contact-bona-fide-nitro-coffee-and-tea/` | page meta description not preserved and no form provider endpoint is configured (form renders disabled) |

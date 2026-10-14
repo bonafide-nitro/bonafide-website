@@ -71,3 +71,11 @@ t('scaffold marker kept on all six (image binaries outstanding); no unproven upl
     assert.ok(!/<img\b/.test(h), `${p}: no <img> until binaries exist`);
   }
 });
+
+t('/about/ gallery stays blocked: no facilities image references until order/variants/alt are evidenced (Block 48)', () => {
+  const h = page('/about/');
+  assert.ok(!/<img\b/i.test(h) && !/href="[^"]*Bona-Fide-Facilities/i.test(h));
+  const doc = fs.readFileSync('docs/migration/43-block47-facilities-import-gate.md', 'utf8');
+  assert.ok(/merged to `main` in #111/.test(doc));
+  assert.ok(!/NOT yet contained/.test(doc));
+});
