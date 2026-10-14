@@ -43,6 +43,16 @@ def import_verified(archive: Path, root: Path, dry_run=False):
             if not raw.startswith(bytes.fromhex("ffd8ff")) or not raw.endswith(bytes.fromhex("ffd9")):
                 raise ValueError(f"Not a complete JPEG: {entry}")
             verified[filename] = raw
+    # Validate the entire destination chain before reading or writing files.
+    # A symlinked ancestor (e.g. public/) must not redirect writes outside root.
+    if root.is_symlink():
+        raise ValueError(f"Refusing symlink root: {root}")
+    relative = Path(SOURCE_PREFIX)
+    current = root
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValueError(f"Refusing symlink destination ancestor: {current}")
     # Verify ALL inputs and existing files before writing ANY output.
     destdir = root / SOURCE_PREFIX
     for filename, data in verified.items():
