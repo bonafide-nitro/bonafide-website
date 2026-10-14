@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import { ASSETS as BLOCK39_ASSETS } from './block39-assets.mjs';
 import { ASSETS as BLOCK40_ASSETS } from './block40-assets.mjs';
 import { ASSETS as BLOCK41_ASSETS } from './block41-assets.mjs';
+import { ASSETS as BLOCK47_ASSETS } from './block47-assets.mjs';
 
 // [URL path, size, SHA-256] of the owner-supplied originals (Issue #84 verified T7 bundle).
 const ASSETS = [
@@ -54,10 +55,10 @@ test('every asset is byte-identical to the owner-supplied original and has the r
   }
 });
 
-test('only the 16 manifested originals plus the Block 39 product-page, Block 40 page-level and Block 41 header-logo originals exist under public/wp-content/uploads', () => {
+test('only the preserved Block 33/39/40/41 and checksum-pinned Block 47 originals exist under public/wp-content/uploads', () => {
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
   const imgs = walk('public/wp-content/uploads').map((f) => '/' + path.relative('public', f).split(path.sep).join('/')).filter((f) => /\.(png|jpe?g)$/i.test(f));
-  assert.deepEqual(imgs.sort(), [...ASSETS, ...BLOCK39_ASSETS, ...BLOCK40_ASSETS, ...BLOCK41_ASSETS].map((a) => a[0]).sort());
+  assert.deepEqual(imgs.sort(), [...ASSETS, ...BLOCK39_ASSETS, ...BLOCK40_ASSETS, ...BLOCK41_ASSETS, ...BLOCK47_ASSETS].map((a) => a[0]).sort());
 });
 
 t('every asset is in dist/ at its exact path and byte-identical to the source', () => {
@@ -70,4 +71,23 @@ t('every asset is in dist/ at its exact path and byte-identical to the source', 
 test('ranking-list completeness stays an explicit open finding (not cleared by importing the archive)', () => {
   assert.equal(manifest.rankingList.complete, false);
   assert.match(manifest.rankingList.evidenceGap, /~20/);
+});
+
+test('Block 47 original facilities assets exactly match the recovered owner ZIP (size, SHA-256, JPEG)', () => {
+  assert.equal(BLOCK47_ASSETS.length, 8);
+  for (const [p, size, sha] of BLOCK47_ASSETS) {
+    assert.ok(exactCase('public', p), `${p} not found with exact case`);
+    const buf = fs.readFileSync(path.join('public', p));
+    assert.equal(buf.length, size, `${p} size`);
+    assert.equal(crypto.createHash('sha256').update(buf).digest('hex'), sha, `${p} sha256`);
+    assert.deepEqual([...buf.subarray(0, 3)], [0xff, 0xd8, 0xff], `${p} JPEG signature`);
+    assert.ok(buf.subarray(-2).equals(Buffer.from([0xff, 0xd9])), `${p} JPEG end marker`);
+  }
+});
+
+t('Block 47 facilities originals are copied byte-identically to dist/', () => {
+  for (const [p] of BLOCK47_ASSETS) {
+    assert.ok(exactCase('dist', p), `${p} missing in dist`);
+    assert.ok(fs.readFileSync(path.join('dist', p)).equals(fs.readFileSync(path.join('public', p))), `${p} differs`);
+  }
 });
