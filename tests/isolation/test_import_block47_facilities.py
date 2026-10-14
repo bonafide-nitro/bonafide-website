@@ -127,6 +127,15 @@ class ImportTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "symlink"):
             imp.import_verified(self.zip, self.root)
 
+    def test_symlinked_parent_directory_rejected(self):
+        self.write_zip()
+        outside = self.base / "outside"
+        outside.mkdir()
+        (self.root / "public").symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symlink destination ancestor"):
+            imp.import_verified(self.zip, self.root)
+        self.assertEqual(list(outside.iterdir()), [])
+
     def test_no_temp_files_left(self):
         self.write_zip()
         imp.import_verified(self.zip, self.root)
