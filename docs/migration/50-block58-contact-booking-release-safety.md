@@ -25,7 +25,7 @@ Build correctness is not end-to-end delivery. These remain open and strict QA bl
 3. Set `PUBLIC_CALENDLY_URL=https://calendly.com/<account>/<event>` for the release build. Only `calendly.com` hosts with a path are accepted.
 4. Build, then confirm in `dist/`: contact form has the expected `action` and no `disabled` fieldset; `/book-appointment/` has the expected link; booking is still `noindex` and absent from the sitemap.
 5. Controlled live test, by a human, after approval: submit one real message and confirm email arrival and honeypot handling; make one real test booking and cancel it.
-6. Only then remove the scaffold markers on both pages and update the `qa/qa.config.json` blockers (separate approved Block).
+6. Only then, in a separate approved Block, may the booking scaffold marker be removed and its `qa/qa.config.json` blocker updated. The contact scaffold marker and blocker must stay until the unrecovered contact meta description is also recovered from evidence; configuring and live-testing the provider alone does not clear it.
 
 ## Results
 See the READY_FOR_SANTIAGO comment on the PR.

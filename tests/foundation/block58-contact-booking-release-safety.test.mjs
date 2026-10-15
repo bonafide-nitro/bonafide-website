@@ -28,6 +28,7 @@ const build = (env) => {
   const clean = { ...process.env };
   delete clean.PUBLIC_CONTACT_FORM_ENDPOINT;
   delete clean.PUBLIC_CALENDLY_URL;
+  delete clean.PUBLIC_GTM_ID;
   try {
     const r = spawnSync(process.execPath, [path.join(REPO, 'node_modules/astro/astro.js'), 'build'], { cwd: root, env: { ...clean, ...env }, encoding: 'utf8' });
     assert.equal(r.status, 0, `build failed: ${r.stderr || r.stdout}`);
