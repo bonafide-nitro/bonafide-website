@@ -28,7 +28,7 @@ test('/kegerators/ scaffold and QA blocker do not claim the binaries are missing
   const blocker = JSON.stringify(cfg, null, 1).match(/"\/kegerators\/": "((?:[^"\\]|\\.)*)"/)[1];
   assert.ok(!FALSE_CLAIM.test(src), 'scaffold comment');
   assert.ok(!FALSE_CLAIM.test(blocker), 'qa blocker');
-  assert.ok(/pinned/.test(src) && /unverified/.test(src));
+  assert.ok(/pinned/.test(src) && /unverified/.test(src) && /doc 09/.test(src));
   assert.ok(/unverified|not evidenced/.test(blocker) && /pinned/.test(blocker));
   assert.ok(src.includes('scaffold'), 'scaffold kept');
   const doc = fs.readFileSync('docs/migration/45-block50-kegerators-imagery.md', 'utf8');
