@@ -23,10 +23,15 @@ Repository-only. Correction of a false statement; no render change.
 ### Provenance matrix
 | Image (`/wp-content/uploads/...`) | Binary pinned | `/products/` placement (original alt) | `/kegerators/` association | Rendered on `/kegerators/` |
 | --- | --- | --- | --- | --- |
-| `2019/08/Bona-Fide-Cold-doble-tap-nitro-machine-compressed.png` | yes, Block 40 | confirmed: under "Are You Looking For Dispensing Equipment?" (doc 39) | associated with `/kegerators/` (doc 09); exact position, order and alt unconfirmed | no |
-| `2019/05/NEW-Hot-Tap-Bona-Fide-Nitro-Coffee-and-tea-for-website-compressed.png` | yes, Block 40 | confirmed: same section (doc 39) | associated with `/kegerators/` (doc 09); exact position, order and alt unconfirmed | no |
-| `2022/10/Bona-Fide-Keg-BIK-Set-Hot-Cold-Machine-New.png` | yes, Block 40 | confirmed: after the "Coffee & Tea For Office" paragraph (doc 39) | associated with `/kegerators/` (doc 09); exact position, order and alt unconfirmed | no |
+| `2019/08/Bona-Fide-Cold-doble-tap-nitro-machine-compressed.png` | yes, Block 40 | confirmed: under "Are You Looking For Dispensing Equipment?" (doc 39) | associated with `/kegerators/` (doc 09); exact position, order and alt unconfirmed | yes (Block 52, `alt=""`, neutral) |
+| `2019/05/NEW-Hot-Tap-Bona-Fide-Nitro-Coffee-and-tea-for-website-compressed.png` | yes, Block 40 | confirmed: same section (doc 39) | associated with `/kegerators/` (doc 09); exact position, order and alt unconfirmed | yes (Block 52, `alt=""`, neutral) |
+| `2022/10/Bona-Fide-Keg-BIK-Set-Hot-Cold-Machine-New.png` | yes, Block 40 | confirmed: after the "Coffee & Tea For Office" paragraph (doc 39) | associated with `/kegerators/` (doc 09); exact position, order and alt unconfirmed | yes (Block 52, `alt=""`, neutral) |
 | `2018/06/Kegerator-counter-top-Bona-Fide.jpg` | yes, Block 33 | n/a | associated with `/kegerators/` (doc 09), position unknown | yes (Block 50, `alt=""`) |
 | `2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png` | yes, Block 33 | n/a | associated with `/kegerators/` (doc 09), position unknown | yes (Block 50, `alt=""`) |
 
 **To unlock:** a saved original `/kegerators/` HTML (or equivalent owner evidence) showing the exact position, order and alt text of the already-associated images (page association is not in question; doc 09 records it). No alt text is invented. Scaffold marker and strict QA thresholds are unchanged; Stage-8 strict blockers stand.
+
+## Block 52 provisional neutral rendering (Issue #120)
+Repository-only. The three Block 40-pinned equipment PNGs are now rendered on `/kegerators/` together with the two Block 50 images, as one **provisional neutral** collection of five images: `alt=""` on all (new accessibility handling, not recovered history), no captions, no equipment-group mapping, and an arbitrary order that makes **no claim of historical order or position**. Dimensions (907x1209, 671x796, 898x894) come from the committed binaries; images are responsive (`max-width:100%;height:auto`, lazy). No external downloads or generated renders; Block 49 renders are not placed.
+
+Still unverified: exact `/kegerators/` position, order, original alt and fuller copy. The scaffold marker and the Stage-8 strict blocker are therefore kept, and no QA threshold changed. The "Rendered on `/kegerators/`" column above reflects this provisional rendering only.
