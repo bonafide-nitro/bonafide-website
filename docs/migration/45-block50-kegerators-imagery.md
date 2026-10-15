@@ -29,4 +29,4 @@ Repository-only. Correction of a false statement; no render change.
 | `2018/06/Kegerator-counter-top-Bona-Fide.jpg` | yes, Block 33 | n/a | associated with `/kegerators/` (doc 09), position unknown | yes (Block 50, `alt=""`) |
 | `2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png` | yes, Block 33 | n/a | associated with `/kegerators/` (doc 09), position unknown | yes (Block 50, `alt=""`) |
 
-**To unlock:** a saved original `/kegerators/` HTML (or equivalent owner evidence) showing which images appeared, in what order, with what alt. No alt text is invented. Scaffold marker and strict QA thresholds are unchanged; Stage-8 strict blockers stand.
+**To unlock:** a saved original `/kegerators/` HTML (or equivalent owner evidence) showing the exact position, order and alt text of the already-associated images (page association is not in question; doc 09 records it). No alt text is invented. Scaffold marker and strict QA thresholds are unchanged; Stage-8 strict blockers stand.
