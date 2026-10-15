@@ -35,8 +35,9 @@ test('/kegerators/ scaffold and QA blocker do not claim the binaries are missing
   assert.ok(/Block 51/.test(doc) && /Provenance matrix/.test(doc));
 });
 
-test('equipment PNGs are not rendered on /kegerators/ (placement unevidenced)', () => {
-  const src = fs.readFileSync('src/pages/kegerators/index.astro', 'utf8');
-  const body = src.replace(/<!--[\s\S]*?-->/g, '');
-  for (const u of EQUIPMENT) assert.ok(!body.includes(u.split('/').pop()), u);
+test('the page association and outstanding provenance remain recorded without locking future rendering', () => {
+  const doc = fs.readFileSync('docs/migration/45-block50-kegerators-imagery.md', 'utf8');
+  for (const u of EQUIPMENT) assert.ok(doc.includes(u.split('/').pop()), u);
+  assert.match(doc, /associated with `\/kegerators\/`|\/kegerators\/.*associated/i);
+  assert.match(doc, /exact position, order and alt/i);
 });
