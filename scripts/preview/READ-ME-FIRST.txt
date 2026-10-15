@@ -1,0 +1,32 @@
+BONA FIDE WEBSITE — LOCAL PREVIEW  (this is NOT the live website)
+=================================================================
+
+What this is
+  A copy of the new Astro website, as it looks today, that runs only on your own Mac.
+  Nothing is published, uploaded or sent anywhere. The live bonafidenitro.com is untouched.
+  Seeing it is NOT a sign-off: the migration checks still list 40 open findings.
+
+Why not just open index.html?
+  The pages use site-wide links such as "/products/". Opened straight from the folder, the
+  pictures and styles would be missing and links would break. The launcher below fixes that.
+
+To open it (about 1 minute)
+  1. Unzip everything you downloaded from GitHub (double-click the zip files until you see this folder).
+  2. Double-click  Open-Preview.command
+     - First time only, macOS may say it "cannot be opened". Then: right-click (or Control-click)
+       Open-Preview.command  ->  Open  ->  Open.
+       (If there is no Open button: System Settings -> Privacy & Security -> scroll down -> "Open Anyway".)
+  3. A black Terminal window opens and, after a moment, your browser shows the site at
+     http://127.0.0.1:8765/   (the address only works on your Mac).
+  4. When finished, close the Terminal window. That stops the preview.
+
+If the double-click does not work
+  - A pop-up offers to install "command line developer tools": you can click Install (free, Apple,
+    several minutes) and then double-click again, or ignore it and tell Claude/Santiago the
+    launcher failed. No other setup is needed.
+  - Message "Port 8765 is already in use": close other preview windows and try again.
+  - Fallback if you have Python: open Terminal, type  cd  (with a space), drag the "site" folder into
+    the window, press Return, then type:  python3 -m http.server 8765 --bind 127.0.0.1
+    and open http://127.0.0.1:8765/ in your browser.
+
+Do not open site/index.html by double-clicking it; it will look broken.

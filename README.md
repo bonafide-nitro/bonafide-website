@@ -11,6 +11,7 @@ This private repository is the GitHub source of truth for the rebuild of **bonaf
 - An Astro static-site foundation (placeholders + data contracts) exists; see `docs/STATIC_SITE_STRUCTURE.md`.
 - No WordPress files, DNS, redirects, Search Console settings, or production content should be changed merely because this repository exists.
 - Migration evidence and preservation requirements live in `docs/migration/`.
+- Owner-viewable local preview (not a deployment): see `docs/OWNER_LOCAL_PREVIEW.md`.
 
 ## Migration rule
 
