@@ -86,7 +86,7 @@
       "/interested-in-selling-eu-and-usa/": "images and meta description not preserved; CTA destinations (some Google Docs) not evidenced; nitro information/quiz not preserved",
       "/interested-in-selling-eu-qr-2/": "images and meta description not preserved; CTA destinations (some Google Docs) not evidenced; nitro information/quiz not preserved",
       "/interested-in-selling-usa/": "images and meta description not preserved; lead form and SCHEDULE A DEMO destination not evidenced (Stage 7); CTA is a label only",
-      "/kegerators/": "equipment image binaries (e.g. Kegerator-counter-top-Bona-Fide.jpg) and alt text not supplied; first CTA destination returns 404 on the store (preserved as observed)",
+      "/kegerators/": "exact historical position, order, original alt text and fuller copy not evidenced: two 2018 equipment originals are shown with empty alt, and three equipment PNGs (binaries present and pinned by Block 40) are associated with /kegerators/ by doc 09 and placed on /products/ by saved HTML, but their /kegerators/ position, order and alt are not evidenced; first CTA destination returns 404 on the store (preserved as observed)",
       "/nitro-coffee-kegs/": "keg images have no evidenced upload paths and the meta description is not preserved",
       "/nitro-coffee-questions/": "the Nitro Coffee brochure PDF and Draft System SOP have no evidenced upload paths; live answers were not supplied (answers are rewritten); meta description not preserved",
       "/nitro-cold-brew-coffee-made-easy-2/": "meta description and images not preserved; the interactive branching/serving-volume form is not recreated (Stage 7)",
