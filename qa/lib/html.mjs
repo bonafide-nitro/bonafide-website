@@ -44,6 +44,13 @@ export const parseHtml = (rawHtml) => {
     robots: metas.filter((m) => (m.name ?? '').toLowerCase() === 'robots').map((m) => (m.content ?? '').toLowerCase()),
     scaffold: metas.some((m) => (m.name ?? '').toLowerCase() === 'bonafide-qa' && m.content === 'scaffold-placeholder'),
     metaRefresh: metas.some((m) => (m['http-equiv'] ?? '').toLowerCase() === 'refresh'),
+    // Resource references for the internal link graph check (scripts/check-internal-links.mjs).
+    resourceRefs: [
+      ...tags(html, 'img').map((a) => a.src),
+      ...tags(html, 'source').map((a) => a.src),
+      ...scripts.map((s) => s.attrs.src),
+      ...links.filter((l) => !/\b(canonical|alternate|dns-prefetch|preconnect)\b/i.test(l.rel ?? '')).map((l) => l.href),
+    ].filter((v) => typeof v === 'string' && v !== ''),
     hrefs: tags(html, 'a').map((a) => a.href).filter((h) => h !== undefined),
     scriptSrcs: scripts.map((s) => s.attrs.src).filter(Boolean),
     inlineScripts: scripts.filter((s) => !s.attrs.src && (s.attrs.type ?? '').toLowerCase() !== 'application/ld+json').map((s) => s.body),
