@@ -29,10 +29,18 @@ test('/kegerators/ scaffold and QA blocker do not claim the binaries are missing
   assert.ok(!FALSE_CLAIM.test(src), 'scaffold comment');
   assert.ok(!FALSE_CLAIM.test(blocker), 'qa blocker');
   assert.ok(/pinned/.test(src) && /unverified/.test(src) && /doc 09/.test(src));
+  assert.ok(/provisional neutral/.test(src), 'Block 52 neutral rendering stated');
   assert.ok(/unverified|not evidenced/.test(blocker) && /pinned/.test(blocker));
   assert.ok(src.includes('scaffold'), 'scaffold kept');
   const doc = fs.readFileSync('docs/migration/45-block50-kegerators-imagery.md', 'utf8');
   assert.ok(/Block 51/.test(doc) && /Provenance matrix/.test(doc));
+});
+
+test('Block 52: the three equipment PNGs are rendered neutrally on /kegerators/ without claiming placement', () => {
+  const src = fs.readFileSync('src/pages/kegerators/index.astro', 'utf8');
+  for (const u of EQUIPMENT) assert.ok(src.includes(u), u);
+  assert.ok(!/<h2[^>]*>[^<]*<\/h2>\s*<img/.test(src));
+  assert.ok(!/<figcaption/.test(src));
 });
 
 test('the page association and outstanding provenance remain recorded without locking future rendering', () => {

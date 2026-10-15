@@ -73,21 +73,24 @@ t('scaffold marker kept on all six (image binaries outstanding); no unproven upl
   }
 });
 
-t('/kegerators/: exactly the two pinned originals, alt="" (no invented alt), bytes intact, other pages unchanged (Block 50)', () => {
+t('/kegerators/: exactly the five pinned originals, alt="" (no invented alt), bytes intact (Blocks 50, 52)', () => {
   const h = page('/kegerators/');
   const pinned = {
     '/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg': 'a837fd44d76ba484db9f3cb1bf8adefd2b96d80a53b2b9dac3c98541162f7876',
     '/wp-content/uploads/2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png': '84d92129106de5d620926f94013b07f755a7fc0c4433d5af4cd38d64fec35198',
+    '/wp-content/uploads/2019/08/Bona-Fide-Cold-doble-tap-nitro-machine-compressed.png': '0ca712d0dcb01444476e4c758a3d4c5234c19328cda440630287b591c619f0b6',
+    '/wp-content/uploads/2019/05/NEW-Hot-Tap-Bona-Fide-Nitro-Coffee-and-tea-for-website-compressed.png': 'd2c4ac44782ca84b205322e43509df29be1e94389f8fe126ad659bc8ce488b02',
+    '/wp-content/uploads/2022/10/Bona-Fide-Keg-BIK-Set-Hot-Cold-Machine-New.png': 'e796c7f86db98412a545d54e2e4219d39c819f31fc9a5e95f4586ce97d13ea85',
   };
   const imgs = [...h.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]).filter((x) => !/site-logo/.test(x));
-  assert.equal(imgs.length, 2);
+  assert.equal(imgs.length, 5);
   assert.deepEqual(imgs.map((x) => x.match(/src="([^"]+)"/)[1]).sort(), Object.keys(pinned).sort());
   for (const x of imgs) assert.ok(/\balt=""/.test(x), 'alt must stay empty: no historical alt is preserved');
   for (const [u, sha] of Object.entries(pinned)) {
     assert.equal(crypto.createHash('sha256').update(fs.readFileSync(`public${u}`)).digest('hex'), sha, u);
   }
   assert.ok(h.includes('scaffold-placeholder'));
-  assert.ok(!/2019\/08|2019\/05|2022\/10/.test(h), 'unpinned doc-08 equipment images must not be referenced');
+  assert.ok(!/Block-49|renders?\//i.test(h), 'Block 49 renders must not be placed');
 });
 
 t('/about/ gallery stays blocked: no facilities image references until order/variants/alt are evidenced (Block 48)', () => {
