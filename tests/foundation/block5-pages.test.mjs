@@ -2,6 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 // Block 41: the shared header logo is sitewide chrome, not page body content.
 const page = (p) => fs.readFileSync(`dist${p}index.html`, 'utf8').replace(/<header id="masthead"[\s\S]*?<\/header>/, '');
@@ -68,8 +69,25 @@ t('scaffold marker kept on all six (image binaries outstanding); no unproven upl
     const h = page(p);
     assert.ok(h.includes('scaffold-placeholder'), p);
     for (const u of hrefs(h)) if (u.startsWith('/wp-content/uploads/')) assert.ok(fs.existsSync(`public${u}`), u);
-    assert.ok(!/<img\b/.test(h), `${p}: no <img> until binaries exist`);
+    if (p !== '/kegerators/') assert.ok(!/<img\b/.test(h), `${p}: no <img> until binaries exist`);
   }
+});
+
+t('/kegerators/: exactly the two pinned originals, alt="" (no invented alt), bytes intact, other pages unchanged (Block 50)', () => {
+  const h = page('/kegerators/');
+  const pinned = {
+    '/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg': 'a837fd44d76ba484db9f3cb1bf8adefd2b96d80a53b2b9dac3c98541162f7876',
+    '/wp-content/uploads/2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png': '84d92129106de5d620926f94013b07f755a7fc0c4433d5af4cd38d64fec35198',
+  };
+  const imgs = [...h.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]).filter((x) => !/site-logo/.test(x));
+  assert.equal(imgs.length, 2);
+  assert.deepEqual(imgs.map((x) => x.match(/src="([^"]+)"/)[1]).sort(), Object.keys(pinned).sort());
+  for (const x of imgs) assert.ok(/\balt=""/.test(x), 'alt must stay empty: no historical alt is preserved');
+  for (const [u, sha] of Object.entries(pinned)) {
+    assert.equal(crypto.createHash('sha256').update(fs.readFileSync(`public${u}`)).digest('hex'), sha, u);
+  }
+  assert.ok(h.includes('scaffold-placeholder'));
+  assert.ok(!/2019\/08|2019\/05|2022\/10/.test(h), 'unpinned doc-08 equipment images must not be referenced');
 });
 
 t('/about/ gallery stays blocked: no facilities image references until order/variants/alt are evidenced (Block 48)', () => {
