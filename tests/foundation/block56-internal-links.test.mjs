@@ -49,3 +49,15 @@ test('resolveInternal skips non-route schemes and outbound hosts', () => {
   assert.equal(resolveInternal('https://example.com/', '/'), null);
   assert.deepEqual(resolveInternal('../x/?q=1#h', '/a/b/'), { path: '/a/x/' });
 });
+
+test('accepts extensionless generated files and rejects encoded path separators', () => {
+  const dist = mkDist({
+    'index.html': page('<a href="/LICENSE">lic</a><a href="/assets%2Fimg.png">enc</a><a href="/assets/caf%C3%A9.png">utf</a><a href="/nolic">nolic</a>'),
+    'LICENSE': 'MIT',
+    'assets/img.png': 'x',
+    'assets/café.png': 'x',
+  });
+  const r = checkInternalLinks(dist);
+  assert.deepEqual(r.findings.map((f) => f.ref).sort(), ['/assets%2Fimg.png', '/nolic']);
+  assert.equal(r.findings.find((f) => f.ref === '/nolic').why, 'route without trailing slash');
+});

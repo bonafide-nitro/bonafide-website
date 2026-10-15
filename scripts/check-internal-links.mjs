@@ -15,7 +15,8 @@ export const resolveInternal = (ref, fromPath) => {
   let u;
   try { u = new URL(h, ORIGIN + fromPath); } catch { return { invalid: true }; }
   if (!/^https?:$/.test(u.protocol) || !HOSTS.has(u.hostname)) return null;
-  try { return { path: decodeURIComponent(u.pathname) }; } catch { return { invalid: true }; }
+  // Encoded separators (%2F, %5C) stay encoded: a browser requests them literally, so they must not match a real directory path.
+  try { return { path: u.pathname.split(/(%2f|%5c)/i).map((s, i) => (i % 2 ? s : decodeURIComponent(s))).join('') }; } catch { return { invalid: true }; }
 };
 
 export const checkInternalLinks = (distDir) => {
@@ -33,7 +34,7 @@ export const checkInternalLinks = (distDir) => {
       if (t.invalid) { findings.push({ from: page.path, ref, why: 'unparseable internal URL' }); continue; }
       const p = t.path;
       const ext = /\.[a-z0-9]+$/i.test(p);
-      const ok = p.endsWith('/') ? pages.has(p) : ext ? files.has(p.slice(1)) : false;
+      const ok = p.endsWith('/') ? pages.has(p) : files.has(p.slice(1));
       if (!ok) findings.push({ from: page.path, ref, why: !p.endsWith('/') && !ext ? 'route without trailing slash' : `target ${p} not generated (${kind})` });
     }
   }
