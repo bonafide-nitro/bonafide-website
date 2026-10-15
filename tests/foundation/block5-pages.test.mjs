@@ -69,7 +69,7 @@ t('scaffold marker kept on all six (image binaries outstanding); no unproven upl
     const h = page(p);
     assert.ok(h.includes('scaffold-placeholder'), p);
     for (const u of hrefs(h)) if (u.startsWith('/wp-content/uploads/')) assert.ok(fs.existsSync(`public${u}`), u);
-    if (p !== '/kegerators/') assert.ok(!/<img\b/.test(h), `${p}: no <img> until binaries exist`);
+    if (p !== '/kegerators/' && p !== '/nitro-cold-brew/') assert.ok(!/<img\b/.test(h), `${p}: no <img> until binaries exist`);
   }
 });
 
@@ -91,6 +91,31 @@ t('/kegerators/: exactly the five pinned originals, alt="" (no invented alt), by
   }
   assert.ok(h.includes('scaffold-placeholder'));
   assert.ok(!/Block-49|renders?\//i.test(h), 'Block 49 renders must not be placed');
+});
+
+t('/nitro-cold-brew/: exactly the six pinned originals, alt="" (no invented alt), bytes intact, missing Cold-brew-Nitro-Coffee.jpg not referenced (Block 53)', () => {
+  const h = page('/nitro-cold-brew/');
+  const pinned = {
+    '/wp-content/uploads/2018/06/All-about-nitro-cold-brew-coffee.jpg': [188946, '01474a0f78e81755cd1f6f3347ad65ca64c29061ff903a0dce348e98cd774970'],
+    '/wp-content/uploads/2021/10/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap.jpg': [145686, '9a6c00f4e9512a73109416daae014ee2b2c1553db87ac335d0176845bd664aa2'],
+    '/wp-content/uploads/2023/03/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-1.jpg': [237416, '5e9054653036aefe2c523a0052d0750c9351bec5afe50aa1c6e5b81651e75f64'],
+    '/wp-content/uploads/2023/03/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap-PET-Keg.jpg': [274186, 'd8d763e80436323d0cc55a6f88487b9e7453784f9dd599f397e2545ae7185436'],
+    '/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg': [212930, 'a837fd44d76ba484db9f3cb1bf8adefd2b96d80a53b2b9dac3c98541162f7876'],
+    '/wp-content/uploads/2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png': [86246, '84d92129106de5d620926f94013b07f755a7fc0c4433d5af4cd38d64fec35198'],
+  };
+  const imgs = [...h.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]).filter((x) => !/site-logo/.test(x));
+  assert.equal(imgs.length, 6);
+  assert.deepEqual(imgs.map((x) => x.match(/src="([^"]+)"/)[1]).sort(), Object.keys(pinned).sort());
+  for (const x of imgs) assert.ok(/\balt=""/.test(x), 'alt must stay empty: no historical alt is preserved');
+  for (const [u, [size, sha]] of Object.entries(pinned)) {
+    const b = fs.readFileSync(`public${u}`);
+    assert.equal(b.length, size, u);
+    assert.equal(crypto.createHash('sha256').update(b).digest('hex'), sha, u);
+  }
+  assert.ok(!/(?:src|href)="[^"]*Cold-brew-Nitro-Coffee/.test(h), 'binary absent from the repo: must not be referenced');
+  assert.ok(!/Block-49|renders?\//i.test(h), 'Block 49 renders must not be placed');
+  assert.ok(!/<figcaption/.test(h));
+  assert.ok(h.includes('scaffold-placeholder'));
 });
 
 t('/about/ gallery stays blocked: no facilities image references until order/variants/alt are evidenced (Block 48)', () => {
