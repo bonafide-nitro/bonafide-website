@@ -28,7 +28,7 @@
       "/how-ambient-stable-coffee-kegs-help-you-save-more-money/": "live page has a video embed whose exact destination is not evidenced; body copy is a rewrite from Issue #32; images unrecovered",
       "/hot-nitro-coffee/": "body is a paraphrase (exact copy not preserved); on-page author/date semantics not captured; images unrecovered",
       "/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/": "body is a conservative paraphrase of listed themes (exact copy not preserved); images unrecovered",
-      "/what-is-nitro-cold-brew-coffee/": "body copy is a rewrite from Issue #32 (exact copy not preserved); images unrecovered (ranking image What-is-nitro-Coffee-Explained-simple-Bona-Fide.jpg is a missing T7 binary)",
+      "/what-is-nitro-cold-brew-coffee/": "body copy is a rewrite from Issue #32 (exact copy not preserved); page images unrecovered: the ranking image What-is-nitro-Coffee-Explained-simple-Bona-Fide.jpg is PRESENT and byte-pinned (Block 33) but only ranking-list associated (doc 02 row 59), with no page-specific evidence that it appeared on this article, so it is intentionally not rendered; original alt text and image order also not evidenced",
       "/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/": "depends on T7 binary Bag-In-Box-And-Pouch-Shopify-Glass-Cold-Coffee.jpg at its exact upload path (not supplied) plus alt text",
       "/nitro-coffee-health-benefits/": "body is a conservative paraphrase of broad historical statements (exact copy not preserved); images unrecovered",
       "/is-coffee-healthy/": "body is a conservative paraphrase of listed themes (exact copy not preserved); images unrecovered",
