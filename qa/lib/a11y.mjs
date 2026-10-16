@@ -16,10 +16,39 @@ const parseAttrs = (raw) => {
 
 const present = (v) => typeof v === 'string' && v.trim() !== '';
 const textOf = (inner) => normText(inner.replace(/<[^>]*>/g, ' '));
+const VOID = new Set(['img', 'input', 'br', 'hr', 'meta', 'link', 'source', 'wbr', 'area', 'col', 'embed', 'track']);
+
+// Remove aria-hidden="true" subtrees: their content is not exposed to assistive technology, so it cannot name anything.
+const stripHidden = (inner) => {
+  let out = inner;
+  for (;;) {
+    let cut = null;
+    for (const m of out.matchAll(/<([a-z][a-z0-9-]*)\b([^>]*)>/gi)) {
+      if (parseAttrs(m[2])['aria-hidden']?.trim().toLowerCase() !== 'true') continue;
+      const tag = m[1].toLowerCase();
+      let end = m.index + m[0].length;
+      if (!VOID.has(tag) && !/\/\s*$/.test(m[2])) {
+        let depth = 1;
+        const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+        re.lastIndex = end;
+        for (let t = re.exec(out); t; t = re.exec(out)) {
+          depth += t[1] ? -1 : 1;
+          if (!depth) { end = t.index + t[0].length; break; }
+        }
+        if (depth) end = out.length;
+      }
+      cut = [m.index, end];
+      break;
+    }
+    if (!cut) return out;
+    out = `${out.slice(0, cut[0])} ${out.slice(cut[1])}`;
+  }
+};
 const idTokens = (v) => (v ?? '').split(/\s+/).filter(Boolean);
 
 // Does an element's inner HTML provide an accessible name? Visible text, a labelled/titled/alt-bearing descendant.
-const innerName = (inner) => {
+const innerName = (rawInner) => {
+  const inner = stripHidden(rawInner);
   if (textOf(inner) !== '') return true;
   for (const m of inner.matchAll(/<(img|svg|input)\b([^>]*)>/gi)) {
     const a = parseAttrs(m[2]);
@@ -38,12 +67,16 @@ export const auditHtml = (rawHtml) => {
   const htmlTag = html.match(/<html\b([^>]*)>/i);
   if (!htmlTag || !present(parseAttrs(htmlTag[1]).lang)) add('html-lang', '<html> has no non-empty lang attribute');
 
-  const mains = [...html.matchAll(/<main\b([^>]*)>/gi)].length + [...html.matchAll(/<[a-z][^>]*\brole\s*=\s*["']main["'][^>]*>/gi)].length;
+  // Count elements, not pattern hits: <main role="main"> is one landmark.
+  let mains = 0;
+  for (const m of html.matchAll(/<([a-z][a-z0-9-]*)\b([^>]*)>/gi)) {
+    if (m[1].toLowerCase() === 'main' || parseAttrs(m[2]).role?.trim().toLowerCase() === 'main') mains++;
+  }
   if (mains !== 1) add('main-landmark', `expected exactly one main landmark, found ${mains}`);
 
   const h1s = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)];
   if (h1s.length !== 1) add('h1-count', `expected exactly one <h1>, found ${h1s.length}`);
-  else if (textOf(h1s[0][1]) === '' && !innerName(h1s[0][1])) add('h1-empty', '<h1> has no accessible text');
+  else if (!innerName(h1s[0][1])) add('h1-empty', '<h1> has no accessible text');
 
   // ids
   const idCount = new Map();
@@ -92,7 +125,8 @@ export const auditHtml = (rawHtml) => {
   }
 
   // form controls and labels
-  const labels = [...html.matchAll(/<label\b([^>]*)>([\s\S]*?)<\/label>/gi)].map((m) => ({ attrs: parseAttrs(m[1]), inner: m[2] }));
+  const labels = [...html.matchAll(/<label\b([^>]*)>([\s\S]*?)<\/label>/gi)]
+    .map((m) => ({ attrs: parseAttrs(m[1]), inner: m[2], start: m.index, end: m.index + m[0].length }));
   const labelFor = new Set();
   for (const l of labels) {
     if (l.attrs.for !== undefined) {
@@ -100,7 +134,8 @@ export const auditHtml = (rawHtml) => {
       else labelFor.add(l.attrs.for);
     }
   }
-  const wrapped = (re) => labels.some((l) => l.attrs.for === undefined && re.test(l.inner) && textOf(l.inner) !== '');
+  // A control is implicitly labelled only if this very element sits inside a for-less <label> that has text.
+  const wrapped = (pos) => labels.some((l) => l.attrs.for === undefined && pos > l.start && pos < l.end && textOf(l.inner) !== '');
   for (const m of html.matchAll(/<(input|select|textarea)\b([^>]*)>/gi)) {
     const a = parseAttrs(m[2]);
     const type = (a.type ?? 'text').toLowerCase();
@@ -109,7 +144,7 @@ export const auditHtml = (rawHtml) => {
       continue;
     }
     const named = present(a['aria-label']) || present(a['aria-labelledby']) || present(a.title) || (present(a.id) && labelFor.has(a.id));
-    if (!named && !wrapped(new RegExp(`<${m[1]}\\b[^>]*${a.name ? `name\\s*=\\s*["']${a.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']` : ''}`, 'i'))) {
+    if (!named && !wrapped(m.index)) {
       add('control-label', `<${m[1].toLowerCase()}${a.name ? ` name="${a.name}"` : ''}${a.id ? ` id="${a.id}"` : ''}> has no associated label`);
     }
   }

@@ -21,6 +21,12 @@ test('healthy page has no findings', () => {
     '<iframe title="Map" src="/m/"></iframe><p id="d">d</p><input id="q" aria-describedby="d" title="q">')), []);
 });
 
+test('redundant role=main on the single main is one landmark; visible text beside aria-hidden still names', () => {
+  assert.deepEqual(auditHtml(doc('<h1>H</h1>', { main: false }).replace('<body>', '<body><main role="main"><h1>H</h1></main>').replace(/<h1>H<\/h1><\/body>/, '</body>')), []);
+  assert.deepEqual(auditHtml(doc('<h1>H</h1><button type="button"><span aria-hidden="true">x</span> Close</button><a href="/x/"><span aria-hidden="true"><span>i</span></span>Home</a>')), []);
+  assert.deepEqual(auditHtml(doc('<h1>H</h1><label><input type="radio" name="r"> A</label><label><input type="radio" name="r"> B</label>')), []);
+});
+
 const detects = [
   ['missing lang', doc('<h1>H</h1>', { lang: '' }), 'html-lang'],
   ['empty lang', doc('<h1>H</h1>', { lang: 'lang=""' }), 'html-lang'],
@@ -41,6 +47,13 @@ const detects = [
   ['input labelled by a different id', doc('<h1>H</h1><label for="b">B</label><input id="a" name="a"><input id="b" name="b">'), 'control-label'],
   ['unlabelled textarea', doc('<h1>H</h1><textarea name="m"></textarea>'), 'control-label'],
   ['aria-labelledby to missing id', doc('<h1>H</h1><input aria-labelledby="gone" name="a">'), 'aria-ref'],
+  ['two mains, one with role=main', doc('<h1>H</h1><main role="main"></main>'), 'main-landmark'],
+  ['div role=main beside native main', doc('<h1>H</h1><div role="main"></div>'), 'main-landmark'],
+  ['button named only by aria-hidden text', doc('<h1>H</h1><button type="button"><span aria-hidden="true">X</span></button>'), 'button-name'],
+  ['link named only by aria-hidden nested text', doc('<h1>H</h1><a href="/x/"><span aria-hidden="true"><b>X</b> y</span></a>'), 'link-name'],
+  ['h1 with only aria-hidden text', doc('<h1><span aria-hidden="true">T</span></h1>'), 'h1-empty'],
+  ['unwrapped radio sharing a name with a labelled one', doc('<h1>H</h1><label><input type="radio" name="r" value="a"> A</label><input type="radio" name="r" value="b">'), 'control-label'],
+  ['second nameless input beside a wrapped one', doc('<h1>H</h1><label>Mail <input></label><input>'), 'control-label'],
   ['image input without alt', doc('<h1>H</h1><input type="image" src="/a.png">'), 'input-image-alt'],
 ];
 for (const [name, html, code] of detects) test(`detects: ${name}`, () => assert.ok(codes(html).includes(code), `expected ${code}, got ${codes(html)}`));
