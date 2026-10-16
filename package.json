@@ -12,6 +12,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check:dist": "node scripts/check-build-output.mjs",
+    "check:a11y": "node scripts/check-accessibility.mjs",
     "check:links": "node scripts/check-internal-links.mjs",
     "check:artifact": "node scripts/check-release-artifact.mjs",
     "package:preview": "node scripts/package-preview.mjs",
@@ -20,7 +21,7 @@
     "build:apache": "node scripts/build-apache-config.mjs",
     "check:apache": "node scripts/build-apache-config.mjs --check",
     "test": "node --test \"tests/foundation/*.test.mjs\" \"tests/qa/*.test.mjs\"",
-    "test:build": "npm run build && npm run check:dist && npm run check:links && npm run check:artifact && npm run qa:foundation",
+    "test:build": "npm run build && npm run check:dist && npm run check:a11y && npm run check:links && npm run check:artifact && npm run qa:foundation",
     "qa": "node qa/cli.mjs --mode foundation",
     "qa:foundation": "node qa/cli.mjs --mode foundation",
     "qa:strict": "node qa/cli.mjs --mode strict"
