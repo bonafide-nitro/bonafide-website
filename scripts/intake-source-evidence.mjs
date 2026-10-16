@@ -85,8 +85,15 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
   const flags = [];
   if (!routes.includes(wanted)) flags.push({ code: 'route-unknown', detail: `${wanted} is not a route in src/pages` });
 
-  const bare = html.replace(/<!--[\s\S]*?-->/g, '');
+  // Comments and whole script/style elements (bodies included, even if unterminated) are removed
+  // before any visible-text extraction, so script bodies never reach the report.
+  const bare = html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ')
+    .replace(/<(script|style)\b[\s\S]*$/i, ' ');
   const parsed = parseHtml(html);
+  // The shared parser reads raw markup; take title/h1 from the script-stripped copy.
+  const visible = parseHtml(bare);
   const metas = [...bare.matchAll(/<meta\b([^>]*)>/gi)].map((m) => attrsOf(m[1]));
   const metaBy = (key, val) => metas.filter((m) => (m[key] ?? '').toLowerCase() === val).map((m) => m.content ?? '');
   const descriptions = metaBy('name', 'description');
@@ -107,8 +114,8 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
   if (parsed.canonicals.length > 1) flags.push({ code: 'multiple-canonicals', detail: String(parsed.canonicals.length) });
   if (descriptions.length === 0) flags.push({ code: 'no-meta-description', detail: 'none present in the file; do not invent one' });
   if (descriptions.length > 1) flags.push({ code: 'multiple-meta-descriptions', detail: String(descriptions.length) });
-  if (parsed.title === null) flags.push({ code: 'no-title', detail: '' });
-  if (parsed.h1Count !== 1) flags.push({ code: 'h1-count', detail: String(parsed.h1Count) });
+  if (visible.title === null) flags.push({ code: 'no-title', detail: '' });
+  if (visible.h1Count !== 1) flags.push({ code: 'h1-count', detail: String(visible.h1Count) });
   if (parsed.robots.some((r) => r.includes('noindex'))) flags.push({ code: 'noindex', detail: parsed.robots.join(',') });
 
   const anchors = [...bare.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)].map((m) => ({
@@ -137,7 +144,7 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
   const missingAlt = images.filter((i) => !i.altPresent).length;
   if (missingAlt) flags.push({ code: 'images-without-alt-attribute', detail: `${missingAlt}; absent alt is not evidence of empty alt` });
 
-  const scripts = parsed.scriptSrcs.length + parsed.inlineScripts.length;
+  const scripts = parsed.scriptSrcs.length + parsed.inlineScripts.length + parsed.jsonLd.length;
   const iframes = [...bare.matchAll(/<iframe\b/gi)].length;
   const forms = [...bare.matchAll(/<form\b([^>]*)>/gi)].map((m) => ({ action: attrsOf(m[1]).action ?? null }));
   if (scripts) flags.push({ code: 'scripts-present', detail: `${scripts}; inventoried only, never copied` });
@@ -163,9 +170,9 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
     routeEvidence,
     identifiers,
     shortlinks,
-    title: parsed.title,
+    title: visible.title,
     metaDescriptions: descriptions,
-    h1: parsed.h1s,
+    h1: visible.h1s,
     headings,
     links,
     externalHosts,
@@ -224,13 +231,40 @@ export const inspectAsset = (buf, expectedPath, root = ROOT) => {
   };
 };
 
+const realish = (p) => {
+  // realpath of the deepest existing ancestor, plus the not-yet-existing remainder.
+  const rest = [];
+  let cur = path.resolve(p);
+  while (!fs.existsSync(cur) && !isLink(cur)) {
+    rest.unshift(path.basename(cur));
+    const up = path.dirname(cur);
+    if (up === cur) break;
+    cur = up;
+  }
+  return path.join(fs.realpathSync(cur), ...rest);
+};
+
+const isLink = (p) => {
+  try {
+    return fs.lstatSync(p).isSymbolicLink();
+  } catch {
+    return false;
+  }
+};
+
 const refuseUnsafeOutput = (out, root = ROOT) => {
   const abs = path.resolve(out);
+  if (isLink(abs)) throw new IntakeError('refusing to write the report through a symbolic link');
+  const real = realish(abs);
   for (const d of ['src', 'public', 'qa', 'docs']) {
-    const protectedDir = path.join(root, d) + path.sep;
-    if (abs.startsWith(protectedDir)) throw new IntakeError(`refusing to write the report inside ${d}/; choose a path outside the repo content`);
+    const protectedDirs = [path.join(root, d), fs.existsSync(path.join(root, d)) ? fs.realpathSync(path.join(root, d)) : null].filter(Boolean);
+    for (const dir of protectedDirs) {
+      if (abs.startsWith(dir + path.sep) || real.startsWith(dir + path.sep)) {
+        throw new IntakeError(`refusing to write the report inside ${d}/; choose a path outside the repo content`);
+      }
+    }
   }
-  return abs;
+  return real;
 };
 
 const readInput = (file) => {

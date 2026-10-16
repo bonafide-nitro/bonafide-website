@@ -130,3 +130,29 @@ test('CLI: exit 0 with --output summary; exit 2 with error: on bad input', () =>
   assert.equal(bad.status, 2);
   assert.match(bad.stderr.toString(), /^error:/);
 });
+
+test('run: refuses output through a symlink (file or parent dir) that lands in a protected dir', () => {
+  const html = write('sym.html', SAMPLE);
+  const protectedTarget = path.resolve('docs', 'block61-symlink-probe.json');
+  const fileLink = path.join(tmp, 'file-link.json');
+  fs.symlinkSync(protectedTarget, fileLink);
+  assert.throws(() => run(['--route', '/howtobuy/', '--html', html, '--output', fileLink]), /refusing to write/);
+  const dirLink = path.join(tmp, 'dir-link');
+  fs.symlinkSync(path.resolve('docs'), dirLink);
+  assert.throws(() => run(['--route', '/howtobuy/', '--html', html, '--output', path.join(dirLink, 'probe.json')]), /refusing to write/);
+  assert.equal(fs.existsSync(protectedTarget), false);
+});
+
+test('script bodies nested in p/li/h/a are never in the report', () => {
+  const html = '<h1>T<script>evilH()</script></h1><p>ok<script>malware()</script>end</p><ul><li>x<style>.q{}</style>y</li></ul><a href="/a/">go<script>evilA()</script></a><script>unterminated()';
+  const json = JSON.stringify(inspectHtml(html, '/howtobuy/', routes));
+  for (const bad of ['malware', 'evilH', 'evilA', 'unterminated', '.q{}']) assert.ok(!json.includes(bad), bad);
+  assert.ok(json.includes('ok end'));
+});
+
+test('JSON-LD-only page counts its script and flags scripts-present without embedding the body', () => {
+  const r = inspectHtml('<head><script type="application/ld+json">{"secret":1}</script></head><h1>x</h1>', '/howtobuy/', routes);
+  assert.equal(r.scriptCount, 1);
+  assert.ok(codes(r).includes('scripts-present'));
+  assert.ok(!JSON.stringify(r).includes('secret'));
+});
