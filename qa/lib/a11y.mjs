@@ -97,11 +97,27 @@ export const auditHtml = (rawHtml) => {
     }
   }
 
+  // Only a non-empty referenced element can supply an accessible name via aria-labelledby.
+  // This is a conservative static check; it does not claim to compute the full accessibility tree.
+  const referencedName = (value) => idTokens(value).some((id) => {
+    for (const m of html.matchAll(/<([a-z][a-z0-9-]*)\\b([^>]*)>/gi)) {
+      if (parseAttrs(m[2]).id !== id) continue;
+      const tag = m[1].toLowerCase();
+      const after = html.slice(m.index + m[0].length);
+      const close = new RegExp(`<\\/\\/\\/\\/${tag}\\s*>`, 'i');
+      // Simple textual alternatives of referenced elements (without hidden descendants).
+      const end = after.search(new RegExp(`<\\/${tag}\\s*>`, 'i'));
+      const content = end < 0 ? '' : after.slice(0, end);
+      return innerName(content) || present(parseAttrs(m[2])['aria-label']);
+    }
+    return false;
+  });
+
   // links
   for (const m of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const a = parseAttrs(m[1]);
     if (a.href === undefined) continue;
-    if (!present(a['aria-label']) && !present(a['aria-labelledby']) && !innerName(m[2])) add('link-name', `link to "${a.href}" has no accessible name`);
+    if (!present(a['aria-label']) && !referencedName(a['aria-labelledby']) && !innerName(m[2])) add('link-name', `link to "${a.href}" has no accessible name`);
     if (a.href.startsWith('#') && a.href.length > 1) {
       const frag = (() => { try { return decodeURIComponent(a.href.slice(1)); } catch { return a.href.slice(1); } })();
       if (frag !== 'top' && !ids.has(frag) && !names.has(frag)) add('fragment-target', `same-page link "${a.href}" has no matching id`);
@@ -117,7 +133,7 @@ export const auditHtml = (rawHtml) => {
   // buttons, iframes
   for (const m of html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/gi)) {
     const a = parseAttrs(m[1]);
-    if (!present(a['aria-label']) && !present(a['aria-labelledby']) && !present(a.title) && !innerName(m[2])) add('button-name', '<button> has no accessible name');
+    if (!present(a['aria-label']) && !referencedName(a['aria-labelledby']) && !present(a.title) && !innerName(m[2])) add('button-name', '<button> has no accessible name');
   }
   for (const m of html.matchAll(/<iframe\b([^>]*)>/gi)) {
     const a = parseAttrs(m[1]);
@@ -134,7 +150,7 @@ export const auditHtml = (rawHtml) => {
   for (const l of labels) {
     if (l.attrs.for !== undefined) {
       if (!ids.has(l.attrs.for)) add('label-for', `<label for="${l.attrs.for}"> references a missing id`);
-      else labelFor.add(l.attrs.for);
+      else if (innerName(l.inner)) labelFor.add(l.attrs.for);
     }
   }
   // A control is implicitly labelled only if this very element sits inside a for-less <label> that has text.
@@ -142,11 +158,11 @@ export const auditHtml = (rawHtml) => {
   for (const m of html.matchAll(/<(input|select|textarea)\b([^>]*)>/gi)) {
     const a = parseAttrs(m[2]);
     const type = (a.type ?? 'text').toLowerCase();
-    if (m[1].toLowerCase() === 'input' && ['hidden', 'submit', 'button', 'reset', 'image'].includes(type)) {
+    if (m[1].toLowerCase() === 'input' && ['hidden', 'submit', 'reset', 'image'].includes(type)) {
       if (type === 'image' && !present(a.alt)) add('input-image-alt', '<input type="image"> has no alt');
       continue;
     }
-    const named = present(a['aria-label']) || present(a['aria-labelledby']) || present(a.title) || (present(a.id) && labelFor.has(a.id));
+    const named = present(a['aria-label']) || referencedName(a['aria-labelledby']) || present(a.title) || (present(a.id) && labelFor.has(a.id)) || (m[1].toLowerCase() === 'input' && type === 'button' && present(a.value));
     if (!named && !wrapped(m.index)) {
       add('control-label', `<${m[1].toLowerCase()}${a.name ? ` name="${a.name}"` : ''}${a.id ? ` id="${a.id}"` : ''}> has no associated label`);
     }
