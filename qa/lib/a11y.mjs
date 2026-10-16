@@ -100,7 +100,7 @@ export const auditHtml = (rawHtml) => {
   // Only a non-empty referenced element can supply an accessible name via aria-labelledby.
   // This is a conservative static check; it does not claim to compute the full accessibility tree.
   const referencedName = (value) => idTokens(value).some((id) => {
-    for (const m of html.matchAll(/<([a-z][a-z0-9-]*)\\b([^>]*)>/gi)) {
+    for (const m of html.matchAll(/<([a-z][a-z0-9-]*)\b([^>]*)>/gi)) {
       if (parseAttrs(m[2]).id !== id) continue;
       const tag = m[1].toLowerCase();
       const after = html.slice(m.index + m[0].length);
