@@ -12,6 +12,10 @@ const doc = (body, { lang = 'lang="en"', main = true } = {}) =>
 const good = doc('<h1>Heading</h1>');
 const codes = (html) => auditHtml(html).map((f) => f.code);
 
+test('hidden tracking iframe (GTM noscript style) is not flagged', () => {
+  assert.deepEqual(auditHtml(doc('<h1>H</h1><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-X" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>')), []);
+});
+
 test('healthy page has no findings', () => {
   assert.deepEqual(auditHtml(good), []);
   assert.deepEqual(auditHtml(doc(
@@ -45,6 +49,7 @@ const detects = [
   ['label for missing id', doc('<h1>H</h1><label for="zz">Z</label>'), 'label-for'],
   ['unlabelled input', doc('<h1>H</h1><input id="a" name="a">'), 'control-label'],
   ['input labelled by a different id', doc('<h1>H</h1><label for="b">B</label><input id="a" name="a"><input id="b" name="b">'), 'control-label'],
+  ['implicit label with only aria-hidden text', doc('<h1>H</h1><label><span aria-hidden="true">Name</span><input name="n"></label>'), 'control-label'],
   ['unlabelled textarea', doc('<h1>H</h1><textarea name="m"></textarea>'), 'control-label'],
   ['aria-labelledby to missing id', doc('<h1>H</h1><input aria-labelledby="gone" name="a">'), 'aria-ref'],
   ['two mains, one with role=main', doc('<h1>H</h1><main role="main"></main>'), 'main-landmark'],

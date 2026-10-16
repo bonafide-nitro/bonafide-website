@@ -121,6 +121,9 @@ export const auditHtml = (rawHtml) => {
   }
   for (const m of html.matchAll(/<iframe\b([^>]*)>/gi)) {
     const a = parseAttrs(m[1]);
+    // Hidden frames (e.g. the GTM noscript tracking pixel) are not exposed to assistive technology.
+    const hidden = a['aria-hidden']?.trim().toLowerCase() === 'true' || a.hidden !== undefined || /display\s*:\s*none/i.test(a.style ?? '');
+    if (hidden) continue;
     if (!present(a.title) && !present(a['aria-label'])) add('iframe-title', `<iframe src="${a.src ?? ''}"> has no title`);
   }
 
@@ -135,7 +138,7 @@ export const auditHtml = (rawHtml) => {
     }
   }
   // A control is implicitly labelled only if this very element sits inside a for-less <label> that has text.
-  const wrapped = (pos) => labels.some((l) => l.attrs.for === undefined && pos > l.start && pos < l.end && textOf(l.inner) !== '');
+  const wrapped = (pos) => labels.some((l) => l.attrs.for === undefined && pos > l.start && pos < l.end && textOf(stripHidden(l.inner)) !== '');
   for (const m of html.matchAll(/<(input|select|textarea)\b([^>]*)>/gi)) {
     const a = parseAttrs(m[2]);
     const type = (a.type ?? 'text').toLowerCase();

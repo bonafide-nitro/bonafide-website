@@ -36,6 +36,8 @@ jobs:
         run: npm run check:dist
       - name: Internal link graph on dist/
         run: npm run check:links
+      - name: Accessibility gate on dist/
+        run: npm run check:a11y
       - name: Migration QA — foundation/development mode
         run: npm run qa:foundation
       - name: QA fixture tests and foundation tests
