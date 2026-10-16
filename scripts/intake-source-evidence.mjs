@@ -97,8 +97,13 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
 
   // Comments and whole script/style elements (bodies included, even if unterminated) are removed
   // before any visible-text extraction, so script bodies never reach the report.
-  const bare = html
+  const safeHtml = html.replace(/&#(x[0-9a-f]+|[0-9]+);/gi, (entity, digits) => {
+    const codePoint = digits[0].toLowerCase() === 'x' ? Number.parseInt(digits.slice(1), 16) : Number.parseInt(digits, 10);
+    return !Number.isFinite(codePoint) || codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff) ? '&#65533;' : entity;
+  });
+  const bare = safeHtml
     .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<!--[\s\S]*$/g, '')
     .replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ')
     .replace(/<(script|style)\b[\s\S]*$/i, ' ');
   // The shared parser reads raw markup; take every field except script inventory from the
@@ -155,7 +160,7 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
   if (missingAlt) flags.push({ code: 'images-without-alt-attribute', detail: `${missingAlt}; absent alt is not evidence of empty alt` });
 
   // Count every <script> element independently of the shared parser: complete ones, JSON-LD, and an unterminated tail.
-  const noComments = html.replace(/<!--[\s\S]*?-->/g, '');
+  const noComments = safeHtml.replace(/<!--[\s\S]*?-->/g, '').replace(/<!--[\s\S]*$/g, '');
   const completeScripts = [...noComments.matchAll(/<script\b[\s\S]*?<\/script\s*>/gi)].length;
   const scripts = completeScripts + (/<script\b/i.test(noComments.replace(/<script\b[\s\S]*?<\/script\s*>/gi, ' ')) ? 1 : 0);
   const iframes = [...bare.matchAll(/<iframe\b/gi)].length;
@@ -316,7 +321,15 @@ export const run = (argv, root = ROOT) => {
   }
   report.generatedFrom = path.basename(o.html ?? o.asset);
   const json = JSON.stringify(report, null, 2);
-  if (o.output) fs.writeFileSync(refuseUnsafeOutput(o.output, root), `${json}\n`);
+  // Exclusive create: never truncate an existing path or a protected file sharing its inode via a hard link.
+  if (o.output) {
+    const safePath = refuseUnsafeOutput(o.output, root);
+    try { fs.writeFileSync(safePath, `${json}\n`, { flag: 'wx' }); }
+    catch (e) {
+      if (e.code === 'EEXIST') throw new IntakeError('refusing to overwrite an existing report; choose a new --output path');
+      throw e;
+    }
+  }
   return { report, json };
 };
 
