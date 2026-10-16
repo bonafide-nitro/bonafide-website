@@ -65,17 +65,18 @@ export const renderStagingOverlay = () => [
   '</IfModule>',
   '<IfModule mod_headers.c>',
   `  Header always set X-Robots-Tag "${NOINDEX_VALUE}"`,
+  '  # Authentication lives only in this branch: uncontained Require lines are OR-ed (implicit RequireAny), so a',
+  '  # valid-user outside it would override the denial above and serve staging without X-Robots-Tag.',
+  '  AuthType Basic',
+  `  AuthName "${PLACEHOLDER_AUTH_REALM}"`,
+  `  AuthUserFile ${PLACEHOLDER_AUTH_FILE}`,
+  '  Require valid-user',
   '</IfModule>',
-  '',
-  `AuthType Basic`,
-  `AuthName "${PLACEHOLDER_AUTH_REALM}"`,
-  `AuthUserFile ${PLACEHOLDER_AUTH_FILE}`,
-  'Require valid-user',
   '',
 ].join('\n');
 
 const lines = (text) => text.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
-const countRules = (text) => lines(text).filter((l) => l.startsWith('RewriteRule ')).length;
+const countRules = (text) => lines(text).filter((l) => /^RewriteRule\s/i.test(l)).length;
 
 // Returns a list of blocking problems ([] = pass). Pure over the candidate text.
 export const preflight = (text, target) => {
@@ -89,11 +90,11 @@ export const preflight = (text, target) => {
     if (has(/^Auth(Type|Name|UserFile|BasicProvider)\b/i) || has(/^Require\s+(valid-user|user|group|all denied)/i)) problems.push('staging auth/access directive present in production config');
     if (eff.some((l) => l.includes('@@'))) problems.push('unresolved @@placeholder@@ in production config');
     if (/htpasswd/i.test(text)) problems.push('htpasswd reference in production config');
-    if (!has(/^ErrorDocument\s+404\s+\/404\.html$/)) problems.push('missing local "ErrorDocument 404 /404.html"');
+    if (!eff.some((l) => /^ErrorDocument\s+404\s+/i.test(l) && /\s\/404\.html$/.test(l))) problems.push('missing local "ErrorDocument 404 /404.html"');
     if (has(/^ErrorDocument\s+404\s+(https?:|")/i) || has(/^ErrorDocument\s+404\s+\/(?!404\.html$)\S+/i)) problems.push('404 ErrorDocument is not the local /404.html (external URL would 302; other paths would hide the 404)');
     if (has(/^ErrorDocument\s+(?!404\b)/i)) problems.push('unexpected ErrorDocument for a status other than 404');
-    if (has(/^RewriteRule\s+\S+\s+\S+\s+\[[^\]]*R=30[2378]/) ) problems.push('non-301 redirect');
-    if (has(/^(Redirect|RedirectMatch)\b/)) problems.push('mod_alias Redirect used; redirects must come from the generated mod_rewrite rules');
+    if (has(/^RewriteRule\s+\S+\s+\S+\s+\[[^\]]*R=30[2378]/i)) problems.push('non-301 redirect');
+    if (has(/^(Redirect|RedirectMatch)\b/i)) problems.push('mod_alias Redirect used; redirects must come from the generated mod_rewrite rules');
     if (has(/^RewriteRule\s+\^?\.\*\$?\s+\S*index\.html/i) || has(/^FallbackResource\b/i)) problems.push('catch-all/fallback routing would turn unknown URLs into 200s');
     if (has(/^RewriteRule\s+\^?wp-content\/uploads/i)) problems.push('rule touches retained /wp-content/uploads/ paths');
     if (has(/^php_|^AddHandler|^SetHandler|^AddType\s+application\/x-httpd-php/i)) problems.push('PHP handler directive in static production config');
@@ -107,7 +108,16 @@ export const preflight = (text, target) => {
     if (eff.some((l) => l.includes('@@'))) problems.push('unresolved @@placeholder@@: human-supplied auth realm/credentials-file path is missing');
     if (!has(/^Header\s+always\s+set\s+X-Robots-Tag\s+"noindex, nofollow"$/i)) problems.push('missing server-enforced X-Robots-Tag: noindex, nofollow');
     if (!has(/^AuthType\s+Basic$/i) || !has(/^AuthName\s+"[^"]+"$/) || !has(/^AuthUserFile\s+\/\S+$/) || !has(/^Require\s+valid-user$/i)) problems.push('HTTP Basic authentication incomplete (AuthType, AuthName, absolute AuthUserFile, Require valid-user)');
-    if (!has(/^<IfModule !mod_headers\.c>$/) || !has(/^Require all denied$/i)) problems.push('missing fail-closed branch for absent mod_headers');
+    if (!has(/^<IfModule !mod_headers\.c>$/i) || !has(/^Require all denied$/i)) problems.push('missing fail-closed branch for absent mod_headers');
+    // Every Require must sit inside the right IfModule branch; an uncontained Require valid-user is OR-ed with the denial and defeats it.
+    const stack = [];
+    for (const l of eff) {
+      const open = l.match(/^<IfModule\s+(!?mod_\w+\.c)>$/i);
+      if (open) { stack.push(open[1].toLowerCase()); continue; }
+      if (/^<\/IfModule>$/i.test(l)) { stack.pop(); continue; }
+      if (/^Require\s+valid-user$/i.test(l) && stack[stack.length - 1] !== 'mod_headers.c') problems.push('Require valid-user outside the mod_headers branch: it would override the fail-closed denial');
+      if (/^Require\s+all\s+denied$/i.test(l) && stack[stack.length - 1] !== '!mod_headers.c') problems.push('Require all denied outside the !mod_headers branch');
+    }
   } else problems.push(`unknown target "${target}" (production|staging)`);
   return problems;
 };

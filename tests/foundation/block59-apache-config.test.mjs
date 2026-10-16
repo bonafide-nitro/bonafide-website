@@ -51,6 +51,9 @@ test('staging overlay requires human input AND enforces noindex, and fails close
   assert.ok(overlay.includes('Header always set X-Robots-Tag "noindex, nofollow"'));
   assert.ok(overlay.includes('Require valid-user'));
   assert.ok(/<IfModule !mod_headers\.c>[^<]*Require all denied/.test(overlay));
+  // Require valid-user must live only inside the mod_headers branch, otherwise it is OR-ed with the denial.
+  assert.ok(/<IfModule mod_headers\.c>[^]*Require valid-user[^]*<\/IfModule>/.test(overlay));
+  assert.equal(overlay.split('\n').filter((l) => /^Require\b/.test(l)).length, 0, 'no uncontained Require');
   assert.ok(preflight(overlay, 'staging').length > 0, 'template with placeholders must be blocked');
   assert.equal(/password|passwd:|:\$apr1\$|\$2y\$/i.test(overlay.replace(/AuthUserFile|htpasswd/gi, '')), false, 'no credential material');
   const filled = overlay.replace(PLACEHOLDER_AUTH_FILE, '/home/example/.private/staging.htpasswd').replace(PLACEHOLDER_AUTH_REALM, 'Staging');
@@ -73,6 +76,12 @@ test('preflight blocks unsafe production configs', () => {
     'php handler': prod + '\nAddHandler application/x-httpd-php .html\n',
     'missing redirects': prod.replace(redirects.replace(/\n$/, ''), '# removed'),
     'dropped rule': prod.replace(/RewriteRule \^contact\/\$[^\n]*\n/, ''),
+    'lowercase alias redirect': prod + '\nredirect 302 /old https://example.com/new\n',
+    'lowercase redirectmatch': prod + '\nredirectmatch 301 ^/a /b\n',
+    'lowercase 302 rewrite': prod.replace('RewriteRule', 'rewriterule').replace('R=301,L]', 'r=302,L]'),
+    'lowercase extra rewriterule': prod + '\nrewriterule ^zzz$ /yyy [R=301,L]\n',
+    'lowercase errordocument path': prod.replace('ErrorDocument 404 /404.html', 'errordocument 404 /404.HTML'),
+    'lowercase auth': prod + '\nauthtype basic\nrequire valid-user\n',
   };
   for (const [name, text] of Object.entries(bad)) assert.ok(preflight(text, 'production').length > 0, name);
   assert.ok(preflight('x', 'nope').length > 0);
@@ -85,6 +94,7 @@ test('preflight blocks incomplete staging configs', () => {
     'weaker noindex': filled.replace('noindex, nofollow', 'noindex'),
     'no auth requirement': filled.replace('Require valid-user\n', ''),
     'no fail-closed': filled.replace('Require all denied', ''),
+    'uncontained valid-user overrides denial': filled.replace(/<IfModule mod_headers\.c>[\s\S]*<\/IfModule>\n/, (m) => m.replace(/ {2}(AuthType|AuthName|AuthUserFile|Require valid-user)[^\n]*\n/g, '')) + 'AuthType Basic\nAuthName "x"\nAuthUserFile /home/e/.p/h\nRequire valid-user\n',
     'authfile in docroot': filled.replace('/home/example/.private', '/home/example/public_html'),
   };
   for (const [name, text] of Object.entries(bad)) assert.ok(preflight(text, 'staging').length > 0, name);

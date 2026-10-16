@@ -9,9 +9,10 @@
 </IfModule>
 <IfModule mod_headers.c>
   Header always set X-Robots-Tag "noindex, nofollow"
+  # Authentication lives only in this branch: uncontained Require lines are OR-ed (implicit RequireAny), so a
+  # valid-user outside it would override the denial above and serve staging without X-Robots-Tag.
+  AuthType Basic
+  AuthName "@@STAGING_AUTH_REALM@@"
+  AuthUserFile @@STAGING_AUTH_USER_FILE_ABSOLUTE_PATH@@
+  Require valid-user
 </IfModule>
-
-AuthType Basic
-AuthName "@@STAGING_AUTH_REALM@@"
-AuthUserFile @@STAGING_AUTH_USER_FILE_ABSOLUTE_PATH@@
-Require valid-user
