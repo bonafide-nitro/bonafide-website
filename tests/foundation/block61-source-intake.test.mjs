@@ -156,3 +156,25 @@ test('JSON-LD-only page counts its script and flags scripts-present without embe
   assert.ok(codes(r).includes('scripts-present'));
   assert.ok(!JSON.stringify(r).includes('secret'));
 });
+
+test('canonical/robots strings inside script bodies are not route or noindex evidence', () => {
+  const html = '<head><link rel="canonical" href="https://bonafidenitro.com/howtobuy/"><script>var s=\'<link rel="canonical" href="https://bonafidenitro.com/other/"><meta name="robots" content="noindex">\'</script></head><h1>x</h1>';
+  const r = inspectHtml(html, '/howtobuy/', routes);
+  assert.equal(r.routeEvidence, 'match');
+  assert.equal(r.identifiers.length, 1);
+  assert.ok(!codes(r).includes('noindex'));
+});
+
+test('off-domain canonical/og:url with the requested path is not a route match', () => {
+  const r = inspectHtml('<link rel="canonical" href="https://other.example/howtobuy/"><h1>x</h1>', '/howtobuy/', routes);
+  assert.equal(r.routeEvidence, 'mismatch');
+  const ok = inspectHtml('<link rel="canonical" href="/howtobuy/"><meta property="og:url" content="https://www.bonafidenitro.com/howtobuy/"><h1>x</h1>', '/howtobuy/', routes);
+  assert.equal(ok.routeEvidence, 'match');
+});
+
+test('an unterminated script is counted and flagged', () => {
+  const r = inspectHtml('<h1>x</h1><p>a</p><script>never_closed()', '/howtobuy/', routes);
+  assert.equal(r.scriptCount, 1);
+  assert.ok(codes(r).includes('scripts-present'));
+  assert.ok(!JSON.stringify(r).includes('never_closed'));
+});

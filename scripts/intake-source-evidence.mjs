@@ -55,6 +55,16 @@ const pathOf = (url) => {
   }
 };
 
+// Absolute identifiers must be on a Bona Fide host; relative ones are resolved against it.
+const identifierPath = (url) => {
+  try {
+    const u = new URL(url, 'https://bonafidenitro.com');
+    return u.hostname === 'bonafidenitro.com' || u.hostname === 'www.bonafidenitro.com' ? u.pathname : null;
+  } catch {
+    return null;
+  }
+};
+
 const classifyLink = (href) => {
   const h = href.trim();
   if (/^(javascript|data|vbscript):/i.test(h)) return 'unsafe-scheme';
@@ -91,8 +101,8 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ')
     .replace(/<(script|style)\b[\s\S]*$/i, ' ');
-  const parsed = parseHtml(html);
-  // The shared parser reads raw markup; take title/h1 from the script-stripped copy.
+  // The shared parser reads raw markup; take every field except script inventory from the
+  // script-stripped copy so script-body strings never become canonical/robots/title evidence.
   const visible = parseHtml(bare);
   const metas = [...bare.matchAll(/<meta\b([^>]*)>/gi)].map((m) => attrsOf(m[1]));
   const metaBy = (key, val) => metas.filter((m) => (m[key] ?? '').toLowerCase() === val).map((m) => m.content ?? '');
@@ -105,18 +115,18 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
 
   // Route association: every self-identifying URL in the page must resolve to the requested route.
   const identifiers = [
-    ...parsed.canonicals.map((v) => ({ kind: 'canonical', value: v })),
+    ...visible.canonicals.map((v) => ({ kind: 'canonical', value: v })),
     ...ogUrl.map((v) => ({ kind: 'og:url', value: v })),
-  ].map((i) => ({ ...i, path: pathOf(i.value) }));
+  ].map((i) => ({ ...i, path: identifierPath(i.value) }));
   const routeEvidence = identifiers.length === 0 ? 'none' : identifiers.every((i) => i.path && normRoute(i.path) === wanted) ? 'match' : 'mismatch';
   if (routeEvidence === 'none') flags.push({ code: 'route-unverified', detail: 'no canonical or og:url to tie this file to the route; human must confirm' });
   if (routeEvidence === 'mismatch') flags.push({ code: 'route-mismatch', detail: `canonical/og:url do not resolve to ${wanted}` });
-  if (parsed.canonicals.length > 1) flags.push({ code: 'multiple-canonicals', detail: String(parsed.canonicals.length) });
+  if (visible.canonicals.length > 1) flags.push({ code: 'multiple-canonicals', detail: String(visible.canonicals.length) });
   if (descriptions.length === 0) flags.push({ code: 'no-meta-description', detail: 'none present in the file; do not invent one' });
   if (descriptions.length > 1) flags.push({ code: 'multiple-meta-descriptions', detail: String(descriptions.length) });
   if (visible.title === null) flags.push({ code: 'no-title', detail: '' });
   if (visible.h1Count !== 1) flags.push({ code: 'h1-count', detail: String(visible.h1Count) });
-  if (parsed.robots.some((r) => r.includes('noindex'))) flags.push({ code: 'noindex', detail: parsed.robots.join(',') });
+  if (visible.robots.some((r) => r.includes('noindex'))) flags.push({ code: 'noindex', detail: visible.robots.join(',') });
 
   const anchors = [...bare.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)].map((m) => ({
     attrs: attrsOf(m[1]),
@@ -144,7 +154,10 @@ export const inspectHtml = (html, route, routes = knownRoutes()) => {
   const missingAlt = images.filter((i) => !i.altPresent).length;
   if (missingAlt) flags.push({ code: 'images-without-alt-attribute', detail: `${missingAlt}; absent alt is not evidence of empty alt` });
 
-  const scripts = parsed.scriptSrcs.length + parsed.inlineScripts.length + parsed.jsonLd.length;
+  // Count every <script> element independently of the shared parser: complete ones, JSON-LD, and an unterminated tail.
+  const noComments = html.replace(/<!--[\s\S]*?-->/g, '');
+  const completeScripts = [...noComments.matchAll(/<script\b[\s\S]*?<\/script\s*>/gi)].length;
+  const scripts = completeScripts + (/<script\b/i.test(noComments.replace(/<script\b[\s\S]*?<\/script\s*>/gi, ' ')) ? 1 : 0);
   const iframes = [...bare.matchAll(/<iframe\b/gi)].length;
   const forms = [...bare.matchAll(/<form\b([^>]*)>/gi)].map((m) => ({ action: attrsOf(m[1]).action ?? null }));
   if (scripts) flags.push({ code: 'scripts-present', detail: `${scripts}; inventoried only, never copied` });
