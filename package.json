@@ -24,7 +24,8 @@
     "test:build": "npm run build && npm run check:dist && npm run check:a11y && npm run check:links && npm run check:artifact && npm run qa:foundation",
     "qa": "node qa/cli.mjs --mode foundation",
     "qa:foundation": "node qa/cli.mjs --mode foundation",
-    "qa:strict": "node qa/cli.mjs --mode strict"
+    "qa:strict": "node qa/cli.mjs --mode strict",
+    "intake:source": "node scripts/intake-source-evidence.mjs"
   },
   "dependencies": {
     "astro": "^5.0.0",
