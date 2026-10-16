@@ -81,6 +81,8 @@ test('preflight blocks unsafe production configs', () => {
     'lowercase redirectmatch': prod + '\nredirectmatch 301 ^/a /b\n',
     'lowercase 302 rewrite': prod.replace('RewriteRule', 'rewriterule').replace('R=301,L]', 'r=302,L]'),
     'lowercase extra rewriterule': prod + '\nrewriterule ^zzz$ /yyy [R=301,L]\n',
+    'disable redirect engine': prod + '\nRewriteEngine Off\n',
+    'disable engine within redirects': prod.replace('RewriteEngine On', 'RewriteEngine Off'),
     'lowercase errordocument path': prod.replace('ErrorDocument 404 /404.html', 'errordocument 404 /404.HTML'),
     'lowercase auth': prod + '\nauthtype basic\nrequire valid-user\n',
   };
@@ -103,6 +105,7 @@ test('preflight blocks incomplete staging configs', () => {
     'lowercase header unset': filled.replace('  AuthType', '  header always unset x-robots-tag\n  AuthType'),
     'Header append': filled.replace('  AuthType', '  Header always append X-Robots-Tag index\n  AuthType'),
     'Satisfy any': filled.replace('  AuthType', '  Satisfy Any\n  AuthType'),
+    'nested fail-closed branch': filled.replace('<IfModule !mod_headers.c>', '<IfModule mod_headers.c>\n<IfModule !mod_headers.c>').replace('  Require all denied\n</IfModule>', '  Require all denied\n</IfModule>\n</IfModule>'),
   };
   const docroot = { docroot: '/home/example/sites/wp-clean' };
   for (const [name, text] of Object.entries(bad)) assert.ok(preflight(text, 'staging', docroot).length > 0, name);
