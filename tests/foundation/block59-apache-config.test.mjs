@@ -57,7 +57,8 @@ test('staging overlay requires human input AND enforces noindex, and fails close
   assert.ok(preflight(overlay, 'staging').length > 0, 'template with placeholders must be blocked');
   assert.equal(/password|passwd:|:\$apr1\$|\$2y\$/i.test(overlay.replace(/AuthUserFile|htpasswd/gi, '')), false, 'no credential material');
   const filled = overlay.replace(PLACEHOLDER_AUTH_FILE, '/home/example/.private/staging.htpasswd').replace(PLACEHOLDER_AUTH_REALM, 'Staging');
-  assert.deepEqual(preflight(filled, 'staging'), []);
+  assert.deepEqual(preflight(filled, 'staging', { docroot: '/home/example/sites/wp-clean' }), []);
+  assert.ok(preflight(filled, 'staging').length > 0, 'staging without a supplied docroot must fail closed');
 });
 
 test('preflight blocks unsafe production configs', () => {
@@ -96,8 +97,21 @@ test('preflight blocks incomplete staging configs', () => {
     'no fail-closed': filled.replace('Require all denied', ''),
     'uncontained valid-user overrides denial': filled.replace(/<IfModule mod_headers\.c>[\s\S]*<\/IfModule>\n/, (m) => m.replace(/ {2}(AuthType|AuthName|AuthUserFile|Require valid-user)[^\n]*\n/g, '')) + 'AuthType Basic\nAuthName "x"\nAuthUserFile /home/e/.p/h\nRequire valid-user\n',
     'authfile in docroot': filled.replace('/home/example/.private', '/home/example/public_html'),
+    'extra Require all granted': filled.replace('  Require valid-user\n', '  Require valid-user\n  Require all granted\n'),
+    'uncontained Require all granted': filled + 'Require all granted\n',
+    'Header unset after set': filled.replace('  AuthType', '  Header always unset X-Robots-Tag\n  AuthType'),
+    'lowercase header unset': filled.replace('  AuthType', '  header always unset x-robots-tag\n  AuthType'),
+    'Header append': filled.replace('  AuthType', '  Header always append X-Robots-Tag index\n  AuthType'),
+    'Satisfy any': filled.replace('  AuthType', '  Satisfy Any\n  AuthType'),
   };
-  for (const [name, text] of Object.entries(bad)) assert.ok(preflight(text, 'staging').length > 0, name);
+  const docroot = { docroot: '/home/example/sites/wp-clean' };
+  for (const [name, text] of Object.entries(bad)) assert.ok(preflight(text, 'staging', docroot).length > 0, name);
+  // AuthUserFile inside a custom-named docroot (no public_html/htdocs/www in the path) is caught by resolved containment.
+  const custom = filled.replace('/home/example/.private/staging.htpasswd', '/home/example/sites/wp-clean/../wp-clean/secrets/staging.htpasswd');
+  assert.ok(preflight(custom, 'staging', docroot).some((p) => /inside the staging docroot/.test(p)));
+  assert.ok(preflight(filled.replace('/home/example/.private', '/home/example/sites/wp-clean'), 'staging', docroot).some((p) => /inside the staging docroot/.test(p)));
+  assert.deepEqual(preflight(filled, 'staging', docroot), []);
+  assert.ok(preflight(filled, 'staging', { docroot: 'relative/dir' }).length > 0);
 });
 
 test('artifacts stay out of dist and carry no host, secret or deploy command', () => {

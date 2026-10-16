@@ -2,8 +2,8 @@
 //
 //   node scripts/build-apache-config.mjs                     write deploy/apache/production.htaccess and staging-overlay.htaccess.template
 //   node scripts/build-apache-config.mjs --check             fail if either committed artifact is missing/stale or the pair violates separation
-//   node scripts/build-apache-config.mjs --preflight <file> --target production|staging
-//                                                            validate a candidate config (e.g. a staging overlay a human completed); never writes
+//   node scripts/build-apache-config.mjs --preflight <file> --target production|staging [--docroot <abs path>]
+//                                                            (staging requires --docroot) validate a candidate config (e.g. a staging overlay a human completed); never writes
 //   node scripts/build-apache-config.mjs --gates             print the open host/human inputs that no repo check can answer
 //
 // Output is a pure function of deploy/apache/redirects.htaccess (itself generated from src/data/redirects.yaml). Nothing here
@@ -79,12 +79,21 @@ const lines = (text) => text.split('\n').map((l) => l.trim()).filter((l) => l &&
 const countRules = (text) => lines(text).filter((l) => /^RewriteRule\s/i.test(l)).length;
 
 // Returns a list of blocking problems ([] = pass). Pure over the candidate text.
-export const preflight = (text, target) => {
+export const preflight = (text, target, { docroot } = {}) => {
   const problems = [];
   const eff = lines(text);
   const has = (re) => eff.some((l) => re.test(l));
   if (text.includes('\r')) problems.push('CRLF line endings');
   if (/AuthUserFile\s+\/[^\s]*(?:public_html|htdocs|www)\b/i.test(text)) problems.push('AuthUserFile inside a web docroot');
+  if (target === 'staging') {
+    // Resolved containment against the ACTUAL staging docroot (human-supplied), not just conventional directory names.
+    const real = (p) => { const r = path.resolve(p); try { return fs.realpathSync(r); } catch { return r; } };
+    const inside = (child, parent) => { const rel = path.relative(real(parent), real(child)); return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel)); };
+    const authFiles = eff.map((l) => l.match(/^AuthUserFile\s+(\/\S+)$/i)).filter(Boolean).map((m) => m[1]);
+    if (!docroot) problems.push('staging docroot not supplied (--docroot <absolute path>): cannot verify AuthUserFile is outside it');
+    else if (!path.isAbsolute(docroot)) problems.push('--docroot must be an absolute path');
+    else if (authFiles.some((f) => inside(f, docroot))) problems.push('AuthUserFile resolves inside the staging docroot');
+  }
   if (target === 'production') {
     if (has(/x-robots-tag/i) || has(/noindex/i)) problems.push('staging noindex/X-Robots-Tag present in production config');
     if (has(/^Auth(Type|Name|UserFile|BasicProvider)\b/i) || has(/^Require\s+(valid-user|user|group|all denied)/i)) problems.push('staging auth/access directive present in production config');
@@ -109,14 +118,19 @@ export const preflight = (text, target) => {
     if (!has(/^Header\s+always\s+set\s+X-Robots-Tag\s+"noindex, nofollow"$/i)) problems.push('missing server-enforced X-Robots-Tag: noindex, nofollow');
     if (!has(/^AuthType\s+Basic$/i) || !has(/^AuthName\s+"[^"]+"$/) || !has(/^AuthUserFile\s+\/\S+$/) || !has(/^Require\s+valid-user$/i)) problems.push('HTTP Basic authentication incomplete (AuthType, AuthName, absolute AuthUserFile, Require valid-user)');
     if (!has(/^<IfModule !mod_headers\.c>$/i) || !has(/^Require all denied$/i)) problems.push('missing fail-closed branch for absent mod_headers');
-    // Every Require must sit inside the right IfModule branch; an uncontained Require valid-user is OR-ed with the denial and defeats it.
+    // Closed allowlist: any other effective directive (Require all granted, Header unset/append, Satisfy, ...) could re-open access
+    // or strip the noindex header, because uncontained Require lines are OR-ed and header directives apply in order.
     const stack = [];
     for (const l of eff) {
       const open = l.match(/^<IfModule\s+(!?mod_\w+\.c)>$/i);
       if (open) { stack.push(open[1].toLowerCase()); continue; }
       if (/^<\/IfModule>$/i.test(l)) { stack.pop(); continue; }
-      if (/^Require\s+valid-user$/i.test(l) && stack[stack.length - 1] !== 'mod_headers.c') problems.push('Require valid-user outside the mod_headers branch: it would override the fail-closed denial');
-      if (/^Require\s+all\s+denied$/i.test(l) && stack[stack.length - 1] !== '!mod_headers.c') problems.push('Require all denied outside the !mod_headers branch');
+      const top = stack[stack.length - 1];
+      if (/^Require\s+valid-user$/i.test(l)) { if (top !== 'mod_headers.c') problems.push('Require valid-user outside the mod_headers branch: it would override the fail-closed denial'); continue; }
+      if (/^Require\s+all\s+denied$/i.test(l)) { if (top !== '!mod_headers.c') problems.push('Require all denied outside the !mod_headers branch'); continue; }
+      if (/^Header\s+always\s+set\s+X-Robots-Tag\s+"noindex, nofollow"$/i.test(l)) { if (top !== 'mod_headers.c') problems.push('X-Robots-Tag set outside the mod_headers branch'); continue; }
+      if (/^(AuthType\s+Basic|AuthName\s+"[^"]+"|AuthUserFile\s+\/\S+)$/i.test(l) || l.includes('@@')) continue;
+      problems.push(`unexpected directive in staging overlay (only the documented auth/noindex/fail-closed lines are allowed): ${l}`);
     }
   } else problems.push(`unknown target "${target}" (production|staging)`);
   return problems;
@@ -150,7 +164,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   else if (argv.includes('--preflight')) {
     const file = argv[argv.indexOf('--preflight') + 1]; const target = argv[argv.indexOf('--target') + 1];
     if (!file || !target || !fs.existsSync(file)) fail('usage: --preflight <existing file> --target production|staging');
-    const problems = preflight(fs.readFileSync(file, 'utf8'), target);
+    const di = argv.indexOf('--docroot'); const docroot = di >= 0 ? argv[di + 1] : undefined;
+    const problems = preflight(fs.readFileSync(file, 'utf8'), target, { docroot });
     if (problems.length) fail(`preflight BLOCKED (${target}):\n- ${problems.join('\n- ')}`);
     console.log(`preflight ok (${target}); host gates remain open: run --gates`);
   } else {
