@@ -83,3 +83,17 @@ test('checkDist reports a broken synthetic dist and passes a healthy one', () =>
     assert.match(cli2.stderr, /img-alt/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('input buttons require names, and explicit labels must contain accessible text', () => {
+  assert.ok(codes(doc('<h1>H</h1><input type="button">')).includes('control-label'));
+  assert.ok(!codes(doc('<h1>H</h1><input type="button" value="Open">')).includes('control-label'));
+  assert.ok(codes(doc('<h1>H</h1><label for="x"></label><input id="x">')).includes('control-label'));
+  assert.ok(codes(doc('<h1>H</h1><label for="x"><span aria-hidden="true">Hidden</span></label><input id="x">')).includes('control-label'));
+});
+
+test('aria-labelledby must reference nonempty accessible content', () => {
+  const bad = doc('<h1>H</h1><span id="n"></span><a href="/x/" aria-labelledby="n"></a><button aria-labelledby="n"></button><input aria-labelledby="n">');
+  for (const code of ['link-name', 'button-name', 'control-label']) assert.ok(codes(bad).includes(code), code);
+  const good = doc('<h1>H</h1><span id="n">Accessible name</span><a href="/x/" aria-labelledby="n"></a><button aria-labelledby="n"></button><input aria-labelledby="n">');
+  for (const code of ['link-name', 'button-name', 'control-label']) assert.ok(!codes(good).includes(code), code);
+});
