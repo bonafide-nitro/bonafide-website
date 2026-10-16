@@ -1,0 +1,162 @@
+# GENERATED FILE - DO NOT EDIT. Source: scripts/build-apache-config.mjs (composes deploy/apache/redirects.htaccess).
+# PRODUCTION static-docroot .htaccess candidate. Offline artifact only: nothing here has been installed or tested on any host.
+# It must never contain staging protection (auth, X-Robots-Tag, noindex): the static pages are deliberately indexable.
+# Unverified host gates (see docs/migration/51-block59-apache-config.md): mod_rewrite, mod_mime, AllowOverride FileInfo,
+# docroot model (D1), who installs this file. Hand-editing the server .htaccess is forbidden (master plan 10.4).
+
+# --- 404: real status from the local static page (a local path keeps the 404 status; a URL would turn it into a 302) ---
+ErrorDocument 404 /404.html
+
+# --- MIME types for static output (guarded: absent mod_mime is a no-op) ---
+<IfModule mod_mime.c>
+AddType application/xml .xml
+AddType text/plain .txt
+AddType application/manifest+json .webmanifest
+AddType image/webp .webp
+AddType image/avif .avif
+AddType image/svg+xml .svg
+AddType font/woff2 .woff2
+AddType font/woff .woff
+</IfModule>
+
+# --- Historical 301 redirects + protocol/host canonicalisation: deploy/apache/redirects.htaccess, verbatim ---
+# BEGIN redirects.htaccess
+# GENERATED FILE - DO NOT EDIT. Source: src/data/redirects.yaml. Regenerate: node scripts/build-htaccess.mjs
+# Apache (mod_rewrite) redirect rules for the static /public_html target. 301 only, one hop, `defined` rules only;
+# `pending-decision`, `deliberate-404` and `dropped` rules are never emitted. Order matters: specific rules first, host/protocol canonicalisation last.
+# Path rules carry an absolute https://bonafidenitro.com destination so http:// and www. requests are still one hop.
+# Rules: 41
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# amp-bookingpress-params
+RewriteCond %{QUERY_STRING} ^bpa_page=bookingpress_download&
+RewriteRule ^amp/$ https://bonafidenitro.com/? [R=301,L,NE]
+
+# amp-booking-thank-you
+RewriteRule ^thank-you/amp/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# amp-booking-my-bookings
+RewriteRule ^my-bookings/amp/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# amp-booking-cancellation-confirmation
+RewriteRule ^appointment-cancellation-confirmation/amp/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# amp-root
+RewriteRule ^amp/$ https://bonafidenitro.com/ [R=301,L]
+
+# wp-sitemap
+RewriteRule ^wp-sitemap\.xml$ https://bonafidenitro.com/sitemap.xml [R=301,L]
+
+# contact-slash
+RewriteRule ^contact/$ https://bonafidenitro.com/contact-bona-fide-nitro-coffee-and-tea/ [R=301,L]
+
+# contact-noslash
+RewriteRule ^contact$ https://bonafidenitro.com/contact-bona-fide-nitro-coffee-and-tea/ [R=301,L]
+
+# blog-old
+RewriteRule ^blog-old/$ https://bonafidenitro.com/blog/ [R=301,L]
+
+# on-tap-in-10-min
+RewriteRule ^on-tap-in-10-min/$ https://bonafidenitro.com/coffee-on-tap-is-the-future/ [R=301,L]
+
+# gastro-hotel-2023
+RewriteRule ^gastro-and-hotel-2023-paid-ticket/$ https://bonafidenitro.com/contact-bona-fide-nitro-coffee-and-tea/ [R=301,L]
+
+# thank-you-page-usa
+RewriteRule ^thank-you-page-usa/$ https://bonafidenitro.com/interested-in-selling-usa/ [R=301,L]
+
+# category-our-facilities
+RewriteRule ^category/our-facilities/$ https://bonafidenitro.com/about/ [R=301,L]
+
+# category-products
+RewriteRule ^category/products/$ https://bonafidenitro.com/products/ [R=301,L]
+
+# category-tea
+RewriteRule ^category/tea/$ https://bonafidenitro.com/products/ [R=301,L]
+
+# healthy-benefits-near-miss
+RewriteRule ^healthy-benefits-drinking-nitro-coffee-nitro-coffee-health-benefits/$ https://bonafidenitro.com/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/ [R=301,L]
+
+# thank-you-ticket-paid
+RewriteRule ^thank-you-your-ticket-is-paid/$ https://bonafidenitro.com/contact-bona-fide-nitro-coffee-and-tea/ [R=301,L]
+
+# slashless-hot-nitro-coffee
+RewriteRule ^hot-nitro-coffee$ https://bonafidenitro.com/hot-nitro-coffee/ [R=301,L]
+
+# slashless-nitro-cold-brew
+RewriteRule ^nitro-cold-brew$ https://bonafidenitro.com/nitro-cold-brew/ [R=301,L]
+
+# slashless-vanilla
+RewriteRule ^a-touch-of-vanilla-to-your-nitro-coffee$ https://bonafidenitro.com/a-touch-of-vanilla-to-your-nitro-coffee/ [R=301,L]
+
+# slashless-3-cups
+RewriteRule ^3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health$ https://bonafidenitro.com/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/ [R=301,L]
+
+# slashless-coffee-trend
+RewriteRule ^coffee-trend-dominate-2018$ https://bonafidenitro.com/coffee-trends-dominate-2018/ [R=301,L]
+
+# booking-my-bookings
+RewriteRule ^my-bookings/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# booking-cancel-appointment
+RewriteRule ^cancel-appointment/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# booking-cancel-payment
+RewriteRule ^cancel-payment/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# booking-cancellation-confirmation
+RewriteRule ^appointment-cancellation-confirmation/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# booking-thank-you
+RewriteRule ^thank-you/$ https://bonafidenitro.com/book-appointment/ [R=301,L]
+
+# svc-hair-raiser
+RewriteRule ^services/hair-raiser-organic/$ https://www.nitrocoffee.store/products/hair-raiser%C2%AE-organic-nitro-coffee [R=301,L,NE,QSD]
+
+# collections-nitro-coffee
+RewriteRule ^collections-nitro-coffee/$ https://www.nitrocoffee.store/collections/nitro-coffee [R=301,L,NE,QSD]
+
+# svc-peru
+RewriteRule ^services/peru-organic/$ https://www.nitrocoffee.store/products/organic-peru-nitro-coffee-5-gal-pet-keg [R=301,L,NE,QSD]
+
+# svc-ethiopia
+RewriteRule ^services/ethiopia-yirgacheffe-organic/$ https://www.nitrocoffee.store/products/organic-ethiopia-yirgacheffe-nitro-coffee-5-gal-pet-keg [R=301,L,NE,QSD]
+
+# svc-guatemala
+RewriteRule ^services/guatemala-organic/$ https://www.nitrocoffee.store/products/guatemala-organic-nitro-coffee [R=301,L,NE,QSD]
+
+# svc-hibiscus
+RewriteRule ^services/organic-hibiscus-tea/$ https://www.nitrocoffee.store/products/organic-hibiscus-nitro-tea [R=301,L,NE,QSD]
+
+# svc-mango
+RewriteRule ^services/mango-tea/$ https://www.nitrocoffee.store/products/mango-nitro-tea [R=301,L,NE,QSD]
+
+# svc-espresso
+RewriteRule ^services/espresso-organic-nitro-coffee/$ https://www.nitrocoffee.store/products/organic-espresso-nitro-pet-5-gal-1 [R=301,L,NE,QSD]
+
+# svc-passion-fruit
+RewriteRule ^services/passion-fruit-tea/$ https://www.nitrocoffee.store/products/organic-passion-fruit-nitro-tea-pet-5-gal [R=301,L,NE,QSD]
+
+# legacy-cold-brew-tap-future
+RewriteRule ^cold-brew-coffee-tap-future-serve/$ https://bonafidenitro.com/coffee-on-tap-is-the-future/ [R=301,L]
+
+# amp-pattern
+RewriteRule ^([^/]+)/amp/$ https://bonafidenitro.com/$1/ [R=301,L]
+
+# http-apex
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP_HOST} ^bonafidenitro\.com(:[0-9]+)?$ [NC]
+RewriteRule ^ https://bonafidenitro.com%{REQUEST_URI} [R=301,L,NE]
+
+# http-www
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP_HOST} ^www\.bonafidenitro\.com(:[0-9]+)?$ [NC]
+RewriteRule ^ https://bonafidenitro.com%{REQUEST_URI} [R=301,L,NE]
+
+# https-www
+RewriteCond %{HTTPS} =on
+RewriteCond %{HTTP_HOST} ^www\.bonafidenitro\.com(:[0-9]+)?$ [NC]
+RewriteRule ^ https://bonafidenitro.com%{REQUEST_URI} [R=301,L,NE]
+</IfModule>
+# END redirects.htaccess
