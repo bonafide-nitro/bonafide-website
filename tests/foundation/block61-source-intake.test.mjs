@@ -178,3 +178,27 @@ test('an unterminated script is counted and flagged', () => {
   assert.ok(codes(r).includes('scripts-present'));
   assert.ok(!JSON.stringify(r).includes('never_closed'));
 });
+
+test('unterminated comments cannot supply canonical, title or visible page text', () => {
+  const r = inspectHtml('<h1>Real</h1><!-- <link rel="canonical" href="https://bonafidenitro.com/howtobuy/"><h1>Fake</h1><p>bad comment</p>', '/howtobuy/', routes);
+  assert.equal(r.routeEvidence, 'none');
+  assert.ok(!JSON.stringify(r).includes('bad comment'));
+  assert.deepEqual(r.h1, ['Real']);
+});
+
+test('out-of-range numeric entities are safely replaced rather than crashing intake', () => {
+  const r = inspectHtml('<h1>ok &#99999999; &#x110000;</h1><p>safe</p>', '/howtobuy/', routes);
+  assert.equal(r.textSnippets[0], 'safe');
+  assert.equal(r.routeEvidence, 'none');
+});
+
+test('an existing output is never overwritten, including potential hard links', () => {
+  const html = write('no-overwrite.html', SAMPLE);
+  const target = write('existing-report.json', 'PRESERVE-THIS-BYTES');
+  assert.throws(() => run(['--route', '/howtobuy/', '--html', html, '--output', target]), /refusing to overwrite/);
+  assert.equal(fs.readFileSync(target, 'utf8'), 'PRESERVE-THIS-BYTES');
+  const linked = path.join(tmp, 'existing-hardlink.json');
+  fs.linkSync(target, linked);
+  assert.throws(() => run(['--route', '/howtobuy/', '--html', html, '--output', linked]), /refusing to overwrite/);
+  assert.equal(fs.readFileSync(target, 'utf8'), 'PRESERVE-THIS-BYTES');
+});
