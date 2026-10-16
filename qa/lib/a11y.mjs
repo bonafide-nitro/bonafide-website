@@ -104,7 +104,6 @@ export const auditHtml = (rawHtml) => {
       if (parseAttrs(m[2]).id !== id) continue;
       const tag = m[1].toLowerCase();
       const after = html.slice(m.index + m[0].length);
-      const close = new RegExp(`<\\/\\/\\/\\/${tag}\\s*>`, 'i');
       // Simple textual alternatives of referenced elements (without hidden descendants).
       const end = after.search(new RegExp(`<\\/${tag}\\s*>`, 'i'));
       const content = end < 0 ? '' : after.slice(0, end);
