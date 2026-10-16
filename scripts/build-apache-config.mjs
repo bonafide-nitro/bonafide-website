@@ -95,6 +95,8 @@ export const preflight = (text, target, { docroot } = {}) => {
     else if (authFiles.some((f) => inside(f, docroot))) problems.push('AuthUserFile resolves inside the staging docroot');
   }
   if (target === 'production') {
+    // Production may ship only the exact generated config; additional Apache directives can override redirects/security.
+    if (text !== renderProduction()) problems.push('production config differs from deterministic generated artifact');
     if (has(/x-robots-tag/i) || has(/noindex/i)) problems.push('staging noindex/X-Robots-Tag present in production config');
     if (has(/^Auth(Type|Name|UserFile|BasicProvider)\b/i) || has(/^Require\s+(valid-user|user|group|all denied)/i)) problems.push('staging auth/access directive present in production config');
     if (eff.some((l) => l.includes('@@'))) problems.push('unresolved @@placeholder@@ in production config');
@@ -123,8 +125,16 @@ export const preflight = (text, target, { docroot } = {}) => {
     const stack = [];
     for (const l of eff) {
       const open = l.match(/^<IfModule\s+(!?mod_\w+\.c)>$/i);
-      if (open) { stack.push(open[1].toLowerCase()); continue; }
-      if (/^<\/IfModule>$/i.test(l)) { stack.pop(); continue; }
+      if (open) {
+        if (stack.length) problems.push('nested IfModule branch is forbidden in staging overlay');
+        stack.push(open[1].toLowerCase());
+        continue;
+      }
+      if (/^<\/IfModule>$/i.test(l)) {
+        if (!stack.length) problems.push('unmatched closing IfModule in staging overlay');
+        else stack.pop();
+        continue;
+      }
       const top = stack[stack.length - 1];
       if (/^Require\s+valid-user$/i.test(l)) { if (top !== 'mod_headers.c') problems.push('Require valid-user outside the mod_headers branch: it would override the fail-closed denial'); continue; }
       if (/^Require\s+all\s+denied$/i.test(l)) { if (top !== '!mod_headers.c') problems.push('Require all denied outside the !mod_headers branch'); continue; }
@@ -132,6 +142,9 @@ export const preflight = (text, target, { docroot } = {}) => {
       if (/^(AuthType\s+Basic|AuthName\s+"[^"]+"|AuthUserFile\s+\/\S+)$/i.test(l) || l.includes('@@')) continue;
       problems.push(`unexpected directive in staging overlay (only the documented auth/noindex/fail-closed lines are allowed): ${l}`);
     }
+    if (stack.length) problems.push('unclosed IfModule branch in staging overlay');
+    const branches = eff.filter((l) => /^<IfModule\s+/i.test(l)).map((l) => l.toLowerCase());
+    if (branches.length !== 2 || branches[0] !== '<ifmodule !mod_headers.c>' || branches[1] !== '<ifmodule mod_headers.c>') problems.push('staging overlay must use exactly two top-level mod_headers branches in order');
   } else problems.push(`unknown target "${target}" (production|staging)`);
   return problems;
 };
