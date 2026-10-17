@@ -98,8 +98,16 @@ export const checkEntries = (entries) => {
 const isFile = (p) => { try { return fs.statSync(p).isFile(); } catch { return false; } };
 const isDir = (p) => { try { return fs.statSync(p).isDirectory(); } catch { return false; } };
 
-// Attribute order inside <meta> is irrelevant to crawlers, so test each tag for name=robots and a noindex value.
-const hasRobotsNoindex = (html) => (html.match(/<meta\b[^>]*>/gi) ?? []).some((tag) => /\bname\s*=\s*["']?robots\b/i.test(tag) && /\bcontent\s*=\s*["'][^"']*noindex/i.test(tag));
+// Attribute order and quoting inside <meta> are irrelevant to crawlers, so parse each tag's attributes (quoted or unquoted values).
+const metaAttrs = (tag) => {
+  const attrs = {};
+  for (const m of tag.matchAll(/([^\s"'<>\/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)) attrs[m[1].toLowerCase()] ??= m[2] ?? m[3] ?? m[4] ?? '';
+  return attrs;
+};
+const hasRobotsNoindex = (html) => (html.match(/<meta\b[^>]*>/gi) ?? []).some((tag) => {
+  const a = metaAttrs(tag.replace(/^<meta\b/i, ''));
+  return /^robots$/i.test(a.name ?? '') && /noindex/i.test(a.content ?? '');
+});
 
 const redirectTargets = (redirectsText) => [...redirectsText.matchAll(/^RewriteRule\s+\S+\s+https:\/\/bonafidenitro\.com(\/[^\s?]*)/gm)].map((m) => m[1]);
 
@@ -150,6 +158,7 @@ export const rehearse = ({ zip, dist = null, redirects = null, forbiddenStrings 
     const root = path.join(tmp, PACKAGE_ROOT);
     const site = path.join(root, 'site');
     if (!isDir(site)) { add([{ invariant: 'R4-layout', file: `${PACKAGE_ROOT}/site`, detail: 'site/ directory missing or not a directory' }]); return result; }
+    for (const w of PREVIEW_ONLY_FILES) if (!isFile(path.join(root, w))) add([{ invariant: 'R4-layout', file: `${PACKAGE_ROOT}/${w}`, detail: 'required preview wrapper file missing or not a regular file' }]);
     add(checkSite(site, { forbiddenStrings, redirects }));
     if (!findings.some((x) => x.invariant === 'R5-site-content' && /non-regular/.test(x.detail))) {
       const manifest = buildManifest(site);

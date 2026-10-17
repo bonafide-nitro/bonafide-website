@@ -54,6 +54,8 @@ const buildZip = (entries) => {
 const R = 'bonafide-preview';
 const good = () => [
   { name: `${R}/PREVIEW-INFO.json`, body: '{}' },
+  { name: `${R}/READ-ME-FIRST.txt`, body: 'read me' },
+  { name: `${R}/Open-Preview.command`, body: '#!/bin/sh' },
   ...Object.entries(SITE).map(([k, v]) => ({ name: `${R}/site/${k}`, body: v })),
 ];
 
@@ -104,6 +106,14 @@ test('site and mandatory site paths must be real directory / regular files (R4),
   assert.ok(invariants(dirAsFile).includes('R4-layout'));
 });
 
+test('every preview wrapper file must be present as a regular file (R4)', () => {
+  for (const w of ['READ-ME-FIRST.txt', 'Open-Preview.command', 'PREVIEW-INFO.json']) {
+    const r = run(buildZip(good().filter((e) => !e.name.endsWith(`/${w}`))));
+    assert.ok(invariants(r).includes('R4-layout') || invariants(r).includes('R8-manifest'), `${w} missing must not PASS`);
+    assert.notEqual(r.findings.length, 0);
+  }
+});
+
 test('WordPress runtime, executable and server-config content in the package is blocked (R5)', () => {
   const r = run(buildZip([...good(), { name: `${R}/site/.htaccess`, body: 'x' }, { name: `${R}/site/shell.php`, body: '<?php' }]));
   assert.ok(invariants(r).includes('R5-site-content'));
@@ -118,6 +128,10 @@ test('staging noindex/auth overlay content or placeholders in production content
   assert.ok(invariants(run(buildZip(noindexHome))).includes('R6-env-separation'));
   const reordered = good().map((e) => (e.name.endsWith('site/index.html') ? { ...e, body: '<meta content="noindex, nofollow" name="robots">' } : e));
   assert.ok(invariants(run(buildZip(reordered))).includes('R6-env-separation'), 'meta attribute order must not hide noindex');
+  for (const body of ['<meta name=robots content=noindex>', "<meta content='noindex' name='robots'>", '<meta content=noindex,nofollow name=robots>']) {
+    const z = good().map((e) => (e.name.endsWith('site/index.html') ? { ...e, body } : e));
+    assert.ok(invariants(run(buildZip(z))).includes('R6-env-separation'), `quoting style must not hide noindex: ${body}`);
+  }
   const blocked = good().map((e) => (e.name.endsWith('robots.txt') ? { ...e, body: 'User-agent: *\nDisallow: /\n' } : e));
   assert.ok(invariants(run(buildZip(blocked))).includes('R6-env-separation'));
 });
