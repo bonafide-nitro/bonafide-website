@@ -97,6 +97,13 @@ test('wrong webroot prefix and files outside site/ are blocked (R4)', () => {
   assert.ok(invariants(noIndex).includes('R4-layout'));
 });
 
+test('site and mandatory site paths must be real directory / regular files (R4), never a crash', () => {
+  const siteIsFile = run(buildZip([{ name: `${R}/PREVIEW-INFO.json`, body: '{}' }, { name: `${R}/site`, body: 'not a dir' }]));
+  assert.ok(invariants(siteIsFile).includes('R4-layout'));
+  const dirAsFile = run(buildZip([...good().filter((e) => !e.name.endsWith('site/404.html')), { name: `${R}/site/404.html/` }]));
+  assert.ok(invariants(dirAsFile).includes('R4-layout'));
+});
+
 test('WordPress runtime, executable and server-config content in the package is blocked (R5)', () => {
   const r = run(buildZip([...good(), { name: `${R}/site/.htaccess`, body: 'x' }, { name: `${R}/site/shell.php`, body: '<?php' }]));
   assert.ok(invariants(r).includes('R5-site-content'));
@@ -109,6 +116,8 @@ test('staging noindex/auth overlay content or placeholders in production content
   }
   const noindexHome = good().map((e) => (e.name.endsWith('site/index.html') ? { ...e, body: '<meta name="robots" content="noindex">' } : e));
   assert.ok(invariants(run(buildZip(noindexHome))).includes('R6-env-separation'));
+  const reordered = good().map((e) => (e.name.endsWith('site/index.html') ? { ...e, body: '<meta content="noindex, nofollow" name="robots">' } : e));
+  assert.ok(invariants(run(buildZip(reordered))).includes('R6-env-separation'), 'meta attribute order must not hide noindex');
   const blocked = good().map((e) => (e.name.endsWith('robots.txt') ? { ...e, body: 'User-agent: *\nDisallow: /\n' } : e));
   assert.ok(invariants(run(buildZip(blocked))).includes('R6-env-separation'));
 });

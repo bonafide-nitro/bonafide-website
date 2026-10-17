@@ -95,13 +95,19 @@ export const checkEntries = (entries) => {
   return f;
 };
 
+const isFile = (p) => { try { return fs.statSync(p).isFile(); } catch { return false; } };
+const isDir = (p) => { try { return fs.statSync(p).isDirectory(); } catch { return false; } };
+
+// Attribute order inside <meta> is irrelevant to crawlers, so test each tag for name=robots and a noindex value.
+const hasRobotsNoindex = (html) => (html.match(/<meta\b[^>]*>/gi) ?? []).some((tag) => /\bname\s*=\s*["']?robots\b/i.test(tag) && /\bcontent\s*=\s*["'][^"']*noindex/i.test(tag));
+
 const redirectTargets = (redirectsText) => [...redirectsText.matchAll(/^RewriteRule\s+\S+\s+https:\/\/bonafidenitro\.com(\/[^\s?]*)/gm)].map((m) => m[1]);
 
 export const checkSite = (siteDir, { forbiddenStrings = [], redirects = null } = {}) => {
   const f = [];
   const add = (invariant, file, detail) => f.push({ invariant, file, detail });
   for (const x of scanArtifact(siteDir, forbiddenStrings)) add('R5-site-content', x.file, `${x.rule}: ${x.detail}`);
-  for (const rel of REQUIRED_SITE_FILES) if (!fs.existsSync(path.join(siteDir, rel))) add('R4-layout', `site/${rel}`, 'required file missing from package');
+  for (const rel of REQUIRED_SITE_FILES) if (!isFile(path.join(siteDir, rel))) add('R4-layout', `site/${rel}`, 'required file missing from package or not a regular file');
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
     const p = path.join(d, e.name);
     return e.isDirectory() ? walk(p) : e.isFile() ? [p] : [];
@@ -113,9 +119,9 @@ export const checkSite = (siteDir, { forbiddenStrings = [], redirects = null } =
     for (const [name, re] of STAGING_MARKERS) if (re.test(text)) add('R6-env-separation', `site/${rel}`, `staging/preview marker in production content: ${name}`);
   }
   const index = path.join(siteDir, 'index.html');
-  if (fs.existsSync(index) && /<meta[^>]+name=["']robots["'][^>]+noindex/i.test(fs.readFileSync(index, 'utf8'))) add('R6-env-separation', 'site/index.html', 'home page carries noindex');
+  if (isFile(index) && hasRobotsNoindex(fs.readFileSync(index, 'utf8'))) add('R6-env-separation', 'site/index.html', 'home page carries noindex');
   const robots = path.join(siteDir, 'robots.txt');
-  if (fs.existsSync(robots) && /^\s*disallow:\s*\/\s*$/im.test(fs.readFileSync(robots, 'utf8'))) add('R6-env-separation', 'site/robots.txt', 'blanket "Disallow: /"');
+  if (isFile(robots) && /^\s*disallow:\s*\/\s*$/im.test(fs.readFileSync(robots, 'utf8'))) add('R6-env-separation', 'site/robots.txt', 'blanket "Disallow: /"');
   if (redirects) {
     // Pattern destinations (back-references such as /$1/) have no single file to look up.
     for (const t of new Set(redirectTargets(redirects))) {
@@ -143,7 +149,7 @@ export const rehearse = ({ zip, dist = null, redirects = null, forbiddenStrings 
     if (r.status !== 0) { add([{ invariant: 'R1-zip-structure', file: zip, detail: `unzip failed: ${r.stderr || r.error}` }]); return result; }
     const root = path.join(tmp, PACKAGE_ROOT);
     const site = path.join(root, 'site');
-    if (!fs.existsSync(site)) { add([{ invariant: 'R4-layout', file: `${PACKAGE_ROOT}/site`, detail: 'site/ directory missing' }]); return result; }
+    if (!isDir(site)) { add([{ invariant: 'R4-layout', file: `${PACKAGE_ROOT}/site`, detail: 'site/ directory missing or not a directory' }]); return result; }
     add(checkSite(site, { forbiddenStrings, redirects }));
     if (!findings.some((x) => x.invariant === 'R5-site-content' && /non-regular/.test(x.detail))) {
       const manifest = buildManifest(site);
