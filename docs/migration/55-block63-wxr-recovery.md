@@ -22,11 +22,11 @@ Repository-only. No WordPress, hosting, DNS, redirect, Search Console, tracking 
 - Meta descriptions from `_aioseop_description` were applied where the export carries one (`/howtobuy/` is new; the others already matched).
 - `/what-is-nitro-cold-brew-coffee/` now renders its image at the exact path with the export alt text and dimensions: the export places it inline in the article body (this was the missing page-level evidence recorded in Block 55).
 
-**Scaffold flags cleared (2):** `/a-touch-of-vanilla-to-your-nitro-coffee/` and `/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/` — exact text, no image/embed references in the export, byline/dates already evidenced. All other flags stay, with updated blockers (below). `/hot-nitro-coffee/` stays because the original on-page byline is not evidenced.
+**Scaffold flags cleared (0):** none. `/a-touch-of-vanilla-to-your-nitro-coffee/` and `/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/` were first cleared, but the export lists two externally hosted (googleusercontent) images for each page that are not recovered, so both stay scaffolded (Codex review correction, round 1). Every flag stays, each with a recorded blocker (below). `/hot-nitro-coffee/` also stays: its original on-page byline is not evidenced and its one externally hosted image is not recovered.
 
-## Strict QA reconciliation (40 → 40, different composition)
+## Strict QA reconciliation (40 → 42, different composition)
 Before: 2 commerce-inventory-missing, 35 placeholder-page, 2 store-links-min, 1 ranking-list-incomplete.
-After: 2 commerce-inventory-missing, **33** placeholder-page, **2 content-missing (new)**, 2 store-links-min, 1 ranking-list-incomplete. No gate, threshold or rule was changed.
+After: 2 commerce-inventory-missing, 35 placeholder-page (unchanged: no scaffold was honestly clearable), **2 content-missing (new)**, 2 store-links-min, 1 ranking-list-incomplete. The +2 are the new honest `content-missing` findings. No gate, threshold or rule was changed.
 
 - `content-missing` ×2 is a *new honest finding*: the baseline `mustContainText` "organic coffee for cancer" (`/coffee-doesnt-produce-cancer-…/`) and "millennials coffee" (`/coffee-trends-dominate-2018/`) are search-query phrases that the exact export text does not contain. The earlier paraphrases had inserted them. They were not re-invented. **Decision needed from Žaneta** whether the baseline phrases should stay required (then copy must be added by a human) or be re-based on the original text.
 - `store-links-min` stays: `/products/` exports 13 Amazon + 1 store-collection destination and `/products-2/` exports no external links; the 16 retail / 22 wholesale targets are **not supported by this export**. No store href was invented. (The `howtobuy` apex e-shop link is registry id `webstore-root-apex`.)

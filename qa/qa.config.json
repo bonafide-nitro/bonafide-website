@@ -21,10 +21,7 @@
   ],
   "articleScaffold": {
     "_note": "Block 28 (Issue #74). Deterministic article scaffold contract. 'cleared' = article routes whose scaffold marker was removed as evidence-complete; 'remaining' = routes that intentionally stay scaffolded with the recorded blocker. cleared + remaining must equal articleRoutes, and each page's built scaffold marker must match. Deleting a marker without moving the route to 'cleared' (or vice versa) fails tests. Missing meta descriptions/images are never invented.",
-    "cleared": [
-      "/a-touch-of-vanilla-to-your-nitro-coffee/",
-      "/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/"
-    ],
+    "cleared": [],
     "remaining": {
       "/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 1 image binary referenced by the 2026-10-19 WordPress export is not in the repo or the export (Bona-Fide-Nitro-Coffee-Tea-on-tap.jpg)",
       "/how-ambient-stable-coffee-kegs-help-you-save-more-money/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: the original inline video embed (https://www.youtube.com/watch?v=d6b3kjWPpbU) is rendered only as a plain link",
@@ -38,7 +35,9 @@
       "/nitro-coffee-future/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: the original inline video embed (https://www.youtube.com/watch?v=Lga6THXO6Lk) is rendered only as a plain link",
       "/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: the original inline video embed (https://www.youtube.com/watch?v=RHwkPIP0qZ8, https://www.youtube.com/watch?v=TN0cxBYh8t8) is rendered only as a plain link",
       "/stability-kegs-nitro-coffee/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 1 image binary referenced by the 2026-10-19 WordPress export is not in the repo or the export (Stability-Keg-Nitro-coffee-nitro-tea-300x300.jpg)",
-      "/coffee-on-tap-is-the-future/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 1 image binary referenced by the 2026-10-19 WordPress export is not in the repo or the export (Bona-Fide-Nitro-Coffee-Tea-on-tap-985x1024.jpg)"
+      "/coffee-on-tap-is-the-future/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 1 image binary referenced by the 2026-10-19 WordPress export is not in the repo or the export (Bona-Fide-Nitro-Coffee-Tea-on-tap-985x1024.jpg)",
+      "/a-touch-of-vanilla-to-your-nitro-coffee/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 2 externally hosted images referenced by the export are not in the repo or the export (A+Touch+of+Vanilla+to+Your+Nitro+Coffee.jpg, Enjoying+the+Sweet+Taste+of+Vanilla+in+Nitro+Coffee.jpg)",
+      "/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 2 externally hosted images referenced by the export are not in the repo or the export (Nitro+Coffee+in+Time+of+COVID-19+Pandemic+How+Safe+is+it.jpg, How+safe+Nitro+Coffee+in+COVID-19+Pandemic+.jpeg)"
     }
   },
   "templateSlugs": [
@@ -78,12 +77,12 @@
     "cleared": [],
     "remaining": {
       "/": "homepage testimonial section is not preserved (no evidence of its source or provenance; not invented); hero imagery not recovered. Review/AggregateRating schema is resolved as omitted (decision I7, Block 30)",
-      "/about/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 40 image binaries referenced by the export are not in the repo or the export (Bona-Fide-Customer-Cult-300x200.png, Customers-Bona-Fide-Vail-300x183.jpg, John-Goerke-Bona-Fide-1.png, Spencer-Weiner-Bona-Fide-2.png, Bona-Fide-Nitro-coffee-and-nitro-tea-nature.jpg, Bona-Fide-Customer-After-300x80.jpg, …)",
+      "/about/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 40 image binaries referenced by the export are not in the repo or the export (Bona-Fide-Customer-Cult-300x200.png, Customers-Bona-Fide-Vail-300x183.jpg, John-Goerke-Bona-Fide-1.png, Spencer-Weiner-Bona-Fide-2.png, Bona-Fide-Nitro-coffee-and-nitro-tea-nature.jpg, Bona-Fide-Customer-After-300x80.jpg, \u2026)",
       "/blog/": "post excerpts, categories and card images are not preserved",
       "/book-appointment/": "exact live Calendly URL is not in repository evidence; supplied only via PUBLIC_CALENDLY_URL, which a human must configure",
       "/contact-bona-fide-nitro-coffee-and-tea/": "page meta description not preserved and no form provider endpoint is configured (form renders disabled)",
       "/hot-nitro-equipment-rental/": "images and meta description not preserved; no single historical H1 is evidenced (H1 is derived from the launch title)",
-      "/howtobuy/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 29 image binaries referenced by the export are not in the repo or the export (Bona-Fide-Facilities.png, Icon-for-website-Keg-alliance-Nitro-Coffee-Bona-Fide.jpg, Icon-round-corners-for-website-Eshop-Nitro-Coffee-Bona-Fide.png, Icon-round-corners-for-website-coffee-distributors-Nitro-Coffee-Bona-Fide.png, Icon-round-for-website-Eshop-Nitro-Coffee-Bona-Fide.png, Icon-round-for-website-Keg-alliance-Nitro-Coffee-Bona-Fide.png, …)",
+      "/howtobuy/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 29 image binaries referenced by the export are not in the repo or the export (Bona-Fide-Facilities.png, Icon-for-website-Keg-alliance-Nitro-Coffee-Bona-Fide.jpg, Icon-round-corners-for-website-Eshop-Nitro-Coffee-Bona-Fide.png, Icon-round-corners-for-website-coffee-distributors-Nitro-Coffee-Bona-Fide.png, Icon-round-for-website-Eshop-Nitro-Coffee-Bona-Fide.png, Icon-round-for-website-Keg-alliance-Nitro-Coffee-Bona-Fide.png, \u2026)",
       "/interested-in-selling-eu-and-usa/": "images and meta description not preserved; CTA destinations (some Google Docs) not evidenced; nitro information/quiz not preserved",
       "/interested-in-selling-eu-qr-2/": "images and meta description not preserved; CTA destinations (some Google Docs) not evidenced; nitro information/quiz not preserved",
       "/interested-in-selling-usa/": "images and meta description not preserved; lead form and SCHEDULE A DEMO destination not evidenced (Stage 7); CTA is a label only",

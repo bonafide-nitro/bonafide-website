@@ -56,7 +56,9 @@ for (const route of cfg.articleRoutes) {
   if (!e) { report.push({ route, ported: false, why: 'no published post in export' }); continue; }
   const file = `src/pages${route}index.astro`;
   const src = readFileSync(file, 'utf8');
-  const missingMedia = e.uploadRefs.filter((u) => { try { readFileSync(`public${u}`); return false; } catch { return true; } });
+  // Externally hosted images (e.g. googleusercontent) are never fetched, so each one is unrecovered media too.
+  const externalImages = e.images.filter((i) => i.kind === 'external').map((i) => decodeURIComponent(i.src.split('/').pop()));
+  const missingMedia = [...e.uploadRefs.filter((u) => !exists(u)), ...externalImages];
   const embeds = e.embeds.map(yt);
   const sealed = missingMedia.length === 0 && embeds.length === 0 && src.includes('<p class="muted">');
   const lines = render(e);
