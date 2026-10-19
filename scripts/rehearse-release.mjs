@@ -10,6 +10,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { buildManifest, diffManifest, scanArtifact } from './check-release-artifact.mjs';
 import { loadBaseline } from '../src/lib/data.mjs';
+import { decodeEntities } from '../qa/lib/html.mjs';
 
 export const PACKAGE_ROOT = 'bonafide-preview';
 export const PREVIEW_ONLY_FILES = ['Open-Preview.command', 'READ-ME-FIRST.txt', 'PREVIEW-INFO.json'];
@@ -86,6 +87,7 @@ export const checkEntries = (entries) => {
     if (e.unixMode !== null) {
       const type = e.unixMode & S_IFMT;
       if (type !== S_IFREG && type !== S_IFDIR && type !== 0) add('R3-entry-type', e.name, `symlink or special file (mode ${e.unixMode.toString(8)})`);
+      if ((type === S_IFREG || (type === 0 && !e.dosDir)) && (e.unixMode & 0o444) === 0) add('R3-entry-type', e.name, 'regular file has no readable permission bits');
     }
     const top = e.name.split('/')[0];
     if (top !== PACKAGE_ROOT) { add('R4-layout', e.name, `entry is outside the single top-level "${PACKAGE_ROOT}/" directory`); continue; }
@@ -106,7 +108,9 @@ const metaAttrs = (tag) => {
 };
 const hasRobotsNoindex = (html) => (html.match(/<meta\b[^>]*>/gi) ?? []).some((tag) => {
   const a = metaAttrs(tag.replace(/^<meta\b/i, ''));
-  return /^robots$/i.test(a.name ?? '') && /noindex/i.test(a.content ?? '');
+  let content = a.content ?? '';
+  try { content = decodeEntities(content); } catch { return true; } // malformed encoded directive: fail closed
+  return /^robots$/i.test(a.name ?? '') && /noindex/i.test(content);
 });
 
 const redirectTargets = (redirectsText) => [...redirectsText.matchAll(/^RewriteRule\s+\S+\s+https:\/\/bonafidenitro\.com(\/[^\s?]*)/gm)].map((m) => m[1]);
@@ -135,7 +139,7 @@ export const checkSite = (siteDir, { forbiddenStrings = [], redirects = null } =
     for (const t of new Set(redirectTargets(redirects))) {
       if (/[$%]/.test(t)) continue;
       const rel = t === '/' ? 'index.html' : t.endsWith('/') ? `${t.slice(1)}index.html` : t.slice(1);
-      if (!fs.existsSync(path.join(siteDir, rel))) add('R7-redirect-target', `site/${rel}`, `redirect destination ${t} has no file in the package`);
+      if (!isFile(path.join(siteDir, rel))) add('R7-redirect-target', `site/${rel}`, `redirect destination ${t} has no file in the package`);
     }
   }
   return f;
@@ -180,6 +184,8 @@ export const rehearse = ({ zip, dist = null, redirects = null, forbiddenStrings 
         neverCopy: PREVIEW_ONLY_FILES,
       };
     }
+  } catch (e) {
+    add([{ invariant: 'R1-zip-structure', file: zip, detail: `rehearsal could not safely scan extracted archive: ${e.message}` }]);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   return result;
 };
@@ -196,10 +202,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const zip = path.resolve(flag('--zip') ?? 'preview-out/bonafide-preview.zip');
   const distArg = flag('--dist') ?? (fs.existsSync('dist') ? 'dist' : null);
   const redirectsFile = path.resolve(flag('--redirects') ?? 'deploy/apache/redirects.htaccess');
+  if (!isFile(redirectsFile)) {
+    console.error(`[R7-redirect-target] ${redirectsFile}: redirect rules file missing or not a regular file`);
+    console.log('BLOCKED: required redirect rules cannot be verified');
+    process.exit(1);
+  }
   const { findings, copyPlan, tree } = rehearse({
     zip,
     dist: distArg ? path.resolve(distArg) : null,
-    redirects: fs.existsSync(redirectsFile) ? fs.readFileSync(redirectsFile, 'utf8') : null,
+    redirects: fs.readFileSync(redirectsFile, 'utf8'),
     forbiddenStrings: loadBaseline().preservationRules.forbiddenBuildStrings,
   });
   if (findings.length) {
