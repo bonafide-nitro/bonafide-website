@@ -173,3 +173,28 @@ test('script is offline: no network, shell or credential access', () => {
   const src = fs.readFileSync('scripts/rehearse-release.mjs', 'utf8').replace(/^\s*\/\/.*$/gm, '');
   assert.ok(!/fetch\(|node:https?|node:net|process\.env|\b(?:curl|wget|ssh|scp|rsync|cpanel)\b/i.test(src));
 });
+
+test('unreadable regular zip entries are blocked before extraction', () => {
+  const r = run(buildZip([...good(), { name: `${R}/site/unreadable.txt`, body: 'x', mode: 0o100000 }]));
+  assert.ok(invariants(r).includes('R3-entry-type'));
+});
+
+test('entity-encoded robots noindex cannot bypass environment separation', () => {
+  const entries = good().map((e) => e.name.endsWith('site/index.html')
+    ? { ...e, body: '<meta name=robots content="no&#x69;ndex">' } : e);
+  assert.ok(invariants(run(buildZip(entries))).includes('R6-env-separation'));
+});
+
+test('redirect destination must be a regular site file, not an empty directory', () => {
+  const entries = [...good().filter((e) => !e.name.endsWith('site/products/index.html')), { name: `${R}/site/products/index.html/`, mode: 0o040755 }];
+  const r = run(buildZip(entries), { redirects: REDIRECTS });
+  assert.ok(invariants(r).includes('R7-redirect-target'));
+});
+
+test('CLI never silently passes when required redirect rules are missing', () => {
+  const { zip, dist } = pack();
+  const result = spawnSync('node', ['scripts/rehearse-release.mjs', '--zip', zip, '--dist', dist, '--redirects', path.join(tmp(), 'missing-rules.htaccess')], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /BLOCKED/);
+  assert.match(result.stderr, /R7-redirect-target/);
+});
