@@ -24,6 +24,8 @@ Repository-only. No WordPress, hosting, DNS, redirect, Search Console, tracking 
 
 **Scaffold flags cleared (0):** none. `/a-touch-of-vanilla-to-your-nitro-coffee/` and `/nitro-coffee-in-time-of-covid-19-pandemic-how-safe-is-it/` were first cleared, but the export lists two externally hosted (googleusercontent) images for each page that are not recovered, so both stay scaffolded (Codex review correction, round 1). Every flag stays, each with a recorded blocker (below). `/hot-nitro-coffee/` also stays: its original on-page byline is not evidenced and its one externally hosted image is not recovered.
 
+**Correction round 2 (Codex review 5575708913).** (1) `/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/`: the export stores two `<img>` tags multiply entity-encoded; they rendered as literal markup. The porter now decodes them repeatedly, drops them from the body and records their files as unrecovered media. (2) Pages and `qa/qa.config.json` were regenerated so the blockers of `/3-cups-of-coffee-…` (3 files), `/how-ambient-stable-coffee-kegs-…` and `/hot-nitro-coffee/` list their external images. Counts are unchanged (strict QA stays at 42); no QA gate changed.
+
 ## Strict QA reconciliation (40 → 42, different composition)
 Before: 2 commerce-inventory-missing, 35 placeholder-page, 2 store-links-min, 1 ranking-list-incomplete.
 After: 2 commerce-inventory-missing, 35 placeholder-page (unchanged: no scaffold was honestly clearable), **2 content-missing (new)**, 2 store-links-min, 1 ranking-list-incomplete. The +2 are the new honest `content-missing` findings. No gate, threshold or rule was changed.

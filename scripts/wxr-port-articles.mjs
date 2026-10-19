@@ -52,12 +52,16 @@ const render = (e, faqGroups = [], h1Text = '') => {
 const report = [];
 for (const route of cfg.articleRoutes) {
   const slug = route.replaceAll('/', '');
-  const e = manifest.entries.find((x) => x.slug === slug && x.status === 'publish' && x.type === 'post');
+  let e = manifest.entries.find((x) => x.slug === slug && x.status === 'publish' && x.type === 'post');
   if (!e) { report.push({ route, ported: false, why: 'no published post in export' }); continue; }
   const file = `src/pages${route}index.astro`;
   const src = readFileSync(file, 'utf8');
   // Externally hosted images (e.g. googleusercontent) are never fetched, so each one is unrecovered media too.
-  const externalImages = e.images.filter((i) => i.kind === 'external').map((i) => decodeURIComponent(i.src.split('/').pop()));
+  // Image tags that the export stores multiply entity-encoded would render as literal markup: drop them and count their files as unrecovered media.
+  const unescape = (h) => { for (let n = 0; n < 12 && /&(amp|lt|gt|quot);/.test(h); n++) h = h.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'); return h; };
+  const encodedImgs = e.blocks.filter((b) => b.t === 'p' && /^<img\s/i.test(unescape(b.html).trim())).map((b) => unescape(b.html).match(/\ssrc="([^"]+)"/)?.[1]).filter(Boolean);
+  e = { ...e, blocks: e.blocks.filter((b) => !(b.t === 'p' && /^<img\s/i.test(unescape(b.html).trim()))) };
+  const externalImages = [...new Set([...e.images.filter((i) => i.kind === 'external').map((i) => i.src), ...encodedImgs].map((u) => decodeURIComponent(u.split('/').pop())))];
   const missingMedia = [...e.uploadRefs.filter((u) => !exists(u)), ...externalImages];
   const embeds = e.embeds.map(yt);
   const sealed = missingMedia.length === 0 && embeds.length === 0 && src.includes('<p class="muted">');

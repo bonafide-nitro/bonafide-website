@@ -69,6 +69,7 @@ for (const route of PORTED) {
     const faq = route === '/nitro-coffee-questions/' ? EVIDENCE.entries.filter((x) => x.type === 'wpsm_faq_r') : [];
     for (const b of e.blocks) {
       if (b.t === 'img') continue;
+      if (b.t === 'p' && /^(?:&?amp;)*(?:&|amp;)?lt;img\s/i.test(b.html)) continue; // multiply-encoded <img> tag in the export: dropped, its file is recorded as unrecovered media
       const pieces = b.t === 'ul' || b.t === 'ol' ? b.items.map((i) => textOf({ html: i })) : [textOf(b)];
       for (const piece of pieces) {
         if (!piece || piece === e.title.toLowerCase().trim() || piece === h1) continue; // title/H1 duplicates are emitted once as the pinned H1
@@ -127,5 +128,18 @@ t('no built page embeds iframes or links to redirect-fragment shorteners; videos
       const c = u.replace(/&amp;/g, '&');
       assert.ok([...videos].some((v) => v === c || v.startsWith(c)) || EVIDENCE.entries.some((e) => JSON.stringify(e).includes(c.replace(/&/g, '&'))), `${f}: ${u}`);
     }
+  }
+});
+
+t('/3-cups-of-coffee-…: multiply-encoded image markup is never rendered as literal text', () => {
+  const html = fs.readFileSync('dist/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/index.html', 'utf8');
+  assert.ok(!/&(amp;)*(lt|gt);|&lt;img|data-init-width/i.test(html.replace(/<script[\s\S]*?<\/script>/g, '')));
+  assert.match(config.articleScaffold.remaining['/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/'], /3-Cups-of-Coffee-a-Day--Why-It-Can-Be-Good-for-the-Health\.jpg/);
+});
+
+test('every external image in the evidence is listed in its route blocker (articles that stay scaffolded)', () => {
+  for (const [route, why] of Object.entries(config.articleScaffold.remaining)) {
+    const e = entry(route.replaceAll('/', ''));
+    for (const i of e.images.filter((x) => x.kind === 'external')) assert.ok(why.includes(decodeURIComponent(i.src.split('/').pop())), `${route}: ${i.src}`);
   }
 });
