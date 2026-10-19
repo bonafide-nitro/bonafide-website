@@ -78,6 +78,7 @@ const EXPECTED = {
   ],
   '/howtobuy/': [
     'https://www.nitrocoffee.store/',
+    'https://nitrocoffee.store/', // Block 63: the 2026-10-19 export links the e-shop image to the apex store root (registry id webstore-root-apex)
   ],
   '/': [
     'https://www.nitrocoffee.store/',

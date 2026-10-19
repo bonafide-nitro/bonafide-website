@@ -19,7 +19,7 @@ test('QA blocker no longer calls the existing binary missing, and records the ev
   const why = config.articleScaffold.remaining[ROUTE];
   assert.ok(why, 'route stays in remaining');
   assert.ok(!/missing T7 binary/i.test(why));
-  assert.match(why, /ranking-list/);
+  assert.match(why, /Block 63/); // placement is now evidenced by the 2026-10-19 export; the remaining gap is the video embed
 });
 
 test('source comment is not stale and the route stays scaffolded', () => {
@@ -27,9 +27,12 @@ test('source comment is not stale and the route stays scaffolded', () => {
   assert.match(src, /<Base\b[^>]*\sscaffold(\s|>|\/)/);
 });
 
-test('ranking-only image is not rendered on the route (source)', () => {
-  assert.ok(!/<img\b/i.test(src));
-  assert.ok(!/src=["'][^"']*Explained-simple/.test(src));
+// Block 63: the export places this exact upload inline in the article body with its original alt text and dimensions.
+test('the image is rendered once, at its exact path, with the export alt text (source)', () => {
+  const imgs = [...src.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+  assert.equal(imgs.length, 1);
+  assert.ok(imgs[0].includes(`src="${IMG}"`));
+  assert.ok(imgs[0].includes('alt="What is nitro coffee explain by Bona Fide"'));
 });
 
 test('no other article route references the image', () => {
@@ -39,6 +42,6 @@ test('no other article route references the image', () => {
 });
 
 const built = fs.existsSync('dist/index.html');
-test('built route does not reference the image', { skip: !built && 'dist/ not built' }, () => {
-  assert.ok(!fs.readFileSync(`dist${ROUTE}index.html`, 'utf8').includes('Explained-simple'));
+test('built route references the image exactly once', { skip: !built && 'dist/ not built' }, () => {
+  assert.equal(fs.readFileSync(`dist${ROUTE}index.html`, 'utf8').split('Explained-simple').length - 1, 1);
 });

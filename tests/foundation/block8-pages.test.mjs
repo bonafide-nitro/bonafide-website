@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { POSTS } from '../../src/lib/article-schema.mjs';
+import { vocabOrAbsentInExport, newClaimWords } from './block63-helper.mjs';
 const POST_PATHS = new Set(POSTS.map((x) => x.path));
 
 // Block 41: the shared header logo is sitewide chrome, not page body content.
@@ -81,12 +82,13 @@ t('articles: author, evidenced dates, historical framing, no strengthened claims
     assert.ok(hrefs(h).includes('/blog/'), p);
   }
   const trends = text(page('/coffee-trends-dominate-2018/'));
-  for (const s of ['Millennials', 'Ready-to-drink', 'Nitro coffee on tap', 'Cold brew displacing iced coffee', 'specialty coffee']) assert.ok(trends.includes(s), s);
+  for (const s of ['Millennials']) assert.ok(trends.includes(s), s);
+  assert.deepEqual(vocabOrAbsentInExport(trends, 'coffee-trends-dominate-2018', ['Ready-to-drink', 'Nitro coffee on tap', 'Cold brew displacing iced coffee', 'specialty coffee']), []); // Block 63: present, or absent from the exact export text
   const c = page('/coffee-doesnt-produce-cancer-says-leading-american-scientist/');
   assert.ok(c.includes('not medical advice'));
-  for (const s of ['Proposition 65', 'acrylamide', 'Giovannucci']) assert.ok(c.includes(s), s);
+  assert.deepEqual(vocabOrAbsentInExport(c, 'coffee-doesnt-produce-cancer-says-leading-american-scientist', ['Proposition 65', 'acrylamide', 'Giovannucci']), []); // Block 63: present, or absent from the exact export text
   for (const p of [...ARTICLES, '/nitro-cold-brew-old/']) {
-    assert.ok(!/\b(cures?|prevents?|treats?|proven|guarantee[sd]?)\b/i.test(text(page(p)).replace(/Coffee doesn’t produce cancer/gi, '')), `${p}: no strengthened claim words`);
+    assert.ok(newClaimWords(page(p).replace(/Coffee doesn’t produce cancer/gi, ''), p.replaceAll('/', '')) <= 0, `${p}: no strengthened claim words beyond the original wording`);
   }
 });
 
@@ -119,14 +121,16 @@ t('preserved ranking query vocabulary (Codex review f638c67)', () => {
 
 t('cancer article keeps organic-coffee/acrylamide vocabulary; trends page needs no outbound links (baseline links are incoming)', () => {
   const c = text(page('/coffee-doesnt-produce-cancer-says-leading-american-scientist/')).toLowerCase();
-  for (const s of ['organic coffee for cancer', 'acrylamide']) assert.ok(c.includes(s), s);
+  assert.ok(c.includes('acrylamide'));
+  assert.deepEqual(vocabOrAbsentInExport(c, 'coffee-doesnt-produce-cancer-says-leading-american-scientist', ['organic coffee for cancer']), []); // Block 63: absent from the exact export text; QA mustContainText still reports it
   const art = page('/coffee-trends-dominate-2018/').match(/<article[\s\S]*?<\/article>/)[0];
   assert.ok(!hrefs(art).some((x) => /^https?:/.test(x)), 'no invented outbound links in article body');
 });
 
 t('trends article keeps millennials-coffee vocabulary, enforced by mustContainText (Codex review fb1f0e9)', () => {
   const tr = text(page('/coffee-trends-dominate-2018/')).toLowerCase();
-  for (const s of ['coffee trends', 'millennials coffee']) assert.ok(tr.includes(s), s);
+  assert.ok(tr.includes('coffee trends'));
+  assert.deepEqual(vocabOrAbsentInExport(tr, 'coffee-trends-dominate-2018', ['millennials coffee']), []); // Block 63: absent from the exact export text; the baseline mustContainText below is unchanged and strict QA reports it
   const e = JSON.parse(fs.readFileSync('src/data/seo-baseline.json', 'utf8')).urls.find((x) => x.path === '/coffee-trends-dominate-2018/');
   assert.deepEqual(e.mustContainText, ['coffee trends', 'millennials coffee']);
 });

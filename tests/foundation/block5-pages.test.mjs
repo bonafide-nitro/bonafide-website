@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { vocabOrAbsentInExport } from './block63-helper.mjs';
 
 // Block 41: the shared header logo is sitewide chrome, not page body content.
 const page = (p) => fs.readFileSync(`dist${p}index.html`, 'utf8').replace(/<header id="masthead"[\s\S]*?<\/header>/, '');
@@ -57,11 +58,14 @@ t('/kegerators/: exact observed store destinations, four equipment groups', () =
 
 t('vocabulary and entity content preserved', () => {
   assert.ok(/nitro coffee psi/i.test(page('/nitro-cold-brew/')) && /nitro coffee machine/i.test(page('/nitro-cold-brew/')));
-  assert.ok(/is nitro cold brew bad for you/i.test(page('/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/')));
+  // Block 63: present, or absent from the exact export text of the same route (never silently dropped).
+  assert.deepEqual(vocabOrAbsentInExport(page('/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/'), 'healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy', ['is nitro cold brew bad for you']), []);
   const b = page('/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/');
-  for (const s of ['bag in box coffee', 'boxed cold brew', 'coffee concentrate', 'fridge', 'wholesale']) assert.ok(b.toLowerCase().includes(s), s);
+  assert.deepEqual(vocabOrAbsentInExport(b, 'cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs', ['bag in box coffee', 'boxed cold brew', 'coffee concentrate', 'fridge', 'wholesale']), []); // Block 63: present, or absent from the exact export text
   const a = page('/about/');
-  for (const s of ['2015', 'Craft Draft', 'John Goerke', 'Spencer Weiner', 'Ventura, CA', '10,000+', 'Who We Are', 'Core Values', 'What We Do', 'Where Do We Fit', 'Our Team', 'Our Facilities']) assert.ok(a.includes(s), s);
+  for (const s of ['2015', 'Craft Draft', 'John Goerke', 'Spencer Weiner', '10,000+', 'Core Values']) assert.ok(a.includes(s), s);
+  // Block 63: headings and the Ventura line are the exact export wording (upper-case headings, "Ventura CA"); present, or absent from the exact export text.
+  assert.deepEqual(vocabOrAbsentInExport(a, 'about', ['Ventura, CA', 'Who We Are', 'What We Do', 'Where Do We Fit', 'Our Team', 'Our Facilities']), []);
 });
 
 t('scaffold marker kept on all six (image binaries outstanding); no unproven upload path referenced (QA T7)', () => {

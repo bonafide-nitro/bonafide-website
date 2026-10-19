@@ -37,5 +37,9 @@ for (const path of ['/products/', '/products-2/']) {
 }
 
 t('other pages gain no meta description from this Block', () => {
-  for (const p of ['/', '/howtobuy/']) if (fs.existsSync(`dist${p}index.html`)) assert.ok(!/name="description"/.test(html(p)), p);
+  if (fs.existsSync('dist/index.html')) assert.ok(!/name="description"/.test(html('/')));
+  // Block 63: /howtobuy/ may carry a description only when it is exactly the _aioseop_description value in the 2026-10-19 WordPress export.
+  const howtobuy = JSON.parse(fs.readFileSync('docs/migration/data/block63-wxr-evidence.json', 'utf8')).entries.find((e) => e.slug === 'howtobuy').seoDescription;
+  const d = all(html('/howtobuy/'), /<meta name="description" content="([^"]*)"/g).map((m) => m[1].replace(/&amp;/g, '&'));
+  assert.deepEqual(d, howtobuy ? [howtobuy] : []);
 });
