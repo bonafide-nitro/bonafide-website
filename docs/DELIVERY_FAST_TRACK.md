@@ -10,7 +10,8 @@ Nothing in the build. On a clean `npm ci` the site builds (41 pages, 2 s) and ev
 npm ci
 npm run build && npm run preview        # http://localhost:4321/
 ```
-or the one-click zip for a Mac (no Node needed): `npm run package:preview` -> `preview-out/bonafide-preview.zip`, or GitHub -> Actions -> "Owner local preview package" -> latest green run -> artifact `bonafide-local-preview-<commit>` (steps: `docs/OWNER_LOCAL_PREVIEW.md`). The launcher serves only on 127.0.0.1.
+or, **with Node**, build the zip yourself: `npm run build && npm run package:preview` -> `preview-out/bonafide-preview.zip` (needs a prior `dist/`).
+**Without Node** (the Mac route): download the GitHub artifact only -- GitHub -> Actions -> "Owner local preview package" -> latest green run -> artifact `bonafide-local-preview-<commit>` -- and follow `docs/OWNER_LOCAL_PREVIEW.md`. The launcher serves only on 127.0.0.1.
 A hosted private preview would be a new external service and needs a separate recorded Zaneta approval naming provider, subdomain, access control and noindex handling. None was created.
 
 ## 3. Implemented routes (41 HTML + `robots.txt` + `sitemap.xml`, 37 sitemap URLs)
@@ -29,7 +30,7 @@ Exact article/FAQ/about/howtobuy text comes from the WXR export (PR #144). Home,
 
 ## 5. Blockers
 ### A. Launch-critical (need owner/source action; real pages were not invented)
-1. **Contact form is inert**: no `PUBLIC_CONTACT_FORM_ENDPOINT`; the form is disabled and points visitors to email/phone. Needs a human-chosen provider and an end-to-end submission test (Block 11).
+1. **Contact form and booking are inert**: no `PUBLIC_CONTACT_FORM_ENDPOINT` (form disabled, points visitors to email/phone) and no `PUBLIC_CALENDLY_URL` (`/book-appointment/` shows "Online scheduling is not available yet"). Needs a human-chosen form provider, an approved Calendly URL, and a real submission and a real booking test (Block 11; `docs/migration/50-block58-contact-booking-release-safety.md`).
 2. **Store links**: `/products/` has 13 unique store destinations (target >=16) and `/products-2/` 18 (>=22); the exact inventory is unpopulated. Needs an approved source list; none invented. The 13 distributor links on `/howtobuy/` are not in the export.
 3. **34 pages carry the scaffold marker** (incl. home, products, products-2, howtobuy, contact). Each has a recorded reason in `qa/qa.config.json` (missing meta description, byline, or images). Owner signoff per page, or supplied source, is needed to remove the marker; strict QA stays red until then.
 4. **Legal pages** (`/privacy-policies/`, `/terms-of-service/`): text exists in the export but contains a personal mailbox and ad-cookie wording; publishing is a legal/business decision. They remain noindex.
@@ -44,10 +45,10 @@ Exact article/FAQ/about/howtobuy text comes from the WXR export (PR #144). Home,
 - Home/contact/products/wholesale/blog text could be replaced with exact export text in a later guard-aware pass.
 
 ## 6. Proposed cutover / rollback checklist (nothing here is authorised or executed)
-Preconditions: owner reviews preview; blockers A1-A7 closed or explicitly signed off in writing on GitHub; strict QA run reported as-is.
+Preconditions (all required; none waivable by this checklist, per `docs/migration/40-block43-cutover-readiness-runbook.md` §5): owner reviews preview; `qa:strict` = 0 findings (the 41 above are blocking, not signoff items -- a scaffold marker is cleared only by evidence, never by waiver); blockers A1-A7 closed; security gates G1-G6 of that runbook evidenced (forensic snapshot, compromise/persistence removed, accounts, credential rotation, clean rollback copy, isolated restore test); rollback rehearsal timed on staging; master-plan §14 gates passed; named owners and window set. If any is missing, STOP -- do not request cutover.
 1. Create a **clean** WordPress backup/copy and verify it restores (rollback asset).
-2. Stage the `bonafide-preview/site/` contents on a private staging host with `deploy/apache/staging-overlay.htaccess.template`; smoke-test all routes, redirects, `/products/` vs `/products-2/`, store links, contact form submission.
-3. Lower DNS TTL ahead of time (owner action).
-4. Owner approves the exact cutover action on GitHub; copy `site/` contents + `deploy/apache/production.htaccess` to the webroot (never the launcher/READ-ME/PREVIEW-INFO files).
+2. Stage the `bonafide-preview/site/` contents on a private staging host (separate recorded approval needed). The staging `.htaccess` is the **completed** `deploy/apache/staging-overlay.htaccess.template` (human fills the `@@...@@` values; htpasswd created by a human outside the docroot) plus `production.htaccess`, checked first with `node scripts/build-apache-config.mjs --preflight <file> --target staging --docroot <actual staging docroot>` (`docs/migration/51-block59-apache-config.md`). Smoke-test all routes, redirects, `/products/` vs `/products-2/`, store links, contact form and booking.
+3. No DNS change: the migration keeps the same domain, host, SSL and `/public_html` docroot (master plan); the routing switch is the webroot replacement only.
+4. Owner approves the exact cutover action on GitHub. Deploy is **deletion-aware**: archive the outgoing build (retain the previous five), move the live WordPress out of `/public_html` to the clean sibling location, and clear every destination-only file (old PHP, plugins, stale routes) before copying the `site/` contents (`docs/migration/06-stage1-pre-build-blockers-resolved.md`, D1; never the launcher/READ-ME/PREVIEW-INFO files). Install `deploy/apache/production.htaccess` **as the webroot `.htaccess`** (Apache ignores the repository filename) after `--preflight <file> --target production` passes; `dist/` deliberately contains no `.htaccess`, so without this the 404 page, MIME types, canonicalization and all 41 redirects are absent.
 5. Verify: home 200, top URLs 200, 301s, robots/sitemap, canonical, contact and purchase journeys; submit sitemap in Search Console (owner).
 6. Rollback: restore the previous webroot/WordPress copy and DNS/redirect state; keep WordPress untouched until a stability window passes.
