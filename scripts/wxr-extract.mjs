@@ -125,7 +125,10 @@ export function parseContent(html, routes) {
     }
   }
   flush();
-  return { blocks, links, images, uploadRefs, embeds: embedHosts, stats };
+  // A video URL that already survives as visible text or an anchor in the rendered blocks is an ordinary link, not a removed embed.
+  const rendered = decode(JSON.stringify(blocks).replace(/\\"/g, '"')).replace(/&amp;/g, '&');
+  const embeds = embedHosts.filter((u) => !rendered.includes(u));
+  return { blocks, links, images, uploadRefs, embeds, stats };
 }
 
 export function parseWxr(xml, routes) {

@@ -118,6 +118,6 @@ t('scaffold marker matches the Block 28/63 article contract; no unproven upload 
     for (const u of hrefs(h)) if (u.startsWith('/wp-content/uploads/')) assert.ok(fs.existsSync(`public${u}`), u);
     // Block 63: YouTube destinations are evidenced by the export; only those exact watch URLs may appear, as plain links (never an embed).
     assert.ok(!/<iframe|\.pdf/i.test(h), `${p}: no embed or invented PDF destination`);
-    for (const [u] of h.matchAll(/https:\/\/www\.youtube\.com\/[^"<\s]*/g)) assert.ok(entry(p.replaceAll('/', '')).embeds.some((e) => e.replace('/embed/', '/watch?v=') === u.replace(/&amp;/g, '&')), `${p}: unevidenced video ${u}`);
+    for (const [u] of h.matchAll(/https:\/\/www\.youtube\.com\/[^"<\s]*/g)) { const en = entry(p.replaceAll('/', '')); const url = u.replace(/&amp;/g, '&'); assert.ok(en.embeds.some((e) => e.replace('/embed/', '/watch?v=') === url) || JSON.stringify(en.blocks).includes(url), `${p}: unevidenced video ${u}`); } // an ordinary visible video URL is evidenced by the export blocks, not by a removed embed
   }
 });

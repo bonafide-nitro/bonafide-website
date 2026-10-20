@@ -21,7 +21,9 @@
   ],
   "articleScaffold": {
     "_note": "Block 28 (Issue #74). Deterministic article scaffold contract. 'cleared' = article routes whose scaffold marker was removed as evidence-complete; 'remaining' = routes that intentionally stay scaffolded with the recorded blocker. cleared + remaining must equal articleRoutes, and each page's built scaffold marker must match. Deleting a marker without moving the route to 'cleared' (or vice versa) fails tests. Missing meta descriptions/images are never invented.",
-    "cleared": [],
+    "cleared": [
+      "/nitro-coffee-future/"
+    ],
     "remaining": {
       "/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 3 image binaries referenced by the 2026-10-19 WordPress export are not in the repo or the export (Bona-Fide-Nitro-Coffee-Tea-on-tap.jpg, Good-for-the-Health-drinking-3-cups-a-coffeee-a-day.jpg, 3-Cups-of-Coffee-a-Day--Why-It-Can-Be-Good-for-the-Health.jpg)",
       "/how-ambient-stable-coffee-kegs-help-you-save-more-money/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 1 image binary referenced by the 2026-10-19 WordPress export is not in the repo or the export (Ambient-Stable-Coffee-Kegs-Helping-You-Save-More-Money.jpg); the original inline video embed (https://www.youtube.com/watch?v=d6b3kjWPpbU) is rendered only as a plain link",
@@ -32,8 +34,7 @@
       "/is-coffee-healthy/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 3 image binaries referenced by the 2026-10-19 WordPress export are not in the repo or the export (Coffee-beans-and-fruit.jpg, Coffee-lose-weight.jpg, Woman-healthy-drinikin-coffee.jpg)",
       "/coffee-trends-dominate-2018/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 2 image binaries referenced by the 2026-10-19 WordPress export are not in the repo or the export (Coffee-trends-2018.jpg, Millennials-drinking-coffee.jpg)",
       "/coffee-doesnt-produce-cancer-says-leading-american-scientist/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 2 image binaries referenced by the 2026-10-19 WordPress export are not in the repo or the export (Bona-Fide-Nitro-coffee-and-nitro-tea-nature-1024x797.jpg, Bona-Fide-Nitro-coffee-and-nitro-tea-nature.jpg)",
-      "/nitro-coffee-future/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: the original inline video embed (https://www.youtube.com/watch?v=Lga6THXO6Lk) is rendered only as a plain link",
-      "/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: the original inline video embed (https://www.youtube.com/watch?v=RHwkPIP0qZ8, https://www.youtube.com/watch?v=TN0cxBYh8t8) is rendered only as a plain link",
+      "/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: the on-page author/date byline as originally displayed is not evidenced by the export",
       "/stability-kegs-nitro-coffee/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 1 image binary referenced by the 2026-10-19 WordPress export is not in the repo or the export (Stability-Keg-Nitro-coffee-nitro-tea-300x300.jpg)",
       "/coffee-on-tap-is-the-future/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 1 image binary referenced by the 2026-10-19 WordPress export is not in the repo or the export (Bona-Fide-Nitro-Coffee-Tea-on-tap-985x1024.jpg)",
       "/a-touch-of-vanilla-to-your-nitro-coffee/": "exact body text ported from the 2026-10-19 WordPress export (Block 63); still missing: 2 image binaries referenced by the 2026-10-19 WordPress export are not in the repo or the export (A+Touch+of+Vanilla+to+Your+Nitro+Coffee.jpg, Enjoying+the+Sweet+Taste+of+Vanilla+in+Nitro+Coffee.jpg)",

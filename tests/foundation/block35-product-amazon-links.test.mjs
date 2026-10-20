@@ -52,8 +52,8 @@ t('/products/ renders the 13 Amazon hrefs in document order; no other page rende
   assert.ok(!hrefs('dist/products-2/index.html').some((h) => /amazon|amzn/i.test(h)));
 });
 
-t('strict QA blockers: 42 (Block 35 left 40; Block 63 adds 2 content-missing findings); no Amazon finding remains', () => {
+t('strict QA blockers: 41 (Block 35 left 40; Block 63 adds 2 content-missing findings and clears 1 scaffold); no Amazon finding remains', () => {
   const strict = runQa({ ...loadInputs(), distDir: 'dist', mode: 'strict' });
-  assert.equal(strict.blocking.length, 42);
+  assert.equal(strict.blocking.length, 41);
   assert.ok(!strict.findings.some((f) => f.path === '/products/' && /amazon|commerce-destination-missing/.test(f.code)));
 });
