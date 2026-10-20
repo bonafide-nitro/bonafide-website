@@ -1,62 +1,132 @@
 ---
 import { commerceHref } from '../lib/commerce.mjs';
+import { PAGE_MEDIA as M } from '../lib/page-media.mjs';
 import Base from '../layouts/Base.astro';
+const store = commerceHref('webstore-root-apex');
+const bik = store; // only the evidenced webstore root is linked from the homepage
+const U = '/wp-content/uploads/';
+// Existing vetted uploads only (no new binaries). Alt is descriptive of what the image shows.
+const tap = { src: `${U}2018/06/Nitro-Coffeee-serving-from-tap-Bona-Fide.jpg`, alt: 'Nitro coffee with a creamy head in a Bona Fide Craft Draft glass on a tap', width: 1920, height: 1188 };
+const bikImg = { src: M.classicBlend.src, alt: 'Bona Fide Classic Blend bag-in-box cold brew coffee', width: M.classicBlend.width, height: M.classicBlend.height };
+const kegs = { src: M.threeKegs.src, alt: 'Three Bona Fide Nitro Coffee & Tea keg types: stainless, steel and PET', width: M.threeKegs.width, height: M.threeKegs.height };
+const setup = { src: M.kegBikSet.src, alt: 'Bona Fide hot and cold nitro dispensers on a console table with kegs underneath', width: M.kegBikSet.width, height: M.kegBikSet.height };
+const explain = { src: `${U}2023/03/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap-PET-Keg.jpg`, alt: 'Graphic showing a Bona Fide PET keg connected to a nitro tap' };
+const flavors = [
+  ['2017/10/Hair-Raiser-Nitro-Coffee-for-website.png', 'Hair Raiser Nitro Coffee by Bona Fide'],
+  ['2019/05/Esspreso-Nitro-Coffee-for-website.png', 'Esspreso-Nitro-Coffee-by Bona Fide'],
+  ['2017/10/Ethiopia-Nitro-Coffeemfor-website.png', 'Ethiopia Nitro Coffee by Bona Fide'],
+  ['2022/05/Hibiscuis-Nitro-Tea-for-website.png', 'Hibiscus Nitro Tea by Bona Fide'],
+  ['2022/05/Mango-Nitro-Tea-for-website-organic.png', 'Mango Nitro Tea by Bona Fide'],
+];
 ---
 <!-- scaffold: kept until the homepage testimonial section is evidenced. Review/AggregateRating schema is deliberately omitted (decision I7, Block 30). -->
-<Base title="Nitro Coffee Experts & Leaders - Bona Fide Nitro Coffee & Nitro Tea" canonicalPath="/" scaffold>
-  <h1>BONA FIDE - EXPERTS IN NITRO COFFEE AND NITRO TEA</h1>
-  <ul>
-    <li>CO-BRANDING OPPORTUNITIES</li>
-    <li>AMBIENT SHELF STABLE</li>
-    <li>SUPERIOR TASTE</li>
-    <li>PREFERRED BY ROAST MASTERS</li>
-  </ul>
-  <h2>Nitro Coffee Has Never Been Easier!</h2>
-  <p>Through trusted distribution partners and multiple coffee brands, Bona Fide produces, installs, delivers and services nationwide.</p>
-  <blockquote>"Bona Fide is your nitrogen infused coffee and nitro tea solution!"</blockquote>
-  <blockquote>"AWARD-WINNING QUALITY, THE BEST ON THE MARKET!"</blockquote>
-  <p>
-    <a class="cta" href={commerceHref('webstore-root-apex')}>Shop nitro coffee &amp; tea and Bag in Box on the webstore</a>
-    <a class="cta" href="/products/">Products</a>
-    <a class="cta" href="/howtobuy/">How to Buy</a>
-  </p>
+<Base title="Nitro Coffee Experts & Leaders - Bona Fide Nitro Coffee & Nitro Tea" canonicalPath="/" scaffold fullBleed>
+  <section class="hero">
+    <img class="hero-bg" src={tap.src} alt="" width={tap.width} height={tap.height} fetchpriority="high" decoding="async" />
+    <div class="hero-in">
+      <p class="eyebrow">Craft Draft nitrogen infused coffee &amp; tea</p>
+      <h1>BONA FIDE - EXPERTS IN NITRO COFFEE AND NITRO TEA</h1>
+      <p class="lead">Nitro Coffee Has Never Been Easier! Through trusted distribution partners and multiple coffee brands, Bona Fide produces, installs, delivers and services nationwide.</p>
+      <p class="actions">
+        <a class="btn btn-primary" href={store}>Shop the webstore</a>
+        <a class="btn btn-ghost" href="/products/">See products</a>
+        <a class="btn btn-ghost" href="/howtobuy/">How to buy</a>
+      </p>
+      <ul class="chips">
+        <li>Co-branding opportunities</li>
+        <li>Ambient shelf stable</li>
+        <li>Superior taste</li>
+        <li>Preferred by roast masters</li>
+      </ul>
+    </div>
+  </section>
 
-  <h2>Leaders In The Market For Nitrogen Infused Coffee and Tea</h2>
-  <p>Bona Fide Brewing Company brews and kegs nitrogen infused coffee and nitro tea for coffee shops, offices, restaurants and homes. Learn more <a href="/about/">about Bona Fide</a> or read the <a href="/nitro-coffee-questions/">nitro coffee questions</a> and <a href="/nitro-cold-brew/">nitro cold brew</a> pages.</p>
+  <section class="band quotes" aria-label="Highlights">
+    <blockquote>"Bona Fide is your nitrogen infused coffee and nitro tea solution!"</blockquote>
+    <blockquote>"AWARD-WINNING QUALITY, THE BEST ON THE MARKET!"</blockquote>
+  </section>
 
-  <h2>Evolution of Coffee</h2>
-  <p>Convenience and sustainability: Bona Fide moves coffee preparation out of the customer's kitchen and into the brewery.</p>
+  <section class="wrap intro">
+    <h2>Leaders In The Market For Nitrogen Infused Coffee and Tea</h2>
+    <p>Bona Fide Brewing Company brews and kegs nitrogen infused coffee and nitro tea for coffee shops, offices, restaurants and homes. Learn more <a href="/about/">about Bona Fide</a> or read the <a href="/nitro-coffee-questions/">nitro coffee questions</a> and <a href="/nitro-cold-brew/">nitro cold brew</a> pages.</p>
+  </section>
 
-  <h2>Industry Leading Stability</h2>
-  <p>Shelf-stable kegs, made with our Craft Draft process, preserve freshness and flavor.</p>
+  <section class="wrap paths" aria-labelledby="paths-h">
+    <h2 id="paths-h" class="center">Choose your Bona Fide pathway</h2>
+    <div class="path-grid">
+      <article class="path path-retail">
+        <img src={bikImg.src} alt={bikImg.alt} width={bikImg.width} height={bikImg.height} loading="lazy" decoding="async" />
+        <div class="path-body">
+          <p class="tag">Retail</p>
+          <h3>Bag in Box</h3>
+          <h4>Evolution of Coffee</h4>
+          <p>Convenience and sustainability: Bona Fide moves coffee preparation out of the customer's kitchen and into the brewery. Shop bag-in-box coffee and tea on the webstore.</p>
+          <p class="actions"><a class="btn btn-primary" href={bik}>Shop on the webstore</a> <a class="btn btn-outline" href="/products/">Retail products</a></p>
+        </div>
+      </article>
+      <article class="path path-wholesale">
+        <img src={kegs.src} alt={kegs.alt} width={kegs.width} height={kegs.height} loading="lazy" decoding="async" />
+        <div class="path-body">
+          <p class="tag">Wholesale</p>
+          <h3>Nitro kegs</h3>
+          <p>Shelf-stable kegs made with our Craft Draft process preserve freshness and flavor, for coffee shops, offices and restaurants. Already have a keg system? Our PET disposable kegs ship by UPS and are recyclable (Petainer).</p>
+          <p class="actions"><a class="btn btn-primary" href="/howtobuy/">Wholesale: how to buy</a> <a class="btn btn-outline" href="/nitro-coffee-kegs/">About kegs</a></p>
+        </div>
+      </article>
+    </div>
+  </section>
 
-  <h2>Benefits of Serving Nitro</h2>
-  <p>Nitro is easy to serve, saves labor and space, and means less preparation and less waste.</p>
+  <section class="band dark feature">
+    <div class="wrap split">
+      <div>
+        <h2>Industry Leading Stability</h2>
+        <p>Shelf-stable kegs, made with our Craft Draft process, preserve freshness and flavor.</p>
+        <h3>Craft Draft nitro coffee</h3>
+        <p>Our proprietary Craft Draft process uses nitrogen infusion for a cascading presentation and creamy head, made with organic and natural ingredients.</p>
+        <p class="actions"><a class="btn btn-primary" href="/stability-kegs-nitro-coffee/">Learn about stability</a></p>
+      </div>
+      <img src={explain.src} alt={explain.alt} loading="lazy" decoding="async" width="1500" height="1000" />
+    </div>
+  </section>
 
-  <h2>Wide Variety of Products</h2>
-  <p>See the full range of nitro coffee and nitro tea kegs on the <a href="/products/">products page</a>.</p>
+  <section class="wrap split rev">
+    <img src={setup.src} alt={setup.alt} width={setup.width} height={setup.height} loading="lazy" decoding="async" />
+    <div>
+      <h2>Benefits of Serving Nitro</h2>
+      <p>Nitro is easy to serve, saves labor and space, and means less preparation and less waste.</p>
+      <h3>We Are Here To Help</h3>
+      <p>Technical advice and support for kegs, dispensers and pouring nitro. See our <a href="/kegerators/">kegerators and dispensing equipment</a>.</p>
+      <p class="actions"><a class="btn btn-outline" href="/kegerators/">Kegerators</a></p>
+    </div>
+  </section>
 
-  <h2>We Are Here To Help</h2>
-  <p>Technical advice and support for kegs, dispensers and pouring nitro. See our <a href="/kegerators/">kegerators and dispensing equipment</a>.</p>
+  <section class="band tint">
+    <div class="wrap">
+      <h2 class="center">Wide Variety of Products</h2>
+      <p class="center">See the full range of nitro coffee and nitro tea kegs on the <a href="/products/">products page</a>.</p>
+      <ul class="flavors">
+        {flavors.map(([f, alt]) => <li><img src={`${U}${f}`} alt={alt} width="470" height="558" loading="lazy" decoding="async" /></li>)}
+      </ul>
+      <p class="center actions"><a class="btn btn-primary" href="/products/">View all products</a></p>
+    </div>
+  </section>
 
-  <h2>Channels of Distribution</h2>
-  <ul>
-    <li>Office coffee distributors</li>
-    <li>Wholesale suppliers</li>
-    <li>PET kegs through the webstore, shipped by UPS</li>
-    <li>Alliance kegging</li>
-  </ul>
-  <p>Find the right route on the <a href="/howtobuy/">How to Buy</a> page.</p>
+  <section class="wrap channels">
+    <h2 class="center">Channels of Distribution</h2>
+    <ul class="channel-grid">
+      <li>Office coffee distributors</li>
+      <li>Wholesale suppliers</li>
+      <li>PET kegs through the webstore, shipped by UPS</li>
+      <li>Alliance kegging</li>
+    </ul>
+    <p class="center">Find the right route on the <a href="/howtobuy/">How to Buy</a> page.</p>
+  </section>
 
-  <h2>Already have a keg system?</h2>
-  <p>Our PET disposable kegs ship by UPS and are recyclable (Petainer).</p>
-
-  <h2>Craft Draft nitro coffee</h2>
-  <p>Our proprietary Craft Draft process uses nitrogen infusion for a cascading presentation and creamy head, made with organic and natural ingredients.</p>
-
-  <h2>Serve Nitro Coffee Now!</h2>
-  <p><a class="cta" href={commerceHref('webstore-root-apex')}>Visit the webstore</a></p>
-
-  <h2>Refill locations &amp; contact</h2>
-  <p><a href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a> for refill locations. Also see the <a href="/blog/">blog</a>.</p>
+  <section class="band dark cta-final">
+    <div class="wrap center">
+      <h2>Serve Nitro Coffee Now!</h2>
+      <p class="actions"><a class="btn btn-primary" href={store}>Visit the webstore</a></p>
+      <p><a class="plain" href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a> for refill locations. Also see the <a class="plain" href="/blog/">blog</a>.</p>
+    </div>
+  </section>
 </Base>
