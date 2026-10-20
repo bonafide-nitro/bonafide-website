@@ -99,10 +99,11 @@ t('selling pages: B2B intent kept, CTA is a label only, no form endpoint', () =>
     assert.ok(hrefs(h).filter((x) => /^https?:/.test(x)).every((x) => x.startsWith('https://www.nitrocoffee.store') || x.startsWith('https://bonafidenitro.com')), `${p}: no invented external CTA`);
   }
   const us = page('/interested-in-selling-usa/');
-  for (const s of ['SCHEDULE A DEMO', 'Craft Draft', 'tap and pour']) assert.ok(us.includes(s), s);
+  // Issue #147: exact export text replaced the paraphrase; a phrase may be absent only if the export text for the route lacks it too.
+  assert.deepEqual(vocabOrAbsentInExport(us, 'interested-in-selling-usa', ['SCHEDULE A DEMO', 'Craft Draft', 'tap and pour']), []);
   for (const p of ['/interested-in-selling-eu-and-usa/', '/interested-in-selling-eu-qr-2/']) {
     const h = page(p);
-    for (const s of ['180 days', '19L (5 gal)', 'recyclable', 'Why Us?', 'Private label', 'Czech']) assert.ok(h.includes(s), `${p} ${s}`);
+    assert.deepEqual(vocabOrAbsentInExport(h, p.replaceAll('/', ''), ['180 days', '19L (5 gal)', 'recyclable', 'Why Us?', 'Private label', 'Czech']), [], p);
   }
 });
 

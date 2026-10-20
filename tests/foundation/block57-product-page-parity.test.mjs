@@ -31,9 +31,14 @@ test('routes stay separate, self-canonical, scaffolded, with distinct contracts'
   assert.match(w, /Direct Distribution Program/);
 });
 
-test('unresolved retail sections are not fabricated (truncated stubs only in doc 39)', () => {
+test('retail sections formerly truncated in doc 39 appear only with the exact export wording (Issue #147)', async () => {
+  const { entry, plain } = await import('./block63-helper.mjs');
   const r = src('products');
+  const exportHeadings = entry('products').blocks.filter((b) => b.t === 'h').map((b) => plain(b.html).trim());
   for (const stub of ['Brewing Craft', 'Buy Nitro Cold Brew Kegs', 'Buy Better Than Cold Brew']) {
-    assert.ok(!r.includes(stub), `${stub} must stay absent until full wording is evidenced`);
+    const full = exportHeadings.find((h) => h.startsWith(stub));
+    assert.ok(full, `${stub}: no full heading in the export evidence`);
+    assert.ok(r.includes(full), `${stub}: page must carry the exact export heading "${full}"`);
   }
 });
+
