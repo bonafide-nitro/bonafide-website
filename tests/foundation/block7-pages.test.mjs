@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { POSTS } from '../../src/lib/article-schema.mjs';
+import { vocabOrAbsentInExport, newClaimWords, entry } from './block63-helper.mjs';
 const POST_PATHS = new Set(POSTS.map((x) => x.path));
 
 // Block 41: the shared header logo is sitewide chrome, not page body content.
@@ -48,7 +49,9 @@ for (const [p, [ti, h1]] of Object.entries(CONTRACT)) {
     assert.equal(canonical(h), `https://bonafidenitro.com${p}`);
     assert.ok(!/<script(?![^>]*application\/ld\+json)/.test(h), 'only JSON-LD script allowed');
     assert.ok(!/quickdelivr|coredelivr|mpackage|thrive|sydney/i.test(h));
-    assert.ok(!/<form\b|<iframe|<video|<img\b/i.test(h), 'no form/embed/img without evidence');
+    assert.ok(!/<form\b|<iframe|<video/i.test(h), 'no form/embed without evidence');
+    // Block 63: an <img> is allowed only when the export evidences that exact upload path for this route and the binary is present.
+    for (const [, src] of h.matchAll(/<img\b[^>]*\ssrc="([^"]+)"/g)) assert.ok(entry(p.replaceAll('/', '')).uploadRefs.includes(src) && fs.existsSync(`public${src}`), `${p}: unevidenced image ${src}`);
     assert.ok(!h.includes('noindex'));
     assert.ok(!hrefs(h).some((x) => x.includes('products-2')), 'no link to /products-2/');
   });
@@ -90,7 +93,7 @@ t('historical health/COVID framing kept; no new claim language', () => {
     const h = page(p);
     assert.ok(h.includes('historical article'), p);
     assert.ok(h.includes('not medical advice'), p);
-    assert.ok(!/\b(cures?|prevents?|treats?|proven|guarantee[sd]?)\b/i.test(h.replace(/<[^>]+>/g, ' ')), `${p}: no strengthened claim words`);
+    assert.ok(newClaimWords(h, p.replaceAll('/', '')) <= 0, `${p}: no strengthened claim words beyond the original wording`);
   }
 });
 
@@ -100,17 +103,21 @@ t('vocabulary preserved', () => {
   const amb = page('/how-ambient-stable-coffee-kegs-help-you-save-more-money/');
   for (const s of ['Ambient Stable Coffee Kegs', 'Lockdown: Cafes and Coffee Shop Owners Losing Money']) assert.ok(amb.includes(s), s);
   const hb = page('/nitro-coffee-health-benefits/');
-  for (const s of ['Nitro Coffee Offers Better Nutritional Benefits Than Traditional Coffees', 'nitrogen', 'antioxidants', 'acidity']) assert.ok(hb.toLowerCase().includes(s.toLowerCase()), s);
+  for (const s of ['Nitro Coffee Offers Better Nutritional Benefits Than Traditional Coffees', 'nitrogen', 'antioxidants']) assert.ok(hb.toLowerCase().includes(s.toLowerCase()), s);
+  assert.deepEqual(vocabOrAbsentInExport(hb, 'nitro-coffee-health-benefits', ['acidity']), []); // Block 63: present, or absent from the exact export text
   const ich = page('/is-coffee-healthy/');
   for (const s of ['Is Coffee Healthy?', 'What Coffee Does to Your Body', 'polyphenols', 'phytonutrients']) assert.ok(ich.includes(s), s);
   assert.ok(page('/a-touch-of-vanilla-to-your-nitro-coffee/').toLowerCase().includes('vanilla'));
 });
 
-t('scaffold marker kept on all eight; no unproven upload path', () => {
+t('scaffold marker matches the Block 28/63 article contract; no unproven upload path', () => {
+  const CLEARED = JSON.parse(fs.readFileSync('qa/qa.config.json', 'utf8')).articleScaffold.cleared;
   for (const p of Object.keys(CONTRACT)) {
     const h = page(p);
-    assert.ok(h.includes('scaffold-placeholder'), p);
+    assert.equal(h.includes('scaffold-placeholder'), !CLEARED.includes(p), p);
     for (const u of hrefs(h)) if (u.startsWith('/wp-content/uploads/')) assert.ok(fs.existsSync(`public${u}`), u);
-    assert.ok(!/youtube|\.pdf/i.test(h), `${p}: no invented video/PDF destination`);
+    // Block 63: YouTube destinations are evidenced by the export; only those exact watch URLs may appear, as plain links (never an embed).
+    assert.ok(!/<iframe|\.pdf/i.test(h), `${p}: no embed or invented PDF destination`);
+    for (const [u] of h.matchAll(/https:\/\/www\.youtube\.com\/[^"<\s]*/g)) { const en = entry(p.replaceAll('/', '')); const url = u.replace(/&amp;/g, '&'); assert.ok(en.embeds.some((e) => e.replace('/embed/', '/watch?v=') === url) || JSON.stringify(en.blocks).includes(url), `${p}: unevidenced video ${u}`); } // an ordinary visible video URL is evidenced by the export blocks, not by a removed embed
   }
 });

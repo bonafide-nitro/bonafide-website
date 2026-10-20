@@ -2,6 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { vocabOrAbsentInExport } from './block63-helper.mjs';
 
 // Block 41: the shared header logo is sitewide chrome, not page body content.
 const page = (p) => fs.readFileSync(`dist${p}index.html`, 'utf8').replace(/<header id="masthead"[\s\S]*?<\/header>/, '');
@@ -92,8 +93,10 @@ t('/stability-kegs-nitro-coffee/: distinct static 200, exact title/H1, evidenced
   assert.deepEqual(h1s(h), ['STABILITY KEGS NITRO COFFEE']);
   assert.equal(canonical(h), 'https://bonafidenitro.com/stability-kegs-nitro-coffee/');
   assert.ok(!h.includes('noindex') && !/http-equiv="refresh"/i.test(h));
-  for (const s of ['By John Goerke', 'datetime="2017-12-01"', 'datetime="2018-11-16"', 'News Nitro Coffee and Nitro Tea', 'historical article', 'shelf-stable', 'keg deposits', 'predictable cost of goods sold', 'tap and pour', 'no coffee preparation on site']) assert.ok(h.includes(s), s);
-  assert.ok(!/\d\s?%|\$\s?\d|€|guarantee/i.test(h.replace(/<(?:script|style)\b[^>]*>[\s\S]*?<\/(?:script|style)>/gi, '')), 'no invented price/GP figure or guarantee');
+  for (const s of ['By John Goerke', 'datetime="2017-12-01"', 'datetime="2018-11-16"', 'News Nitro Coffee and Nitro Tea', 'historical article']) assert.ok(h.includes(s), s);
+  // Block 63: the exact export text replaced the paraphrase; each former phrase must be present or absent from that exact text.
+  assert.deepEqual(vocabOrAbsentInExport(h, 'stability-kegs-nitro-coffee', ['shelf-stable', 'keg deposits', 'predictable cost of goods sold', 'tap and pour', 'no coffee preparation on site']), []);
+  assert.ok(!/\d\s?%|\$\s?\d|€|guarantee/i.test(h.replace(/<(?:script|style)\b[^>]*>[\s\S]*?<\/(?:script|style)>|<meta\b[^>]*>/gi, '')), 'no invented price/GP figure or guarantee in the page body (the meta description is the evidenced export value, checked in block63-wxr-port.test.mjs)');
   assert.ok(!/<form\b|<img\b|<iframe/i.test(h));
 });
 

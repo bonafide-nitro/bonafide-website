@@ -2,6 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { vocabOrAbsentInExport } from './block63-helper.mjs';
 import { POSTS } from '../../src/lib/article-schema.mjs';
 const POST_PATHS = new Set(POSTS.map((x) => x.path));
 
@@ -59,11 +60,12 @@ t('/contact-…/: evidenced details, no fake endpoint', () => {
 
 t('vocabulary preserved', () => {
   const tap = page('/coffee-on-tap-is-the-future/');
-  for (const s of ['coffee on tap', 'John Goerke', 'shelf stable']) assert.ok(tap.toLowerCase().includes(s.toLowerCase()), s);
+  for (const s of ['coffee on tap', 'John Goerke']) assert.ok(tap.toLowerCase().includes(s.toLowerCase()), s);
+  assert.deepEqual(vocabOrAbsentInExport(tap, 'coffee-on-tap-is-the-future', ['shelf stable', 'shelf-stable']), []); // Block 63: absent only if absent from the exact export text
   const kegs = page('/nitro-coffee-kegs/');
-  for (const s of ['PET', 'Sankey D', 'stainless steel', 'single-use', 'tamper', 'Craft Draft', 'pasteurization', 'ready-to-tap']) assert.ok(kegs.includes(s), s);
+  assert.deepEqual(vocabOrAbsentInExport(kegs, 'nitro-coffee-kegs', ['PET', 'Sankey D', 'stainless steel', 'single-use', 'tamper', 'Craft Draft', 'pasteurization', 'ready-to-tap']), []); // Block 63: present, or absent from the exact export text
   const cups = page('/3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health/').toLowerCase();
-  for (const s of ['3 cups of coffee', 'is 3 cups of coffee too much', 'moderation', 'caffeine', 'calorie', 'sleep']) assert.ok(cups.includes(s), s);
+  assert.deepEqual(vocabOrAbsentInExport(cups, '3-cups-of-coffee-a-day-why-it-can-be-good-for-the-health', ['3 cups of coffee', 'is 3 cups of coffee too much', 'moderation', 'caffeine', 'calorie', 'sleep']), []); // Block 63: present, or absent from the exact export text
   const faq = page('/nitro-coffee-questions/').toLowerCase();
   for (const s of ['shelf life', 'refrigeration', 'nitro tea', 'flavored', 'pallet', 'co-brand', 'alliance']) assert.ok(faq.includes(s), s);
   const rent = page('/hot-nitro-equipment-rental/');
