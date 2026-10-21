@@ -34,6 +34,7 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
     {description && <meta name="description" content={description} />}
     {scaffold && <meta name="bonafide-qa" content="scaffold-placeholder" />} <!-- QA marker: strict migration QA fails on this -->
     {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     {canonicalPath && <link rel="canonical" href={abs(canonicalPath)} />}
     <script type="application/ld+json" set:html={jsonLd} />
     <GoogleTagManager id={gtmId} position="head" />
