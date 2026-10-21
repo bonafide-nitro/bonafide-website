@@ -6,10 +6,14 @@ import { resolveContactEndpoint } from '../../lib/contact-form.mjs';
 const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDPOINT);
 ---
 <!-- scaffold: kept until the page meta description is preserved and a provider endpoint is configured. Structure and visible contact details are migrated from the public rendered evidence in Issue #30. The form posts only to the configured endpoint; with none configured it renders disabled and nothing is submitted anywhere. -->
-<Base title="Contact - Bona Fide Nitro Coffee And Tea" canonicalPath="/contact-bona-fide-nitro-coffee-and-tea/" breadcrumbs={[{ name: 'Contact', path: '/contact-bona-fide-nitro-coffee-and-tea/' }]} scaffold>
+<Base title="Contact - Bona Fide Nitro Coffee And Tea" canonicalPath="/contact-bona-fide-nitro-coffee-and-tea/" breadcrumbs={[{ name: 'Contact', path: '/contact-bona-fide-nitro-coffee-and-tea/' }]} fullBleed scaffold>
+  <section class="band dark page-hero"><div class="wrap">
+  <p class="eyebrow">Get in touch</p>
   <h1>Contact</h1>
   <p>Reach Bona Fide for consumer, distributor, retailer and co-packer inquiries.</p>
-
+  </div></section>
+  <section><div class="wrap contact-grid">
+  <div class="panel">
   <h2>Send us a message</h2>
   <p>Consumer, distributor, retailer and co-packer inquiries are all welcome. Please tell us which in your message.</p>
   <p>Please check your SPAM folder as well to find our responses. Thank you.</p>
@@ -38,6 +42,7 @@ const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDP
       <p><button type="submit" class="cta">Send message</button></p>
     </fieldset>
   </form>
+  </div>
   <style is:global>
     .contact-form fieldset { border: 0; padding: 0; margin: 0; }
     .contact-form legend { position: absolute; left: -10000px; }
@@ -47,6 +52,8 @@ const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDP
     .contact-form button:disabled { opacity: .5; cursor: not-allowed; }
   </style>
 
+  <div class="side">
+  <div class="panel dark">
   <h2>Bona Fide HQ</h2>
   <address>
     3020 Sherwin Ave Suite D<br />
@@ -54,10 +61,16 @@ const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDP
     <a href="tel:+18554821446">855-482-1446</a><br />
     <a href="mailto:contact@bonafidenitro.com">contact@bonafidenitro.com</a>
   </address>
+  </div>
 
+  <div class="panel">
   <h2>Webstore</h2>
   <p>If you are already set up and ready to pour our nitro products, you can buy PET or BIK Nitro Coffee and Nitro Tea kegs on our WebStore. We ship all over the USA.</p>
-  <p><a class="cta" href={commerceHref('webstore-root-www')}>Visit the Bona Fide webstore</a></p>
-
+  <p><a class="btn btn-primary" href={commerceHref('webstore-root-www')}>Visit the Bona Fide webstore</a></p>
+  </div>
+  </div>
+  </div></section>
+  <section class="band tint"><div class="wrap center">
   <p>Not sure where to start? See <a href="/howtobuy/">How to Buy</a> or <a href="/nitro-coffee-questions/">Nitro Coffee Questions</a>.</p>
+  </div></section>
 </Base>

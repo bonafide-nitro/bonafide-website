@@ -2,15 +2,20 @@
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept (Block 63). Exact body text is ported from the 2026-10-19 WordPress export (docs/migration/data/block63-wxr-evidence.json). Still missing: 40 referenced image binaries (not in the repo or the export). -->
-<Base description="Bona Fide Brewing Company produces Nitro Coffee &amp; Tea in kegs and provides dispensing equipment, installation, delivery &amp; service in one elegant solution" title="Nitro Coffee Best Quality - Bona Fide Nitro Coffee Experts" canonicalPath="/about/" breadcrumbs={[{ name: 'About', path: '/about/' }]} scaffold>
+<Base description="Bona Fide Brewing Company produces Nitro Coffee &amp; Tea in kegs and provides dispensing equipment, installation, delivery &amp; service in one elegant solution" title="Nitro Coffee Best Quality - Bona Fide Nitro Coffee Experts" canonicalPath="/about/" breadcrumbs={[{ name: 'About', path: '/about/' }]} fullBleed scaffold>
+    <section class="band dark page-hero"><div class="wrap">
+  <p class="eyebrow">About Bona Fide</p>
   <h1>Bona Fide Nitro Coffee and Tea</h1>
   <p>Otherworldly!</p>
   <h2>Experts in Cold Brew Space</h2>
+    </div></section>
+  <section><div class="wrap prose">
   <h3>WHO WE ARE</h3>
   <p>Bona Fide Nitro Coffee and Tea Brewing Company is the first company on the market with a naturally stable keg brewing process for coffee and tea. We were founded in 2015 with a mission to brew &amp; deliver profoundly good nitro coffee &amp; tea using our innovative and disruptive technology while contributing to the sustainability of our planet.</p>
   <p>We consider coffee and tea to be a finite, precious commodity and a social lubricant that should be within economic reach of most people. By stimulating positive thoughts and emotions in our customers with interesting, great-tasting beverages, we can inspire a conscious connection between them.</p>
   <p>Our vision is to be the premier kegged nitro coffee and tea solution for offices and food service outlets. We aim to exceed expectations with innovation, technology, and conscious capitalism. We will become a brand of global significance while creating abundance for our stakeholders and high value for consumers.</p>
   <p><strong>Our Core Values</strong></p>
+  <div class="values">
   <p>The Four Agreements</p>
   <p>Social Benefit</p>
   <p>Joyful Collaboration</p>
@@ -23,33 +28,52 @@ import Base from '../../layouts/Base.astro';
   <p>Produce and Deliver Quality</p>
   <p>Consciousness</p>
   <p>Fun</p>
+  </div>
+    </div></section>
+  <section class="band dark"><div class="wrap">
   <h3>WHAT WE DO</h3>
   <p>We have spent 5 years perfecting our proprietary “Craft Draft” process, which takes coffee and tea into the category of fine beer and wine. Craft Draft technology allows for the complete preparation of our coffee and tea in advance, imbeds flavor stability into our kegs and provides these valuable advantages:</p>
   <p>1. Food safe, unparalleled, protection of each product’s unique and extraordinary flavor profile, conveniently packaged in sanitary Sanke kegs.2. Guaranteed 120 day refrigerated with 30+ day ambient, keg stability which practically eliminates product expiration issues (that is 4 times the life of our competitor’s cold brew kegs).3. Efficient, proven dispensing system which eliminates preparation labor and costly mistakes at the serving point.4. Our products are made with the best organic and natural ingredients available, pure water, organic coffee and pure nitrogen gas. No artificial preservatives or stabilizers are used in our process.</p>
+    </div></section>
+  <section class="band tint"><div class="wrap">
   <h3>WHERE DO WE FIT</h3>
-  <ul>
+  <div class="fit-grid">
+  <ul class="checklist">
       <li>High Volume Food Service Establishments</li>
       <li>Airports &amp; Other Transportation Facilities</li>
       <li>College &amp; University Campuses</li>
       <li>Coffee Shops, Restaurants &amp; Bars</li>
       <li>Offices</li>
     </ul>
-  <ul>
+  <ul class="checklist">
       <li>Hotels, Resorts &amp; Convention Centers</li>
       <li>Sport, Entertainment, &amp; Event Concessionaires</li>
       <li>Healthcare Facilities &amp; Clubs</li>
       <li>Convenience Stores</li>
     </ul>
+  </div>
+    </div></section>
+  <section><div class="wrap prose">
   <h3>Bona Fide Nitro Coffee And Tea Introduces</h3>
   <h2>Our Team</h2>
+  <div class="team-grid">
+  <div class="person">
   <h5>John Goerke</h5>
   <p>Founder/CEO</p>
+  </div>
+  <div class="person">
   <h5>Spencer Weiner</h5>
   <p>Sales Director</p>
+  </div>
+  </div>
+    </div></section>
+  <section class="band tint"><div class="wrap prose">
   <h3>OUR FACILITIES</h3>
   <p>We craft Bona Fide Nitro Coffee &amp; Tea at our certified organic brewing facility in Ventura CA, with the capacity to brew 10,000+ kegs per month.</p>
   <h3>OUR CUSTOMERS</h3>
   <h3>WHAT OTHERS SAY</h3>
+    </div></section>
+  <section class="band dark"><div class="wrap">
   <h4>The Bona Fide Nitro Coffee and Tea Responsibility</h4>
   <p><strong>ENVIRONMENTAL SUSTAINABILITY</strong></p>
   <p>Bona Fide Nitro Coffee and Tea has sustainability embedded into its DNA. Our alternative to the typical production, packaging and solid waste steps of coffee, &amp; tea production result in a significant reduction in carbon footprint. Besides boasting a very efficient process, all of our spent coffee grounds and tea leaves are recycled to an organic farm and composting programs.</p>
@@ -58,4 +82,8 @@ import Base from '../../layouts/Base.astro';
   <p><strong>GIVE BACK</strong></p>
   <p>Bona Fide Craft Draft Brewing Co. is pleased to partner with change-makers and nonprofit organizations who are working to make the world better at a local and global scale.</p>
   <p>In addition to practicing sustainability in all aspects of our business, we believe in going a step further and actively seeking ways to help consciousness flow.</p>
+  </div></section>
+<section class="band dark cta-final" aria-label="Get in touch"><div class="wrap center">
+    <p class="actions"><a class="btn btn-primary" href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a> <a class="btn btn-ghost" href="/howtobuy/">How to buy</a></p>
+  </div></section>
 </Base>
