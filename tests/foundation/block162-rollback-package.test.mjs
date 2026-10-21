@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { packagePreview } from '../../scripts/package-preview.mjs';
 import {
   REQUIRED_PREREQUISITES, checkPrerequisites, prepareRollbackPackage, releaseManifest, restoreOrderText, sha256sums, stage,
@@ -50,7 +51,7 @@ test('offline mode writes the package, reinstall simulation passes, prerequisite
   assert.deepEqual(r.problems, []);
   assert.equal(r.prerequisites.confirmed.length, 0);
   assert.equal(r.prerequisites.open.length, REQUIRED_PREREQUISITES.length);
-  assert.deepEqual(r.written.sort(), ['RESTORE-ORDER.txt', 'SHA256SUMS', 'bonafide-release.zip', 'bonafide-release.zip.sha256', 'release-manifest.json']);
+  assert.deepEqual(r.written.sort(), ['RESTORE-ORDER.txt', 'SHA256SUMS', 'bonafide-release.zip', 'bonafide-release.zip.sha256', 'production.htaccess', 'release-manifest.json']);
 });
 
 test('SHA256SUMS verifies with plain sha256sum against the extracted package plus the production .htaccess', () => {
@@ -102,4 +103,14 @@ test('an unsafe package is refused before any manifest is written', () => {
 test('the committed prerequisites file makes no claim of a real backup', () => {
   const doc = JSON.parse(fs.readFileSync(PREREQS, 'utf8'));
   assert.ok(doc.prerequisites.every((p) => p.status === 'OPEN' && p.evidence === null));
+});
+
+test('the rollback package bundles the exact rehearsed .htaccess that the manifest records', () => {
+  const out = path.join(tmp(), 'rb');
+  const r = prep({ out });
+  assert.deepEqual(r.problems, []);
+  const bundled = fs.readFileSync(path.join(out, 'production.htaccess'));
+  assert.deepEqual(bundled, fs.readFileSync(HTACCESS));
+  const entry = r.manifest.files.find((f) => f.path === '.htaccess');
+  assert.equal(createHash('sha256').update(bundled).digest('hex'), entry.sha256);
 });

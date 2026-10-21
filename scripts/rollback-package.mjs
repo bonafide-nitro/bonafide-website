@@ -54,7 +54,7 @@ export const restoreOrderText = (manifest) => [
   '0. Prerequisites that are NOT in this package and must be CONFIRMED first: see deploy/rollback/prerequisites.json (clean WordPress copy,',
   '   day-of backup, forensic snapshot, timed restore rehearsal, credentials, docroot model, WordPress .htaccess copy, decision-maker).',
   '1. Unzip bonafide-release.zip into an empty scratch directory. Never copy Open-Preview.command, READ-ME-FIRST.txt or PREVIEW-INFO.json.',
-  '2. Copy deploy/apache/production.htaccess into the scratch bonafide-preview/site/ directory as .htaccess (it is not inside the zip).',
+  '2. Copy the bundled production.htaccess (next to this file in the rollback package; the exact file that was rehearsed) into the scratch bonafide-preview/site/ directory as .htaccess (it is not inside the zip).',
   '   Then, in that directory, run: sha256sum -c ../../SHA256SUMS (every line must say OK).',
   '3. Upload in stage order. Do not skip a stage, and do not delete anything outside these paths (WordPress files are never touched by the static upload):',
   ...Object.entries(STAGE_NAMES).map(([n, name]) => `   stage ${n}: ${name} (${manifest.files.filter((f) => f.stage === Number(n)).length} file(s))`),
@@ -173,6 +173,7 @@ export const prepareRollbackPackage = ({ zip, previousZip = null, htaccess, redi
       put('RESTORE-ORDER.txt', restoreOrderText(manifest));
       fs.copyFileSync(zip, path.join(out, 'bonafide-release.zip'));
       report.written.push('bonafide-release.zip');
+      put('production.htaccess', htaccessText);
       put('bonafide-release.zip.sha256', `${sha256(fs.readFileSync(zip))}  bonafide-release.zip\n`);
     }
     return report;
