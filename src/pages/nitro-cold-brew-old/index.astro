@@ -3,8 +3,12 @@ import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept until page images (binaries at exact same-path URLs) and the meta description are preserved -- neither is evidenced. Historical informational/FAQ explainer kept as a distinct 200 page from /nitro-cold-brew/ (no canonical/redirect to it). Body copy is a conservative paraphrase of the topics listed in Issue #34; historical health/safety framing is not strengthened or modernised. -->
-<Base title="Nitro Cold Brew - Bona Fide Brewing Company - Nitro Coffee Experts" canonicalPath="/nitro-cold-brew-old/" breadcrumbs={[{ name: 'All About Nitro Cold Brew Coffee', path: '/nitro-cold-brew-old/' }]} scaffold>
-  <h1>ALL ABOUT NITRO COLD BREW COFFEE</h1>
+<Base title="Nitro Cold Brew - Bona Fide Brewing Company - Nitro Coffee Experts" canonicalPath="/nitro-cold-brew-old/" breadcrumbs={[{ name: 'All About Nitro Cold Brew Coffee', path: '/nitro-cold-brew-old/' }]} scaffold fullBleed>
+  <section class="band dark page-hero"><div class="wrap">
+    <p class="eyebrow">Nitro Coffee Guide</p>
+    <h1>ALL ABOUT NITRO COLD BREW COFFEE</h1>
+  </div></section>
+  <section class="band"><div class="wrap prose">
   <p>This is a historical informational page, kept as originally framed. It is general information and not medical advice.</p>
 
   <h2>What is nitro coffee?</h2>
@@ -39,4 +43,5 @@ import Base from '../../layouts/Base.astro';
 
   <h2>Serving, starting and organic questions</h2>
   <p>Further questions about serving nitro coffee, getting started and organic coffee are covered in <a href="/nitro-coffee-questions/">Nitro Coffee Questions</a>. A newer overview is at <a href="/nitro-cold-brew/">All About Nitro Cold Brew Coffee</a>.</p>
+  </div></section>
 </Base>

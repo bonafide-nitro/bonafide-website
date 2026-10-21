@@ -216,6 +216,42 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
         .topic-grid { grid-template-columns: repeat(2, 1fr); }
         .contact-grid { grid-template-columns: 3fr 2fr; }
       }
+      /* Phase 1 (Block 153): blog, articles, equipment, FAQ, archives and wholesale reuse the inner-page system above. Presentation only. */
+      .page-hero .byline { color: #e9dfd0; margin: 0; }
+      .page-hero .eyebrow + h1 { margin-top: .5rem; }
+      .page-hero .byline time { color: #fff; }
+      .article-body, .prose { font-size: 1.05rem; line-height: 1.75; }
+      .article-body { padding-top: 2.5rem; padding-bottom: 3rem; }
+      .article-body h2 { margin-top: 2rem; padding-bottom: .35rem; border-bottom: 3px solid var(--gold); display: inline-block; }
+      .article-body h3, .prose h3 { margin-top: 1.5rem; color: var(--deep); }
+      .article-body p, .article-body li { max-width: 46rem; }
+      .prose img, .article-body img { max-width: 100%; height: auto; border-radius: .6rem; }
+      .prose figure, .article-body figure { margin: 1.5rem 0; }
+      .prose ul, .article-body ul { padding-left: 1.4rem; }
+      .prose li + li { margin-top: .35rem; }
+      .prose blockquote, .article-body blockquote { margin: 1.5rem 0; padding: .5rem 1.25rem; border-left: 6px solid var(--gold); background: var(--card); border-radius: .4rem; }
+      .prose a, .article-body a { text-underline-offset: .15em; }
+      .prose a.cta, .article-body a.cta { display: inline-block; min-height: 44px; background: var(--gold); color: var(--gold-ink); border: 2px solid transparent; border-radius: .4rem; padding: .7rem 1.2rem; font-weight: 700; text-decoration: none; }
+      .prose a.cta:hover, .prose a.cta:focus-visible { background: #f1c06b; }
+      .band.tint .wrap { padding-top: 2.5rem; padding-bottom: 3rem; }
+      .equipment-images { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin: 1.5rem 0 2rem; max-width: none; align-items: center; }
+      .equipment-images img { width: 100%; height: 15rem; object-fit: contain; background: #fff; border: 1px solid #e4d6bf; border-radius: .6rem; padding: .5rem; box-shadow: 0 6px 18px rgba(60,40,15,.08); }
+      .post-grid { gap: 1.25rem; margin: 0 0 2rem; }
+      .post-grid .card { position: relative; background: #fff; border: 1px solid #e4d6bf; border-top: 6px solid var(--gold); border-radius: .75rem; padding: 1.25rem 1.5rem; box-shadow: 0 6px 18px rgba(60,40,15,.08); }
+      .post-grid .card:hover, .post-grid .card:focus-within { box-shadow: 0 10px 24px rgba(60,40,15,.18); }
+      main.full .post-grid .card h2 { font-size: 1.2rem; line-height: 1.3; margin: 0 0 .6rem; }
+      main.full .prose h2 { margin-top: 2.5rem; }
+      .prose a.cta { margin-bottom: .5rem; }
+      .post-grid .card h2 a { color: var(--ink); text-decoration: none; }
+      .post-grid .card h2 a::after { content: ""; position: absolute; inset: 0; }
+      .post-grid .card h2 a:hover, .post-grid .card h2 a:focus-visible { color: var(--accent); text-decoration: underline; }
+      .post-grid .card p { margin: 0; }
+      nav.pagination ol { list-style: none; display: flex; gap: .5rem; padding: 0; margin: 0; }
+      nav.pagination a, nav.pagination span { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border-radius: .4rem; border: 2px solid var(--deep); font-weight: 700; text-decoration: none; color: var(--deep); background: #fff; }
+      nav.pagination a:hover, nav.pagination a:focus-visible { background: var(--deep); color: #fff; }
+      nav.pagination span[aria-current] { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+      .page-hero.wholesale + .band .wrap > ul { background: #fff; border: 1px solid #e4d6bf; border-left: 6px solid var(--gold); border-radius: .5rem; padding: 1rem 1rem 1rem 2.4rem; max-width: 46rem; }
+      .prose h4 { margin: 1.5rem 0 .25rem; padding-left: .75rem; border-left: 6px solid var(--gold); font-size: 1.1rem; }
       @media (max-width: 40rem) { .hero::before { background: rgba(20,13,6,.82); } }
     </style>
   </head>

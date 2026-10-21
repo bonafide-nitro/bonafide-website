@@ -3,7 +3,7 @@
 const { posts, base, current, total = 2 } = Astro.props;
 const url = (n) => (n === 1 ? base : `${base}page/${n}/`);
 ---
-<ul class="grid">
+<ul class="grid post-grid">
   {posts.map((p) => (
     <li class="card">
       <h2><a href={p.path}>{p.title}</a></h2>

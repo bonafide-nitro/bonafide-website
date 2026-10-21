@@ -2,8 +2,12 @@
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept until images, the meta description and the rental page's historical heading structure are preserved. The live page shows several large headings and no single historical H1 is evidenced; the H1 below is derived from the launch title and is NOT a preservation claim (no h1MustContain contract). No booking/payment flow is implemented. -->
-<Base title="Hot Nitro Equipment For Rent in EU - Bona Fide Nitro Coffee" canonicalPath="/hot-nitro-equipment-rental/" breadcrumbs={[{ name: 'Hot Nitro Equipment Rental', path: '/hot-nitro-equipment-rental/' }]} scaffold>
-  <h1>Hot Nitro Equipment For Rent in EU</h1>
+<Base title="Hot Nitro Equipment For Rent in EU - Bona Fide Nitro Coffee" canonicalPath="/hot-nitro-equipment-rental/" breadcrumbs={[{ name: 'Hot Nitro Equipment Rental', path: '/hot-nitro-equipment-rental/' }]} scaffold fullBleed>
+  <section class="band dark page-hero"><div class="wrap">
+    <p class="eyebrow">Equipment</p>
+    <h1>Hot Nitro Equipment For Rent in EU</h1>
+  </div></section>
+  <section class="band"><div class="wrap prose">
   <p>Rent plug-and-play hot and cold nitro equipment in the EU and start serving nitro coffee quickly. The starter set flow is built for fast setup.</p>
 
   <h2>Plug-and-play starter set</h2>
@@ -17,4 +21,5 @@ import Base from '../../layouts/Base.astro';
 
   <h2>Proprietary brewing process</h2>
   <p>Bona Fide brews with its own proprietary process and packs the coffee in kegs ready to tap. See <a href="/nitro-coffee-kegs/">nitro coffee kegs</a>, <a href="/hot-nitro-coffee/">hot nitro coffee</a> and <a href="/kegerators/">kegerators</a>.</p>
+  </div></section>
 </Base>
