@@ -207,7 +207,8 @@ class TestSetupProblems(unittest.TestCase):
         return gh
 
     def posted(self, calls):
-        return [argv[-1][len("body="):] for argv, _ in calls if "--method" in argv]
+        return [argv[-1][len("body="):] for argv, _ in calls
+                if "--method" in argv and argv[-1].startswith("body=")]
 
     def test_missing_token_is_reported_on_the_pr(self):
         calls = []
@@ -220,8 +221,10 @@ class TestSetupProblems(unittest.TestCase):
     def test_refused_token_is_reported_with_githubs_own_words(self):
         calls = []
         self.assertEqual(self.run_main("org-less-token", self.fake_gh(calls, "org-less-token")), 1)
-        wake, notice = self.posted(calls)
-        self.assertEqual(wake, "@codex review")
+        # The token is refused at the first step (the per-head claim), so no
+        # `@codex review` is attempted and the notice names that step.
+        notice, = self.posted(calls)
+        self.assertIn("per-head Codex wake claim", notice)
         self.assertIn("Resource not accessible by personal access token", notice)
         self.assertIn("organization as its resource owner", notice)
         # The notice itself is posted with GITHUB_TOKEN, not the refused token.
@@ -246,6 +249,173 @@ class TestSetupProblems(unittest.TestCase):
         finally:
             os.environ["PATH"] = saved
         self.assertIn("Resource not accessible by personal access token (HTTP 403)", str(caught.exception))
+
+class FakeGitHub:
+    """In-memory GitHub for the wake: one shared ref store, so two runs of
+    main() contend for the same claim exactly as two workflows would."""
+
+    def __init__(self, head=HEAD, fail_posts=0, fail_delete=False):
+        self.head = head
+        self.refs = set()
+        self.comments = []
+        self.fail_posts = fail_posts
+        self.fail_delete = fail_delete
+
+    def __call__(self, argv, token=None):
+        path = next((a for a in argv if a.startswith("repos/")), "")
+        method = argv[argv.index("--method") + 1] if "--method" in argv else "GET"
+        fields = [a for a in argv if "=" in a and not a.startswith("repos/")]
+        field = lambda name: next(f.split("=", 1)[1] for f in fields if f.startswith(name + "="))
+        if method == "GET":
+            return '{"head": {"sha": "%s"}}' % self.head
+        if path.endswith("/git/refs"):
+            ref = field("ref")
+            if ref in self.refs:
+                raise handoff.GhError("`gh api --method POST` failed: gh: Reference already exists (HTTP 422)")
+            self.refs.add(ref)
+            return "{}"
+        if method == "DELETE":
+            if self.fail_delete:
+                raise handoff.GhError("`gh api --method DELETE` failed: HTTP 403")
+            self.refs.discard("refs/" + path.split("/git/refs/", 1)[1])
+            return "{}"
+        body = field("body")
+        if body == "@codex review" and self.fail_posts:
+            self.fail_posts -= 1
+            raise handoff.GhError("`gh api --method POST` failed: HTTP 502")
+        self.comments.append(body)
+        return "{}"
+
+    def wakes(self):
+        return [c for c in self.comments if c == "@codex review"]
+
+
+class TestWakeIsIdempotentPerHead(unittest.TestCase):
+    """Issue #157: PRs #154/#156 got two `@codex review` on one head."""
+
+    def run_main(self, gh, *, label=False, head=HEAD, number=14):
+        import io, json, os, tempfile
+        from contextlib import redirect_stderr, redirect_stdout
+        event = {"comment": {"body": f"READY_FOR_SANTIAGO\n- exact head commit SHA: {head}",
+                             "user": {"login": OWNER}},
+                 "issue": {"number": number, "pull_request": {"url": "x"}}}
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
+            json.dump(event, handle)
+        saved = {k: os.environ.get(k) for k in ("GITHUB_EVENT_PATH", "CODEX_WAKE_TOKEN")}
+        os.environ["GITHUB_EVENT_PATH"] = handle.name
+        os.environ["CODEX_WAKE_TOKEN"] = "owner-token"
+        original = handoff._gh
+        handoff._gh = gh
+        try:
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                args = ["--human", OWNER, "--repo", "o/r", "--number", str(number)]
+                return handoff.main(args + (["--label-event"] if label else []))
+        finally:
+            handoff._gh = original
+            os.unlink(handle.name)
+            for key, value in saved.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+    def test_double_comment_wakes_codex_once(self):
+        gh = FakeGitHub()
+        self.assertEqual(self.run_main(gh), 0)
+        self.assertEqual(self.run_main(gh), 0)
+        self.assertEqual(len(gh.wakes()), 1)
+
+    def test_comment_then_label_wakes_codex_once(self):
+        gh = FakeGitHub()
+        self.assertEqual(self.run_main(gh), 0)
+        self.assertEqual(self.run_main(gh, label=True), 0)
+        self.assertEqual(len(gh.wakes()), 1)
+
+    def test_label_then_comment_wakes_codex_once(self):
+        gh = FakeGitHub()
+        self.assertEqual(self.run_main(gh, label=True), 0)
+        self.assertEqual(self.run_main(gh), 0)
+        self.assertEqual(len(gh.wakes()), 1)
+
+    def test_concurrent_comment_and_label_race_wakes_codex_once(self):
+        import threading
+        gh = FakeGitHub()
+        lock, original_call = threading.Lock(), FakeGitHub.__call__
+        gate = threading.Barrier(2)
+
+        def racing(argv, token=None):
+            # Both runs reach the claim before either posts; the ref store
+            # itself is the only arbiter (the lock only keeps the fake's set
+            # consistent, as GitHub's server does).
+            if any(a.endswith("/git/refs") for a in argv):
+                gate.wait(timeout=5)
+            with lock:
+                return original_call(gh, argv, token)
+
+        results = []
+        # main() swaps the module-level _gh, so both threads run under one patch.
+        import io, json, os, tempfile
+        from contextlib import redirect_stderr, redirect_stdout
+        event = {"comment": {"body": f"READY_FOR_SANTIAGO\n{HEAD}", "user": {"login": OWNER}},
+                 "issue": {"number": 14, "pull_request": {"url": "x"}}}
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
+            json.dump(event, handle)
+        os.environ["GITHUB_EVENT_PATH"], os.environ["CODEX_WAKE_TOKEN"] = handle.name, "owner-token"
+        original = handoff._gh
+        handoff._gh = racing
+        base = ["--human", OWNER, "--repo", "o/r", "--number", "14"]
+        try:
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                threads = [threading.Thread(target=lambda a=a: results.append(handoff.main(base + a)))
+                           for a in (["--label-event"], [])]
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join(10)
+        finally:
+            handoff._gh = original
+            os.unlink(handle.name)
+            os.environ.pop("GITHUB_EVENT_PATH", None)
+            os.environ.pop("CODEX_WAKE_TOKEN", None)
+        self.assertEqual(results, [0, 0])
+        self.assertEqual(len(gh.wakes()), 1)
+
+    def test_a_new_head_sha_is_woken_again_but_only_once(self):
+        gh = FakeGitHub(head=HEAD)
+        self.run_main(gh)
+        new_head = "b" * 40
+        gh.head = new_head
+        self.run_main(gh, head=new_head)
+        self.run_main(gh, head=new_head, label=True)
+        self.assertEqual(len(gh.wakes()), 2)
+        self.assertEqual(gh.refs, {f"refs/harness/codex-wake/{HEAD}",
+                                   f"refs/harness/codex-wake/{new_head}"})
+
+    def test_failed_post_releases_the_claim_so_a_rerun_retries(self):
+        gh = FakeGitHub(fail_posts=1)
+        self.assertEqual(self.run_main(gh), 1)
+        self.assertEqual(gh.wakes(), [])
+        self.assertEqual(gh.refs, set())
+        notice, = [c for c in gh.comments if c.startswith("HARNESS_SETUP_PROBLEM")]
+        self.assertIn("re-run the failed run to retry", notice)
+        self.assertEqual(self.run_main(gh), 0)
+        self.assertEqual(len(gh.wakes()), 1)
+
+    def test_unreleasable_claim_prints_the_one_command_that_frees_it(self):
+        gh = FakeGitHub(fail_posts=1, fail_delete=True)
+        self.assertEqual(self.run_main(gh), 1)
+        notice, = [c for c in gh.comments if c.startswith("HARNESS_SETUP_PROBLEM")]
+        self.assertIn(f"gh api -X DELETE repos/o/r/git/refs/harness/codex-wake/{HEAD}", notice)
+
+    def test_stale_handoff_claims_nothing(self):
+        gh = FakeGitHub(head="c" * 40)
+        self.assertEqual(self.run_main(gh), 0)
+        self.assertEqual(gh.refs, set())
+        self.assertEqual(gh.wakes(), [])
+
+    def test_claim_ref_is_lowercase_and_head_specific(self):
+        self.assertEqual(handoff.claim_ref("ABCDEF1"), "harness/codex-wake/abcdef1")
+
 
 class TestWorkflow(unittest.TestCase):
 
@@ -272,6 +442,12 @@ class TestWorkflow(unittest.TestCase):
         self.assertNotIn("github.repository_owner", self.text)
         self.assertIn("AUTHORIZED_HUMAN: ${{ vars.HARNESS_HUMAN_LOGIN }}", self.text)
         self.assertIn('--human "${AUTHORIZED_HUMAN:-zanetaseiler}"', self.text)
+
+    def test_unrelated_comments_cannot_displace_a_pending_handoff(self):
+        # Only handoff events share the per-PR group; any other comment gets
+        # a run-unique group so it cannot replace the single pending run.
+        self.assertIn("&& 'handoff' || github.run_id", self.text)
+        self.assertIn("cancel-in-progress: false", self.text)
 
     def test_no_schedule_or_actions_scope(self):
         self.assertNotIn("schedule:", self.text)

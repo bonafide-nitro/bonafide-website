@@ -29,7 +29,12 @@ Stalls detected, in loop order:
    nothing on GitHub).
 5. A PR head nobody has asked Codex to review (the READY_FOR_SANTIAGO
    handoff was never posted, or was rejected).
-6. `@codex review` posted on the current head but Codex never answered.
+6. `@codex review` posted on the current head but Codex never finished (no
+   review of that head and no clean-review comment) -- a Codex comment that
+   only says it is still running does not count as finished. This is reported
+   as `MANUAL_REVIEW_REQUIRED` (Issue #157, PRs #154/#156), which alerts the
+   authorized human to run the manual Santiago review. The watchdog never
+   re-wakes Codex, approves, verifies or merges a timed-out review.
 7. Codex reviewed the current head but Claude was never re-dispatched.
 
 Only activity from the last 7 days is considered, so old history is never
@@ -55,6 +60,8 @@ import harness_requeue  # noqa: E402
 GITHUB_TOKEN_PERMISSIONS = {"contents": "read", "pull-requests": "read", "issues": "write"}
 
 CODEX_BOT = "chatgpt-codex-connector[bot]"
+CLEAN_REVIEW = "Didn't find any major issues"
+MANUAL_KEYWORD = "MANUAL_REVIEW_REQUIRED"
 CLAUDE_LABEL = "READY_FOR_CLAUDE_CLOUD"
 DISPATCH_WAIT = timedelta(minutes=15)
 HANDOFF_WAIT = timedelta(minutes=30)
@@ -208,14 +215,28 @@ def check_pr(pr, comments, reviews, *, head_committed_at, now):
 
     if wakes:
         last_wake = max(parse_time(c["created_at"]) for c in wakes)
-        answered = any(_login(c) == CODEX_BOT and parse_time(c["created_at"]) >= last_wake
+        # Only a finished Codex answer counts. Its "running" summary comment
+        # (the PR #154/#156 hang) stays in place forever and must not hide the
+        # stall; a clean-review comment naming this head is finished.
+        answered = any(_login(c) == CODEX_BOT
+                       and CLEAN_REVIEW in (c.get("body") or "")
+                       and parse_time(c["created_at"]) >= last_wake
+                       and (head in (c.get("body") or "") or short in (c.get("body") or ""))
                        for c in comments)
         if not answered and now - last_wake > CODEX_WAIT:
             return (f"codex:{head}",
                     f"`@codex review` was posted for head `{short}` at "
-                    f"{last_wake:%Y-%m-%d %H:%M} UTC and Codex has not answered. "
-                    "Fix: post `@codex review` again; if it still does not answer, check "
-                    "the Codex GitHub connector.")
+                    f"{last_wake:%Y-%m-%d %H:%M} UTC and Codex has not finished a review of it "
+                    f"in {CODEX_WAIT.seconds // 60} minutes.\n\n"
+                    "- next step: the Santiago manual gate reviews this exact head by hand "
+                    "(scope, security and checks, independently).\n"
+                    "- not done automatically: nothing is approved, verified or merged on a "
+                    "timed-out review, and Codex is NOT woken again for this head (a second "
+                    "`@codex review` on one head is what caused the hang). A production "
+                    "cutover keeps its own separate requirements.\n"
+                    "- to retry Codex anyway: delete the claim with "
+                    f"`gh api -X DELETE repos/<repo>/git/refs/harness/codex-wake/{head}`, "
+                    "then post one `@codex review`, or push a new commit.")
         return None
 
     if now - head_time > HANDOFF_WAIT:
@@ -227,7 +248,10 @@ def check_pr(pr, comments, reviews, *, head_committed_at, now):
     return None
 
 
-def stalled_notice(key, message):
+def stalled_notice(key, message, human=None):
+    if key.startswith("codex:"):
+        alert = f"@{human} " if human else ""
+        return (f"{MANUAL_KEYWORD}\n\n{alert}{message}\n\n{MARKER.format(key)}\n")
     return f"HARNESS_STALLED\n\n{message}\n\n{MARKER.format(key)}\n"
 
 
@@ -259,7 +283,7 @@ def _references(pr, number):
     return re.search(rf"(?<![\w/])#{number}(?!\d)", pr.get("body") or "") is not None
 
 
-def sweep(repo, *, gh=_real_gh, now=None, dry_run=False):
+def sweep(repo, *, gh=_real_gh, now=None, dry_run=False, human=None):
     now = now or datetime.now(timezone.utc)
     items = _get(gh, f"repos/{repo}/issues?state=open&per_page=100", paginate=True)
     comments = {item["number"]: _get(gh, f"repos/{repo}/issues/{item['number']}/comments?per_page=100",
@@ -294,7 +318,7 @@ def sweep(repo, *, gh=_real_gh, now=None, dry_run=False):
         print(f"#{number}: {key}")
         if not dry_run:
             gh(["gh", "api", "--method", "POST", f"repos/{repo}/issues/{number}/comments",
-                "-f", f"body={stalled_notice(key, message)}"])
+                "-f", f"body={stalled_notice(key, message, human)}"])
     return reported
 
 
@@ -302,8 +326,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Report stalled harness items.")
     parser.add_argument("--repo", required=True)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--human", default="zanetaseiler",
+                        help="login alerted by MANUAL_REVIEW_REQUIRED (vars.HARNESS_HUMAN_LOGIN)")
     args = parser.parse_args(argv)
-    sweep(args.repo, dry_run=args.dry_run)
+    sweep(args.repo, dry_run=args.dry_run, human=args.human)
     return 0
 
 

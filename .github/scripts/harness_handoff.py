@@ -29,6 +29,21 @@ The rules are now deliberately forgiving, and every rejection is loud:
   says exactly why and what to post instead. A comment without the keyword
   line is an ordinary comment and is ignored silently.
 
+Wake idempotence (Issue #157, PRs #154/#156): two `@codex review` comments
+seconds apart on the same head left Codex "running" forever, because the
+comment path and the label path each woke Codex unconditionally. The wake is
+now claimed per exact PR head SHA *before* it is posted, by creating the git
+ref `refs/harness/codex-wake/<head-sha>`. Ref creation is atomic -- GitHub
+answers 422 "Reference already exists" to every later creator -- so two
+concurrent workflows (comment + label, a rerun, a repeated comment) cannot
+both claim, whatever order their events arrive in. A losing run posts nothing.
+A new head SHA is a new ref, so a corrected push is woken normally. If the
+post fails the claim is deleted, so re-running the failed run retries; if the
+delete itself fails the setup-problem notice prints the one command that frees
+the claim. Comment counting is deliberately not used. A claimed head whose
+review never completes is reported by `harness_watchdog.py` as
+`MANUAL_REVIEW_REQUIRED`; it is never re-woken automatically.
+
 `HANDOFF_IGNORED` is posted with the workflow's own `GITHUB_TOKEN`, which
 GitHub never lets trigger another workflow run, so it cannot loop.
 """
@@ -139,6 +154,39 @@ _gh = run_gh
 
 SECRET = "SANTIAGO_CODEX_BRIDGE_TOKEN"
 
+CLAIM_NAMESPACE = "harness/codex-wake"
+CLAIMED = "claimed"
+DUPLICATE = "duplicate"
+
+
+def claim_ref(head):
+    """Ref name (without `refs/`) that records the Codex wake for `head`."""
+    return f"{CLAIM_NAMESPACE}/{head.lower()}"
+
+
+def claim_wake(repo, head, token):
+    """Atomically record that Codex is being woken for `head`.
+
+    Returns `CLAIMED` for the one caller that created the ref and `DUPLICATE`
+    for every other. Any other GitHub refusal raises GhError."""
+    try:
+        _gh(["api", "--method", "POST", f"repos/{repo}/git/refs",
+             "-f", f"ref=refs/{claim_ref(head)}", "-f", f"sha={head.lower()}"], token=token)
+    except GhError as error:
+        if "already exists" in str(error).lower():
+            return DUPLICATE
+        raise
+    return CLAIMED
+
+
+def release_claim(repo, head, token):
+    """Delete the claim so a failed wake can be retried. True when freed."""
+    try:
+        _gh(["api", "--method", "DELETE", f"repos/{repo}/git/refs/{claim_ref(head)}"], token=token)
+    except GhError:
+        return False
+    return True
+
 
 def setup_problem_notice(step, problem, human):
     """Comment for a harness step that could not run because of repository
@@ -203,19 +251,35 @@ def main(argv=None):
                              args.human)
         return 1
 
-    def wake():
+    def wake(head):
+        claim_step = "recording the per-head Codex wake claim"
+        try:
+            outcome = claim_wake(args.repo, head, wake_token)
+        except GhError as error:
+            report_setup_problem(args.repo, args.number, claim_step,
+                                 f"GitHub refused the `{SECRET}` token: {error}", args.human)
+            return False
+        if outcome == DUPLICATE:
+            print(f"Codex was already woken for head {head}; not posting a second "
+                  "`@codex review` (claim ref refs/" + claim_ref(head) + ").")
+            return True
         try:
             _comment(args.repo, args.number, "@codex review", token=wake_token)
         except GhError as error:
+            freed = release_claim(args.repo, head, wake_token)
+            retry = ("The claim was released: re-run the failed run to retry." if freed else
+                     f"The claim could not be released: run `gh api -X DELETE "
+                     f"repos/{args.repo}/git/refs/{claim_ref(head)}`, then re-run the failed run.")
             report_setup_problem(args.repo, args.number, step,
-                                 f"GitHub refused the `{SECRET}` token: {error}", args.human)
+                                 f"GitHub refused the `{SECRET}` token: {error} {retry}", args.human)
             return False
         return True
 
     if args.label_event:
-        if not wake():
+        head = json.loads(_gh(["api", f"repos/{args.repo}/pulls/{args.number}"]))["head"]["sha"]
+        if not wake(head):
             return 1
-        print(f"Label handoff: posted @codex review on #{args.number}.")
+        print(f"Label handoff for head {head} on #{args.number}.")
         return 0
 
     with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as handle:
@@ -234,7 +298,7 @@ def main(argv=None):
     )
     print(f"{decision}: {reason}")
     if decision == HANDOFF:
-        if not wake():
+        if not wake(current_head):
             return 1
     elif decision == IGNORED:
         _comment(args.repo, args.number, ignored_notice(reason))

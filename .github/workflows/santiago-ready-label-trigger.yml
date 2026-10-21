@@ -18,8 +18,17 @@ permissions:
   issues: write
   pull-requests: write
 
+# One queue per PR for the events that can wake Codex. Every other comment on
+# the PR gets its own group: a GitHub concurrency group keeps only ONE pending
+# run, so an unrelated comment arriving behind a running handoff would
+# otherwise replace (cancel) a pending READY_FOR_SANTIAGO run. The wake itself
+# is deduplicated per head SHA inside harness_handoff.py, not by this group.
 concurrency:
-  group: santiago-ready-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: >-
+    santiago-ready-${{ github.event.pull_request.number || github.event.issue.number }}-${{
+    ((github.event_name == 'pull_request' && github.event.label.name == 'READY_FOR_SANTIAGO') ||
+    (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'READY_FOR_SANTIAGO')))
+    && 'handoff' || github.run_id }}
   cancel-in-progress: false
 
 jobs:

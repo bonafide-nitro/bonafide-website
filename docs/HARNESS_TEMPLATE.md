@@ -162,8 +162,21 @@ summary; both re-start Claude.
 | `MERGED` (github-actions) | The VERIFIED head was merged | nothing |
 | `AUTO_MERGE_SKIPPED` (github-actions) | VERIFIED, but not merged; reason inside | do what the reason says |
 | `HARNESS_SETUP_PROBLEM` (github-actions) | A step could not run because the `SANTIAGO_CODEX_BRIDGE_TOKEN` secret is missing or GitHub refused it; GitHub's own error is inside | fix the secret as it says, then re-run the failed run |
+| `MANUAL_REVIEW_REQUIRED` (github-actions) | Codex was woken for this head but did not finish a review in 30 minutes (or the correction cap was reached); the authorized human is @-mentioned | review the exact head by hand (scope, security, checks); nothing is auto-approved or merged, and Codex is not woken again for that head |
 | `HARNESS_STALLED` (github-actions) | A step silently stopped; the step and fix are inside | do the one fix it names |
 | `NEEDS_ZANETA` (Claude) | A human decision is needed | reply `ZANETA_DECISION …` |
+
+## One Codex wake per head
+
+`harness_handoff.py` claims each wake before posting it: it creates the git ref
+`refs/harness/codex-wake/<head-sha>` with `SANTIAGO_CODEX_BRIDGE_TOKEN`
+(already required to have Contents write). Creation is atomic, so a repeated
+comment, a comment plus the label, or a rerun cannot post a second
+`@codex review` for the same head; a new head SHA gets a new claim. If the post
+fails the claim is deleted and re-running the failed run retries; if deleting
+fails, `HARNESS_SETUP_PROBLEM` prints the `gh api -X DELETE` command. To force
+a re-wake of a hung head, delete that ref by hand and post one `@codex review`.
+Never post `@codex review` twice on one head.
 
 ## Where is it stuck?
 
