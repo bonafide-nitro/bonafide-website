@@ -28,7 +28,9 @@ Stalls detected, in loop order:
    references it (Zoe #289 / #294, 2026-09-25: sessions went idle with
    nothing on GitHub).
 5. A PR head nobody has asked Codex to review (the READY_FOR_SANTIAGO
-   handoff was never posted, or was rejected).
+   handoff was never posted, was rejected, or its per-head wake claim was
+   stranded by a handoff run that died before posting; the notice names the
+   command that frees the claim).
 6. `@codex review` posted on the current head but Codex never finished (no
    review of that head and no clean-review comment) -- a Codex comment that
    only says it is still running does not count as finished. This is reported
@@ -244,7 +246,14 @@ def check_pr(pr, comments, reviews, *, head_committed_at, now):
                 f"Nobody has asked Codex to review head `{short}`. The READY_FOR_SANTIAGO "
                 "handoff was never posted for this commit, or was rejected (see any "
                 "`HANDOFF_IGNORED` comment). Fix: post a comment whose first line is "
-                f"`READY_FOR_SANTIAGO` and that contains `exact head commit SHA: {head}`.")
+                f"`READY_FOR_SANTIAGO` and that contains `exact head commit SHA: {head}`.\n\n"
+                "- if that comment already exists and is valid: the wake claim may be stranded "
+                "(the handoff run died after claiming the head but before posting `@codex "
+                "review`), and a stranded claim makes every later event a no-op. Check that "
+                "there is no `@codex review` on this PR for this head, then free the claim with "
+                f"`gh api -X DELETE repos/<repo>/git/refs/harness/codex-wake/{head}` and "
+                "post a fresh `READY_FOR_SANTIAGO` comment (or re-run the cancelled handoff "
+                "run). Never post `@codex review` by hand while the claim exists.")
     return None
 
 

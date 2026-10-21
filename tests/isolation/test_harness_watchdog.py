@@ -162,6 +162,17 @@ class TestPrChecks(unittest.TestCase):
         comments = [comment("CONTEXT_RECEIPT\n...\n\n" + READY, "2026-09-24T20:30:58Z")]
         self.assertEqual(self.check(comments)[0], f"handoff:{HEAD}")
 
+    def test_stranded_wake_claim_recovery_is_named_in_the_handoff_notice(self):
+        # Runner died after the claim ref was created but before `@codex review`
+        # was posted: no wake exists, so the handoff stall fires and must tell
+        # the human how to free the claim (Codex review of PR #158).
+        comments = [comment(READY, "2026-09-24T20:30:58Z")]
+        key, message = self.check(comments)
+        self.assertEqual(key, f"handoff:{HEAD}")
+        self.assertIn(f"git/refs/harness/codex-wake/{HEAD}", message)
+        self.assertIn("-X DELETE", message)
+        self.assertTrue(watchdog.stalled_notice(key, message).startswith("HARNESS_STALLED"))
+
     def test_unanswered_codex_request_is_reported(self):
         comments = [comment(READY, "2026-09-24T20:31:00Z"),
                     comment("@codex review", "2026-09-24T20:31:10Z")]

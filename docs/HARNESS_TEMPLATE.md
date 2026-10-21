@@ -176,6 +176,11 @@ comment, a comment plus the label, or a rerun cannot post a second
 fails the claim is deleted and re-running the failed run retries; if deleting
 fails, `HARNESS_SETUP_PROBLEM` prints the `gh api -X DELETE` command. To force
 a re-wake of a hung head, delete that ref by hand and post one `@codex review`.
+A claim can also be stranded if the runner dies after creating the ref but
+before the comment is posted; every later event then sees a duplicate. With no
+`@codex review` on the head, the watchdog's `HARNESS_STALLED` handoff notice
+fires after 30 minutes and names the exact delete command; after deleting the
+claim, post a fresh `READY_FOR_SANTIAGO` (or re-run the cancelled run).
 Never post `@codex review` twice on one head.
 
 ## Where is it stuck?
