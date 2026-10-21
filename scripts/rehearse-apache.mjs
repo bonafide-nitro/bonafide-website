@@ -19,6 +19,10 @@ import { walkTree } from './check-release-artifact.mjs';
 import { loadBaseline } from '../src/lib/data.mjs';
 
 export const ORIGIN = 'https://bonafidenitro.com';
+// Apache 2.4 emits both [error] and [module:error] severity tokens.
+export const unexpectedApacheErrors = (log) => log.split('\n').filter((line) =>
+  /\[(?:[^\]:]+:)?(?:alert|crit|emerg|error)\]/i.test(line) &&
+  !/File does not exist|script not found|client denied by server configuration/.test(line));
 const MODULE_DIRS = ['/usr/lib/apache2/modules', '/usr/lib64/httpd/modules', '/usr/local/apache2/modules', '/opt/homebrew/opt/httpd/lib/httpd/modules'];
 const BIN_NAMES = ['apache2', 'httpd'];
 const MIME_TYPES_FILES = ['/etc/mime.types', '/etc/apache2/mime.types', '/usr/local/apache2/conf/mime.types'];
@@ -310,7 +314,7 @@ export const rehearseApache = async ({ zip, htaccess, redirects, apache = findAp
     out.stage = 'served';
     out.results.push(...await runAssertions({ siteDir: docroot, ports, redirectsText, expectedHtaccess: htaccessText }));
     const errLog = fs.existsSync(path.join(tmp, 'error.log')) ? fs.readFileSync(path.join(tmp, 'error.log'), 'utf8') : '';
-    const bad = errLog.split('\n').filter((l) => /\[(?:alert|crit|emerg|error)\]/.test(l) && !/File does not exist|script not found|client denied by server configuration/.test(l));
+    const bad = unexpectedApacheErrors(errLog);
     out.results.push({ id: 'G1-apache-error-log', ok: bad.length === 0, detail: bad.length ? bad.slice(0, 3).join(' | ') : 'no unexpected error-level Apache log lines' });
     return out;
   } finally {
