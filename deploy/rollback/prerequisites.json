@@ -1,0 +1,14 @@
+{
+  "note": "Owner-held rollback prerequisites. Status is OPEN until the owner records evidence on a GitHub Issue/PR comment (URL only; never paste secrets, backup contents or paths to credentials). Nothing in this repository can confirm these; the rollback preflight fails closed in --mode cutover while any is not CONFIRMED with evidence. This file is never an assertion that a backup exists.",
+  "prerequisites": [
+    { "id": "W1-clean-wordpress-copy", "requirement": "Clean WordPress rollback copy (files + database) built from pristine sources, scanned clean twice, held outside the static docroot", "source": "master plan 3.3, 12.1-12.2; runbook doc 40 G5", "owner": "Hosting + Zaneta", "status": "OPEN", "evidence": null },
+    { "id": "W2-live-backup-day-of", "requirement": "Day-of backup of the current live WordPress filesystem and database, checksummed, downloaded off-server, separate from the forensic snapshot", "source": "master plan 14 step 1", "owner": "Hosting", "status": "OPEN", "evidence": null },
+    { "id": "W3-forensic-snapshot", "requirement": "Pre-remediation forensic snapshot preserved off-server and write-protected", "source": "master plan 3.2, 12.1; doc 40 G1", "owner": "Owner / security professional", "status": "OPEN", "evidence": null },
+    { "id": "W4-isolated-restore-timed", "requirement": "Restore of the clean copy rehearsed in isolation and the elapsed restore time recorded", "source": "master plan 14 step 2, 15.4; doc 40 G6", "owner": "Hosting + SEO", "status": "OPEN", "evidence": null },
+    { "id": "W5-credentials-rotated", "requirement": "Hosting, WordPress, FTP/SSH and database credentials rotated and unknown accounts resolved", "source": "master plan 3.3; doc 40 G3-G4", "owner": "Owner", "status": "OPEN", "evidence": null },
+    { "id": "W6-docroot-model-decided", "requirement": "Docroot model decided (symlink flip or rsync copy), PHP kept available for the WordPress fallback, and who installs the docroot .htaccess named", "source": "master plan 12.3, 18 (D1)", "owner": "Hosting + Zaneta", "status": "OPEN", "evidence": null },
+    { "id": "W7-wordpress-htaccess-saved", "requirement": "The current WordPress .htaccess saved separately so a rollback can restore it", "source": "master plan 12.3, 15.4 step 3", "owner": "Hosting", "status": "OPEN", "evidence": null },
+    { "id": "W8-release-package-archived", "requirement": "The release zip, release-manifest.json and SHA256SUMS archived off-host so the release can be reinstalled without any external service", "source": "this Block (Issue #162)", "owner": "Dev", "status": "OPEN", "evidence": null },
+    { "id": "W9-decision-maker-window", "requirement": "Named rollback decision-maker and a non-Friday cutover window with all owners available", "source": "master plan 14, 15.4 step 1", "owner": "Zaneta", "status": "OPEN", "evidence": null }
+  ]
+}
