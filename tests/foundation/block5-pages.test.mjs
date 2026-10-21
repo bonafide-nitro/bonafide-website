@@ -48,8 +48,8 @@ t('Organization + WebSite + BreadcrumbList JSON-LD on all six pages', () => {
 t('/kegerators/: exact observed store destinations, four equipment groups', () => {
   const h = page('/kegerators/');
   const l = hrefs(h);
+  assert.ok(!l.some((u) => u.includes('plug-play-cafe-starter-kit')), 'known-dead starter-kit link is not rendered (Issue #160)');
   for (const u of [
-    'https://www.nitrocoffee.store/products/plug-play-cafe-starter-kit-countertop-flash-chiller-w-compressor-bik-compatible?variant=41629884055715',
     'https://www.nitrocoffee.store/collections/dispensers/products/double-faucet-countertop-flash-chiller-w-compressor',
     'https://www.nitrocoffee.store/collections/dispensers/products/selbach-hot-nitro-dispenser-w-2-faucets',
   ]) assert.ok(l.includes(u), u);

@@ -1,5 +1,5 @@
 ---
-import { commerceHref } from '../../lib/commerce.mjs';
+import { commerceHref, commerceIsKnownDead } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept (Block 52). Five pinned originals are shown in one provisional neutral collection with alt="" because no historical alt text, caption, position or equipment-group mapping is preserved (new accessibility handling, not recovered history). The two 2018 originals (Block 50) and the three equipment PNGs recorded in docs/migration/08 (SHA-256 pinned, Block 40, tests/foundation/block40-assets.mjs) are associated with /kegerators/ by doc 09; their exact /kegerators/ position, order, original alt and fuller copy remain unverified, so the order here is arbitrary and the strict QA blocker stays. The first CTA destination currently returns 404 on the store (observed evidence, preserved as-is). -->
@@ -21,7 +21,9 @@ import Base from '../../layouts/Base.astro';
 
   <h2>Countertop cold nitro dispenser</h2>
   <p>A countertop nitro coffee dispenser with Lindr flash chilling serves cold nitro on demand from a Bag-in-Box (BIK compatible) or keg. It runs on a standard 110v setup and has a small countertop footprint, so it fits a counter without a walk-in cooler.</p>
-  <p><a class="cta" href={commerceHref('equipment-starter-kit')}>Countertop flash chiller starter kit</a></p>
+  {commerceIsKnownDead('equipment-starter-kit')
+    ? <p data-known-dead-cta="equipment-starter-kit"><span class="cta cta-label">Countertop flash chiller starter kit</span> <span class="muted">The online listing for this kit is currently unavailable. Please <a href="/contact-bona-fide-nitro-coffee-and-tea/">contact us</a> to order.</span></p>
+    : <p><a class="cta" href={commerceHref('equipment-starter-kit')}>Countertop flash chiller starter kit</a></p>}
 
   <h2>Double-faucet cold dispenser</h2>
   <p>A double-faucet countertop flash chiller serves two cold nitro cold brew drinks from one machine, with on-demand cold serving and a compressor.</p>

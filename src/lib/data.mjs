@@ -69,7 +69,7 @@ const productSchema = z.object({
 });
 
 const commerceSchema = z.object({
-  links: z.record(z.string(), z.object({ href: storeHref, label: z.string(), note: z.string().optional() }).strict()),
+  links: z.record(z.string(), z.object({ href: storeHref, label: z.string(), note: z.string().optional(), knownDead: z.boolean().optional() }).strict()),
   unresolved: z.array(z.object({
     id: z.string(),
     page: z.string(),

@@ -98,7 +98,7 @@ const EXPECTED = {
   ],
   '/kegerators/': [
     'https://www.nitrocoffee.store/',
-    'https://www.nitrocoffee.store/products/plug-play-cafe-starter-kit-countertop-flash-chiller-w-compressor-bik-compatible?variant=41629884055715',
+    // starter-kit href is knownDead (Issue #160): evidence only in commerce.yaml, never rendered as a link
     'https://www.nitrocoffee.store/collections/dispensers/products/double-faucet-countertop-flash-chiller-w-compressor',
     'https://www.nitrocoffee.store/collections/dispensers/products/selbach-hot-nitro-dispenser-w-2-faucets',
   ],
@@ -222,7 +222,7 @@ t('every rendered commerce href is https on the approved store host', () => {
 test('registry hrefs and product store hrefs are all covered by the evidenced set', () => {
   const evidenced = new Set(Object.values(EXPECTED).flat());
   const c = loadCommerce();
-  for (const [id, l] of Object.entries(c.links)) assert.ok(evidenced.has(l.href), id);
+  for (const [id, l] of Object.entries(c.links)) if (!l.knownDead) assert.ok(evidenced.has(l.href), id); // knownDead hrefs are evidence-only (Issue #160)
   for (const p of loadProducts()) if (p.links?.store) assert.ok(evidenced.has(p.links.store), p.id);
   for (const p of loadProducts()) for (const h of Object.values(p.links?.amazon ?? {})) assert.ok(evidenced.has(h), p.id);
   assert.equal(commerceHref('webstore-root-www'), 'https://www.nitrocoffee.store/');
