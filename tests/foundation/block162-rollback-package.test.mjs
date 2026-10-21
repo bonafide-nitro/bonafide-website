@@ -133,3 +133,20 @@ test('the rollback package bundles the exact rehearsed .htaccess that the manife
   const entry = r.manifest.files.find((f) => f.path === '.htaccess');
   assert.equal(createHash('sha256').update(bundled).digest('hex'), entry.sha256);
 });
+
+test('restore text is deletion-aware and W6/W8 match the approved install path and full package', () => {
+  const siteDir = path.join(tmp(), 'site');
+  for (const [rel, body] of Object.entries(SITE)) { fs.mkdirSync(path.dirname(path.join(siteDir, rel)), { recursive: true }); fs.writeFileSync(path.join(siteDir, rel), body); }
+  const text = restoreOrderText(releaseManifest(siteDir, 'x\n'));
+  assert.match(text, /SSH\/SFTP/);
+  assert.match(text, /File Manager/);
+  assert.match(text, /Destination-only cleanup/);
+  assert.match(text, /in the previously installed release manifest but NOT in this release/);
+  const prereq = JSON.parse(fs.readFileSync(PREREQS, 'utf8')).prerequisites;
+  const w6 = prereq.find((p) => p.id === 'W6-docroot-model-decided').requirement;
+  const w8 = prereq.find((p) => p.id === 'W8-release-package-archived').requirement;
+  assert.match(w6, /SSH\/SFTP/);
+  assert.doesNotMatch(w6, /symlink flip or rsync copy/);
+  assert.match(w8, /production\.htaccess/);
+  assert.match(w8, /entire rollback package/);
+});
