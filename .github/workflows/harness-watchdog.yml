@@ -35,5 +35,8 @@ jobs:
       - name: Report stalled harness items
         env:
           GH_TOKEN: ${{ github.token }}
+          AUTHORIZED_HUMAN: ${{ vars.HARNESS_HUMAN_LOGIN }}
         run: |
-          python3 .github/scripts/harness_watchdog.py --repo "${{ github.repository }}"
+          python3 .github/scripts/harness_watchdog.py \
+            --human "${AUTHORIZED_HUMAN:-zanetaseiler}" \
+            --repo "${{ github.repository }}"

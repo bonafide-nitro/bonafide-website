@@ -162,10 +162,59 @@ class TestPrChecks(unittest.TestCase):
         comments = [comment("CONTEXT_RECEIPT\n...\n\n" + READY, "2026-09-24T20:30:58Z")]
         self.assertEqual(self.check(comments)[0], f"handoff:{HEAD}")
 
+    def test_stranded_wake_claim_recovery_is_named_in_the_handoff_notice(self):
+        # Runner died after the claim ref was created but before `@codex review`
+        # was posted: no wake exists, so the handoff stall fires and must tell
+        # the human how to free the claim (Codex review of PR #158).
+        comments = [comment(READY, "2026-09-24T20:30:58Z")]
+        key, message = self.check(comments)
+        self.assertEqual(key, f"handoff:{HEAD}")
+        self.assertIn(f"git/refs/harness/codex-wake/{HEAD}", message)
+        self.assertIn("-X DELETE", message)
+        self.assertTrue(watchdog.stalled_notice(key, message).startswith("HARNESS_STALLED"))
+
     def test_unanswered_codex_request_is_reported(self):
         comments = [comment(READY, "2026-09-24T20:31:00Z"),
                     comment("@codex review", "2026-09-24T20:31:10Z")]
         self.assertEqual(self.check(comments)[0], f"codex:{HEAD}")
+
+    def test_codex_stuck_running_is_manual_review_required_not_answered(self):
+        # PRs #154/#156: Codex's "running" summary comment is a Codex-bot
+        # comment, but it is not an answer.
+        comments = [comment(READY, "2026-09-24T20:31:00Z"),
+                    comment("@codex review", "2026-09-24T20:31:10Z"),
+                    comment("Codex review: running", "2026-09-24T20:31:20Z", CODEX)]
+        stall = self.check(comments)
+        self.assertEqual(stall[0], f"codex:{HEAD}")
+        notice = watchdog.stalled_notice(*stall, human=OWNER)
+        self.assertTrue(notice.startswith("MANUAL_REVIEW_REQUIRED\n"))
+        self.assertIn(f"@{OWNER}", notice)
+        self.assertIn("nothing is approved, verified or merged", notice)
+        self.assertIn(watchdog.MARKER.format(f"codex:{HEAD}"), notice)
+        for keyword in ("READY_FOR_SANTIAGO", "VERIFIED", "NEEDS_ZANETA"):
+            self.assertFalse(watchdog.harness_handoff.has_keyword_line(notice, keyword), keyword)
+
+    def test_codex_within_the_wait_is_not_reported(self):
+        comments = [comment(READY, "2026-09-25T11:40:00Z"),
+                    comment("@codex review", "2026-09-25T11:41:00Z")]
+        self.assertIsNone(self.check(comments, head_at="2026-09-25T11:30:00Z"))
+
+    def test_clean_codex_comment_for_the_head_counts_as_finished(self):
+        comments = [comment(READY, "2026-09-24T20:31:00Z"),
+                    comment("@codex review", "2026-09-24T20:31:10Z"),
+                    comment(f"Didn't find any major issues.\nReviewed commit: `{HEAD[:7]}`",
+                            "2026-09-24T20:35:00Z", CODEX)]
+        self.assertIsNone(self.check(comments))
+
+    def test_clean_codex_comment_for_an_older_head_does_not_count(self):
+        comments = [comment(READY, "2026-09-24T20:31:00Z"),
+                    comment("@codex review", "2026-09-24T20:31:10Z"),
+                    comment("Didn't find any major issues.\nReviewed commit: `deadbee`",
+                            "2026-09-24T20:35:00Z", CODEX)]
+        self.assertEqual(self.check(comments)[0], f"codex:{HEAD}")
+
+    def test_other_stalls_still_say_harness_stalled(self):
+        self.assertTrue(watchdog.stalled_notice(f"handoff:{HEAD}", "x").startswith("HARNESS_STALLED"))
 
     def test_codex_review_not_requeued_is_reported(self):
         comments = [comment(READY, "2026-09-24T20:31:00Z"),
@@ -243,6 +292,20 @@ class TestSweep(unittest.TestCase):
         self.assertEqual(watchdog.sweep("z/t", gh=self.fake_gh(calls, comments), now=NOW), [])
         self.assertFalse([c for c in calls if "--method" in c])
 
+    def test_timeout_is_reported_once_with_the_human_alert_and_no_wake(self):
+        calls = []
+        comments = [comment(READY, "2026-09-24T20:31:00Z"),
+                    comment("@codex review", "2026-09-24T20:31:10Z"),
+                    comment("running", "2026-09-24T20:31:20Z", CODEX)]
+        reported = watchdog.sweep("z/t", gh=self.fake_gh(calls, comments), now=NOW, human=OWNER)
+        self.assertEqual(reported, [(206, f"codex:{HEAD}")])
+        posts = [c[-1] for c in calls if "--method" in c]
+        self.assertEqual(len(posts), 1)
+        self.assertTrue(posts[0].startswith("body=MANUAL_REVIEW_REQUIRED"))
+        self.assertNotIn("body=@codex", posts[0])
+        comments.append(comment(posts[0][len("body="):], "2026-09-25T12:00:00Z", ACTIONS))
+        self.assertEqual(watchdog.sweep("z/t", gh=self.fake_gh([], comments), now=NOW, human=OWNER), [])
+
     def test_dry_run_writes_nothing(self):
         calls = []
         watchdog.sweep("z/t", gh=self.fake_gh(calls, [comment(READY, "2026-09-24T20:30:58Z")]),
@@ -259,6 +322,10 @@ class TestWorkflow(unittest.TestCase):
         self.assertNotIn("actions:", self.text)
         self.assertNotIn("contents: write", self.text)
         self.assertNotIn("secrets.", self.text)
+
+    def test_human_alert_comes_from_the_repository_variable(self):
+        self.assertIn("AUTHORIZED_HUMAN: ${{ vars.HARNESS_HUMAN_LOGIN }}", self.text)
+        self.assertIn('--human "${AUTHORIZED_HUMAN:-zanetaseiler}"', self.text)
 
     def test_never_labels_wakes_or_fires(self):
         script = (SCRIPTS / "harness_watchdog.py").read_text(encoding="utf-8")
