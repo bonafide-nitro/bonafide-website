@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { packagePreview } from '../../scripts/package-preview.mjs';
-import { findApache, parseRules, declaredRuleCount, rehearseApache } from '../../scripts/rehearse-apache.mjs';
+import { findApache, parseRules, declaredRuleCount, rehearseApache, unexpectedApacheErrors } from '../../scripts/rehearse-apache.mjs';
 
 const apache = findApache();
 const skip = apache.error && process.env.REQUIRE_APACHE !== '1' ? `no Apache in this environment: ${apache.error}` : false;
@@ -33,6 +33,17 @@ test('rule parser reads every generated redirect rule and the header count agree
   assert.equal(rules.length, 41);
   assert.equal(rules.filter((r) => r.conds.some((c) => /HTTPS|HTTP_HOST/.test(c.test))).length, 3);
   assert.ok(rules.every((r) => r.name), 'every rule keeps its identifier comment');
+});
+
+test('Apache 2.4 module-prefixed error severities are detected without flagging benign warnings', () => {
+  const lines = [
+    '[Wed Oct 21 12:00:00 2026] [core:error] [pid 10] unexpected file access',
+    '[Wed Oct 21 12:00:01 2026] [ssl:crit] [pid 10] TLS failure',
+    '[Wed Oct 21 12:00:02 2026] [error] standalone failure',
+    '[Wed Oct 21 12:00:03 2026] [core:warn] ordinary warning',
+    '[Wed Oct 21 12:00:04 2026] [core:error] File does not exist: /missing',
+  ];
+  assert.deepEqual(unexpectedApacheErrors(lines.join('\n')), lines.slice(0, 3));
 });
 
 test('missing Apache fails closed and says nothing was simulated', async () => {
