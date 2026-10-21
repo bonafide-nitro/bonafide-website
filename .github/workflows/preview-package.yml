@@ -36,6 +36,14 @@ jobs:
         run: npm run package:preview
       - name: Offline release rehearsal on the packaged zip
         run: npm run rehearse:release
+      - name: Install Apache for the end-to-end rehearsal (loopback only; no host access)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends apache2 && sudo systemctl stop apache2 || true
+      - name: Offline Apache rehearsal on the packaged zip (Issue #162)
+        run: npm run rehearse:apache
+      - name: Rollback package and fail-closed preflight (Issue #162)
+        run: npm run rollback:preflight
+      - name: Rollback and Apache rehearsal tests (Apache required)
+        run: REQUIRE_APACHE=1 node --test tests/foundation/block162-apache-rehearsal.test.mjs tests/foundation/block162-rollback-package.test.mjs
       - name: Verify zip contents
         run: |
           unzip -l preview-out/bonafide-preview.zip | grep -E 'Open-Preview.command|READ-ME-FIRST.txt|PREVIEW-INFO.json|site/index.html'
@@ -44,5 +52,11 @@ jobs:
         with:
           name: bonafide-local-preview-${{ github.sha }}
           path: preview-out/bonafide-preview.zip
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bonafide-rollback-package-${{ github.sha }}
+          path: rollback-out/
           if-no-files-found: error
           retention-days: 14

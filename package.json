@@ -26,7 +26,9 @@
     "qa": "node qa/cli.mjs --mode foundation",
     "qa:foundation": "node qa/cli.mjs --mode foundation",
     "qa:strict": "node qa/cli.mjs --mode strict",
-    "intake:source": "node scripts/intake-source-evidence.mjs"
+    "intake:source": "node scripts/intake-source-evidence.mjs",
+    "rehearse:apache": "node scripts/rehearse-apache.mjs",
+    "rollback:preflight": "node scripts/rollback-package.mjs"
   },
   "dependencies": {
     "astro": "^5.0.0",
