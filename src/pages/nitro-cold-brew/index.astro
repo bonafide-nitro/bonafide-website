@@ -3,10 +3,15 @@ import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept (Block 53). Six checksum-pinned originals that doc 09 records as associated with /nitro-cold-brew/ are shown in one provisional neutral collection with alt="" because no historical alt text, caption, position, order or equipment mapping is preserved (new accessibility handling, not recovered history); the order here is arbitrary. Still missing: 2018/06/Cold-brew-Nitro-Coffee.jpg (cited in doc 09, no binary in the repo, not referenced), any other page images, original alt and fuller copy, so the strict QA blocker stays. -->
-<Base title="Nitro Cold Brew - Bona Fide Brewing Company - Nitro Coffee Experts" canonicalPath="/nitro-cold-brew/" breadcrumbs={[{ name: 'Nitro Cold Brew', path: '/nitro-cold-brew/' }]} scaffold>
+<Base title="Nitro Cold Brew - Bona Fide Brewing Company - Nitro Coffee Experts" canonicalPath="/nitro-cold-brew/" breadcrumbs={[{ name: 'Nitro Cold Brew', path: '/nitro-cold-brew/' }]} fullBleed scaffold>
+    <section class="hero page-hero"><img class="hero-bg" src="/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg" alt="" width="1920" height="1188" fetchpriority="high" decoding="async" />
+  <div class="wrap">
+  <p class="eyebrow">Nitro cold brew explained</p>
   <h1>ALL ABOUT NITRO COLD BREW COFFEE</h1>
   <p>Everything you need to know about nitro coffee: what it is, how it is served, and how to get it into your home, office or business.</p>
 
+    </div></section>
+  <section class="band tint"><div class="wrap">
   <div class="nitro-images">
     <img src="/wp-content/uploads/2018/06/All-about-nitro-cold-brew-coffee.jpg" alt="" width="1920" height="1188" loading="lazy" style="max-width:100%;height:auto" />
     <img src="/wp-content/uploads/2021/10/Nitro-Coffee-Explain-Graphic-Bona-Fide-Keg-Tap.jpg" alt="" width="1500" height="1000" loading="lazy" style="max-width:100%;height:auto" />
@@ -16,39 +21,72 @@ import Base from '../../layouts/Base.astro';
     <img src="/wp-content/uploads/2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png" alt="" width="591" height="768" loading="lazy" style="max-width:100%;height:auto" />
   </div>
 
+    </div>
+  </div></section>
+  <section><div class="wrap">
+  <div class="topic-grid">
+  <div class="topic">
   <h2>What is nitro coffee?</h2>
   <p>Nitro coffee is cold brew coffee infused with nitrogen gas and served on tap. The nitrogen gives it a smooth, creamy texture and a cascading pour without added sugar or dairy.</p>
+  </div>
 
+  <div class="topic">
   <h2>Nutrition and health</h2>
   <p>Nitro cold brew is served black. For more on health and nutrition context, read <a href="/healthy-benefits-drinking-nitro-coffee-nitro-coffee-healthy/">the healthy benefits of drinking nitro coffee</a>.</p>
+  </div>
 
+  <div class="topic">
   <h2>Cold brew versus cold brewed</h2>
   <p>Cold brew is coffee steeped in cold or room-temperature water for a long time. Coffee that is brewed hot and then chilled is cold brewed, which is not the same thing.</p>
+  </div>
 
+  <div class="topic">
   <h2>What is nitrogen, and is it safe?</h2>
   <p>Nitrogen is an inert gas that makes up most of the air we breathe. Food-grade nitrogen is used to serve nitro coffee.</p>
+  </div>
 
+  <div class="topic">
   <h2>Nitrogen and quality</h2>
   <p>Kegs are protected with nitrogen instead of oxygen, which keeps the coffee fresh and preserves its quality.</p>
+  </div>
 
+  <div class="topic">
   <h2>Keg safety</h2>
   <p>Nitro coffee kegs are pressurised. Handle, connect and change them as instructed, and use a regulator with your nitrogen supply.</p>
+  </div>
 
+  <div class="topic">
   <h2>Equipment</h2>
   <p>A nitro coffee machine, dispenser or kegerator serves nitro coffee on tap. The nitro coffee psi is set at the regulator for the setup you use. See our <a href="/kegerators/">equipment to serve nitro cold brew coffee</a>.</p>
+  </div>
 
+  <div class="topic">
   <h2>Maintenance and keg changes</h2>
   <p>Keep faucets and lines clean, and change kegs when they run empty by disconnecting the empty keg and connecting a full one.</p>
+  </div>
 
+  <div class="topic">
   <h2>Nitrogen supply</h2>
   <p>Where a nitrogen tank is used, it needs to be refilled or exchanged. Ask your supplier or distributor about nitrogen supply.</p>
+  </div>
 
+  <div class="topic">
   <h2>Where can I get nitro coffee?</h2>
   <p>Order from the <a href={commerceHref('webstore-root-www')}>Bona Fide webstore</a>, see <a href="/products/">our products</a>, or find out <a href="/howtobuy/">how to buy</a> through our distributors.</p>
+  </div>
 
+  <div class="topic">
   <h2>Serving nitro coffee</h2>
   <p>Serve nitro cold brew straight from the tap into a cup. It also comes hot: read about <a href="/hot-nitro-coffee/">hot nitro coffee</a>, and about <a href="/cold-brew-coffee-concentrate-bag-in-box-versus-cold-brew-in-kegs/">Bag in Box versus kegs</a>.</p>
+  </div>
 
+  <div class="topic">
   <h2>Organic and private label</h2>
   <p>Bona Fide brews in a certified organic facility and offers co-branded and private-label kegs through the Bona Fide Alliance. See <a href="/about/">about us</a> and <a href="/howtobuy/">how to buy</a>.</p>
+  </div>
+  </div>
+  </div></section>
+<section class="band dark cta-final" aria-label="Next steps"><div class="wrap center">
+    <p class="actions"><a class="btn btn-primary" href="/products/">See products</a> <a class="btn btn-ghost" href="/howtobuy/">How to buy</a></p>
+  </div></section>
 </Base>
