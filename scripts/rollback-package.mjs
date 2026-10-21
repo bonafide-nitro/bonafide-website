@@ -14,6 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { rehearse, PACKAGE_ROOT } from './rehearse-release.mjs';
 import { buildManifest, walkTree } from './check-release-artifact.mjs';
 import { loadBaseline } from '../src/lib/data.mjs';
+import { preflight } from './build-apache-config.mjs';
 
 export const REQUIRED_PREREQUISITES = [
   'W1-clean-wordpress-copy', 'W2-live-backup-day-of', 'W3-forensic-snapshot', 'W4-isolated-restore-timed', 'W5-credentials-rotated',
@@ -55,7 +56,7 @@ export const restoreOrderText = (manifest) => [
   '   day-of backup, forensic snapshot, timed restore rehearsal, credentials, docroot model, WordPress .htaccess copy, decision-maker).',
   '1. Unzip bonafide-release.zip into an empty scratch directory. Never copy Open-Preview.command, READ-ME-FIRST.txt or PREVIEW-INFO.json.',
   '2. Copy the bundled production.htaccess (next to this file in the rollback package; the exact file that was rehearsed) into the scratch bonafide-preview/site/ directory as .htaccess (it is not inside the zip).',
-  '   Then, in that directory, run: sha256sum -c ../../SHA256SUMS (every line must say OK).',
+  '   Then, in that directory, run: sha256sum -c <absolute path of SHA256SUMS from this rollback package> (every line must say OK; SHA256SUMS stays beside the zip, not inside the extracted tree).',
   '3. Upload in stage order. Do not skip a stage, and do not delete anything outside these paths (WordPress files are never touched by the static upload):',
   ...Object.entries(STAGE_NAMES).map(([n, name]) => `   stage ${n}: ${name} (${manifest.files.filter((f) => f.stage === Number(n)).length} file(s))`),
   '4. After upload, re-run sha256sum -c against the live tree; any mismatch means stop and use the rollback procedure in master plan 15.4.',
@@ -131,13 +132,24 @@ const extract = (zip) => {
   return { tmp, siteDir: path.join(tmp, PACKAGE_ROOT, 'site') };
 };
 
-export const prepareRollbackPackage = ({ zip, previousZip = null, htaccess, redirects, out, prerequisites, mode = 'offline' }) => {
+export const prepareRollbackPackage = ({ zip, previousZip = null, previousHtaccess = null, htaccess, redirects, out, prerequisites, mode = 'offline' }) => {
   const problems = [];
   const report = { problems, manifest: null, prerequisites: null, written: [] };
   const redirectsText = fs.existsSync(redirects) ? fs.readFileSync(redirects, 'utf8') : null;
   if (redirectsText === null) { problems.push(`redirect rules ${redirects} missing`); return report; }
   if (!fs.existsSync(htaccess)) { problems.push(`production .htaccess ${htaccess} missing`); return report; }
   const htaccessText = fs.readFileSync(htaccess, 'utf8');
+  for (const p of preflight(htaccessText, 'production')) problems.push(`production .htaccess preflight: ${p}`);
+  let previousHtaccessText = null;
+  if (previousZip) {
+    if (!previousHtaccess || !fs.existsSync(previousHtaccess)) problems.push('--previous-zip requires --previous-htaccess: the retained release\'s own .htaccess file (it is not inside the zip)');
+    else {
+      previousHtaccessText = fs.readFileSync(previousHtaccess, 'utf8');
+      // An older release legitimately differs from today's generated config, so only the safety checks apply to it.
+      const CURRENT_ONLY = /differs from deterministic generated artifact|does not contain deploy\/apache\/redirects\.htaccess verbatim|RewriteRule count differs/;
+      for (const p of preflight(previousHtaccessText, 'production')) if (!CURRENT_ONLY.test(p)) problems.push(`previous .htaccess preflight: ${p}`);
+    }
+  }
   const forbiddenStrings = loadBaseline().preservationRules.forbiddenBuildStrings;
   for (const [label, z] of [['release', zip], ['previous', previousZip]]) {
     if (!z) continue;
@@ -150,7 +162,7 @@ export const prepareRollbackPackage = ({ zip, previousZip = null, htaccess, redi
   try {
     const manifest = releaseManifest(cur.siteDir, htaccessText);
     report.manifest = manifest;
-    const retained = prev ? { siteDir: prev.siteDir, htaccess: htaccessText, manifest: releaseManifest(prev.siteDir, htaccessText) } : { siteDir: cur.siteDir, htaccess: htaccessText, manifest };
+    const retained = prev ? { siteDir: prev.siteDir, htaccess: previousHtaccessText, manifest: releaseManifest(prev.siteDir, previousHtaccessText) } : { siteDir: cur.siteDir, htaccess: htaccessText, manifest };
     // "newer" = the other release when a previous one is supplied; otherwise a deliberately different synthetic tree.
     let newer;
     if (prev) newer = { siteDir: cur.siteDir, htaccess: htaccessText, manifest };
@@ -203,6 +215,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const r = prepareRollbackPackage({
     zip: path.resolve(flag('--zip') ?? 'preview-out/bonafide-preview.zip'),
     previousZip: flag('--previous-zip') ? path.resolve(flag('--previous-zip')) : null,
+    previousHtaccess: flag('--previous-htaccess') ? path.resolve(flag('--previous-htaccess')) : null,
     htaccess: path.resolve(flag('--htaccess') ?? 'deploy/apache/production.htaccess'),
     redirects: path.resolve(flag('--redirects') ?? 'deploy/apache/redirects.htaccess'),
     out: path.resolve(flag('--out') ?? 'rollback-out'),

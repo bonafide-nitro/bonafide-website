@@ -67,8 +67,27 @@ test('SHA256SUMS verifies with plain sha256sum against the extracted package plu
 });
 
 test('previous-release reinstall works between two different real packages', () => {
-  const r = prep({ previousZip: mkZip({ ...SITE, 'old-only.html': '<!doctype html><title>old</title>', 'images/a.png': 'older-bytes' }) });
+  const previousZip = mkZip({ ...SITE, 'old-only.html': '<!doctype html><title>old</title>', 'images/a.png': 'older-bytes' });
+  const oldHt = path.join(tmp(), 'old.htaccess');
+  fs.writeFileSync(oldHt, `${fs.readFileSync(HTACCESS, 'utf8')}# older release\n`);
+  const r = prep({ previousZip, previousHtaccess: oldHt });
   assert.deepEqual(r.problems, []);
+  assert.ok(prep({ previousZip }).problems.some((p) => /requires --previous-htaccess/.test(p)), 'a previous zip without its own .htaccess is refused');
+});
+
+test('a staging or malformed .htaccess is refused before anything is packaged', () => {
+  const bad = path.join(tmp(), 'bad.htaccess');
+  fs.writeFileSync(bad, 'Header set X-Robots-Tag "noindex, nofollow"\nAuthType Basic\n');
+  const out = path.join(tmp(), 'rb-bad');
+  const r = prep({ htaccess: bad, out });
+  assert.ok(r.problems.some((p) => /production \.htaccess preflight/.test(p)));
+  assert.equal(fs.existsSync(out), false);
+});
+
+test('RESTORE-ORDER verification command does not rely on a relative ../../ path', () => {
+  const out = path.join(tmp(), 'rb');
+  assert.deepEqual(prep({ out }).problems, []);
+  assert.doesNotMatch(fs.readFileSync(path.join(out, 'RESTORE-ORDER.txt'), 'utf8'), /\.\.\/\.\.\/SHA256SUMS/);
 });
 
 test('cutover mode fails closed while any prerequisite is OPEN (as committed)', () => {
