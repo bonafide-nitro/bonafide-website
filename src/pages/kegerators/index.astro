@@ -3,8 +3,12 @@ import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <!-- scaffold: kept (Block 52). Five pinned originals are shown in one provisional neutral collection with alt="" because no historical alt text, caption, position or equipment-group mapping is preserved (new accessibility handling, not recovered history). The two 2018 originals (Block 50) and the three equipment PNGs recorded in docs/migration/08 (SHA-256 pinned, Block 40, tests/foundation/block40-assets.mjs) are associated with /kegerators/ by doc 09; their exact /kegerators/ position, order, original alt and fuller copy remain unverified, so the order here is arbitrary and the strict QA blocker stays. The first CTA destination currently returns 404 on the store (observed evidence, preserved as-is). -->
-<Base title="Kegerators - Bona Fide Nitro Coffee" canonicalPath="/kegerators/" breadcrumbs={[{ name: 'Kegerators', path: '/kegerators/' }]} scaffold>
-  <h1>Equipment to Serve Nitro Cold Brew Coffee</h1>
+<Base title="Kegerators - Bona Fide Nitro Coffee" canonicalPath="/kegerators/" breadcrumbs={[{ name: 'Kegerators', path: '/kegerators/' }]} scaffold fullBleed>
+  <section class="band dark page-hero"><div class="wrap">
+    <p class="eyebrow">Equipment</p>
+    <h1>Equipment to Serve Nitro Cold Brew Coffee</h1>
+  </div></section>
+  <section class="band"><div class="wrap prose">
   <p>A nitro coffee dispenser, machine or kegerator lets you serve nitro cold brew on demand from a keg. Bona Fide equipment covers four groups: a countertop cold nitro dispenser, a double-faucet cold dispenser, a hot nitro dispenser and the traditional keg cooler.</p>
 
   <div class="equipment-images">
@@ -34,4 +38,5 @@ import Base from '../../layouts/Base.astro';
   <p>Any nitro coffee machine or dispenser needs regular cleaning of the faucets and lines to keep the drinks tasting right.</p>
 
   <p>Not sure which setup fits your business? See <a href="/howtobuy/">How to Buy</a>, <a href="/nitro-cold-brew/">all about nitro cold brew</a> or <a href="/hot-nitro-coffee/">hot nitro coffee</a>.</p>
+  </div></section>
 </Base>

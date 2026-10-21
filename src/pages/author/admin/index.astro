@@ -4,8 +4,13 @@ import ArchiveList from '../../../components/ArchiveList.astro';
 import { PAGE1, AUTHOR } from '../../../lib/archive.mjs';
 ---
 <!-- Tier-3 archive, complete against its baseline contract (static 200, self-canonical, indexable, sitemap, real pagination). Listing = exact live archive evidence (Issue #36 ZANETA_DECISION). The live <title>/meta description are not evidenced: the title is derived from the evidenced H1 (page 2 adds ' - Page 2' to satisfy the duplicate-title gate); no meta description is emitted. Excerpts/images are not evidenced and not invented. -->
-<Base title="Author: John Goerke | Bona Fide Brewing Company" canonicalPath="/author/admin/" breadcrumbs={[{ name: 'Author: John Goerke', path: '/author/admin/' }]}>
-  <h1>Author: John Goerke</h1>
-  
+<Base title="Author: John Goerke | Bona Fide Brewing Company" canonicalPath="/author/admin/" breadcrumbs={[{ name: 'Author: John Goerke', path: '/author/admin/' }]} fullBleed>
+  <section class="band dark page-hero"><div class="wrap">
+    <p class="eyebrow">Author</p>
+    <h1>Author: John Goerke</h1>
+    
+  </div></section>
+  <section class="band tint"><div class="wrap">
   <ArchiveList posts={PAGE1} base={AUTHOR.base} current={1} />
+  </div></section>
 </Base>

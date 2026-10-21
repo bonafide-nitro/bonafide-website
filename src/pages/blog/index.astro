@@ -4,7 +4,12 @@ import ArchiveList from '../../components/ArchiveList.astro';
 import { PAGE1, BLOG } from '../../lib/archive.mjs';
 ---
 <!-- scaffold: kept until the excerpts/categories/images are preserved. Cards link only to built routes; page 1 = the 10 evidenced posts, page 2 is /blog/page/2/ (Block 9). -->
-<Base title="Nitro Coffee & Nitro Tea News | Bona Fide Brewing Company | Blog" canonicalPath="/blog/" breadcrumbs={[{ name: 'Blog', path: '/blog/' }]} scaffold>
-  <h1>Nitro Coffee &amp; Nitro Tea News</h1>
+<Base title="Nitro Coffee & Nitro Tea News | Bona Fide Brewing Company | Blog" canonicalPath="/blog/" breadcrumbs={[{ name: 'Blog', path: '/blog/' }]} scaffold fullBleed>
+  <section class="band dark page-hero"><div class="wrap">
+    <p class="eyebrow">Blog</p>
+    <h1>Nitro Coffee &amp; Nitro Tea News</h1>
+  </div></section>
+  <section class="band tint"><div class="wrap">
   <ArchiveList posts={PAGE1} base={BLOG.base} current={1} />
+  </div></section>
 </Base>
