@@ -162,6 +162,8 @@ const EXPECTED = {
     'https://www.nitrocoffee.store/collections/nitro-tea/products/organic-passion-fruit-nitro-tea-pet-5-gal',
     'https://www.nitrocoffee.store/collections/better-than-cold-brew-bag-in-box-coffee-and-tea-collection',
     'https://www.nitrocoffee.store/products/orgainc-nitro-hazelnut-creme-coffee-pet-5-gal-keg',
+    // Issue #165: retail Organic Vanilla uses the verified same-SKU href.
+    'https://www.nitrocoffee.store/products/peoples-organic-nitro-vanilla-pet-5-gal',
     'https://www.nitrocoffee.store/collections/pet-nitro-coffee-keg/products/organic-nitro-caramel-coffee-pet-5-gal-keg',
     // Block 35 (Issue #88): the 13 Amazon hrefs, each proven to its product/style by the original /products/ page.
     'https://www.amazon.com/Bona-Craft-Draft-Nitro-Coffee/dp/B01N1001H9',
@@ -197,7 +199,7 @@ t('every page renders exactly its evidenced commerce hrefs (no more, no fewer, b
 });
 
 t('/products/ and /products-2/ keep distinct inventories and counts', () => {
-  assert.equal(EXPECTED['/products/'].length, 26); // 13 store + 13 Amazon (Block 35)
+  assert.equal(EXPECTED['/products/'].length, 27); // 14 store (13 + retail Vanilla, Issue #165) + 13 Amazon (Block 35)
   assert.equal(EXPECTED['/products-2/'].length, 18); // Block 34: +6 Alliance hrefs
   assert.notDeepEqual([...EXPECTED['/products/']].sort(), [...EXPECTED['/products-2/']].sort());
   assert.ok(!commerceHrefs(fs.readFileSync('dist/products-2/index.html', 'utf8')).some((u) => /amazon|amzn/i.test(u)));
@@ -231,7 +233,7 @@ test('registry hrefs and product store hrefs are all covered by the evidenced se
 
 test('unresolved destinations are metadata only: no href, and they are never invented', () => {
   const c = loadCommerce();
-  assert.ok(c.unresolved.length >= 3);
+  assert.ok(c.unresolved.length >= 2);
   for (const u of c.unresolved) assert.ok(!('href' in u), u.id);
   assert.ok(!c.unresolved.some((u) => u.id === 'products-amazon'), 'Block 35 resolved the Amazon register entry');
 });

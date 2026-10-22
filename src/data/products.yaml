@@ -4,8 +4,9 @@
 # Source: docs/migration/07-block4-public-source-capture.md (sanitized public rendered-page capture).
 # Block 38: exact nonempty alt attributes for Espresso, Ethiopia, Hazelnut and Vanilla were verified
 # against the owner-saved /products/ and /products-2/ HTML; original empty alt values remain unfilled.
-# Deliberately NOT here (not evidenced, never invented): the retail Vanilla store href (original-page target is the
-# Jittery John's product, flagged as suspect), the Decaf Mexico store href, image alt text other than where already recorded.
+# Issue #165: retail Organic Vanilla (`vanilla-coffee`) uses the same exact registered store href as wholesale (the original
+# retail target was the erroneous Jittery John's product). `vanilla-nitro-main` stays wholesale-only.
+# Deliberately NOT here (not evidenced, never invented): the Decaf Mexico store href (special request; cards offer a contact path), image alt text other than where already recorded.
 # `links.amazon.{nitro,still}` (Block 35, Issue #88) are the per-style Amazon hrefs read from the owner-supplied original
 # /products/ page (DOM order: Nitro Style then Still (Flat) Style under each product heading); retail view only.
 # `links.storeViews` limits a store link to the views where it is evidenced.
@@ -220,7 +221,6 @@
   pricing: { retail: 149.00, wholesale: 195.00 }
   links:
     store: "https://www.nitrocoffee.store/products/peoples-organic-nitro-vanilla-pet-5-gal"
-    storeViews: [wholesale]
   image: /wp-content/uploads/2022/05/Vanilla-Nitro-by-Bona-Fide.png
   alt: Vanilla-Nitro-by-Bona-Fide
   views: [retail, wholesale]

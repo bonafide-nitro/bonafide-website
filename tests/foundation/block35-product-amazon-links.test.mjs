@@ -38,12 +38,15 @@ test('a "still" Amazon href is only allowed on products that offer the still sty
   for (const p of loadProducts()) if (p.links?.amazon?.still) assert.ok(p.styles?.includes('still'), p.id);
 });
 
-test('flagged, not fixed: the vanilla products have no retail store link and no Amazon link', () => {
+test('Issue #165: retail vanilla uses the verified store href; vanilla-nitro-main stays wholesale-only; no Amazon link', () => {
+  const VANILLA = 'https://www.nitrocoffee.store/products/peoples-organic-nitro-vanilla-pet-5-gal';
+  const byId = (id) => loadProducts().find((x) => x.id === id);
   for (const id of ['vanilla-coffee', 'vanilla-nitro-main']) {
-    const p = loadProducts().find((x) => x.id === id);
-    assert.equal(p.links.amazon, undefined, id);
-    assert.deepEqual(p.links.storeViews, ['wholesale'], id);
+    assert.equal(byId(id).links.amazon, undefined, id);
+    assert.equal(byId(id).links.store, VANILLA, id);
   }
+  assert.equal(byId('vanilla-coffee').links.storeViews, undefined);
+  assert.deepEqual(byId('vanilla-nitro-main').links.storeViews, ['wholesale']);
 });
 
 t('/products/ renders the 13 Amazon hrefs in document order; no other page renders any', () => {
