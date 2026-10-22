@@ -18,6 +18,8 @@ const image = src && typeof alt === 'string' && fs.existsSync(`public${src}`) ? 
 // Block 40: the original wraps the Amazon banner image inside every Amazon link.
 const az = PAGE_MEDIA.amazon;
 const azImage = fs.existsSync(`public${az.src}`);
+// Issue #165: special-request SKUs have no store href; offer the existing contact page instead of a Buy button.
+const contact = p.specialRequest && !store ? '/contact-bona-fide-nitro-coffee-and-tea/' : null;
 const fmt = (n) => `$${n.toFixed(2)}`;
 ---
 <li class="card">
@@ -30,6 +32,7 @@ const fmt = (n) => `$${n.toFixed(2)}`;
   {price == null && p.format && <p>{p.format}</p>}
   {view === 'retail' && p.styles && <p>Nitro Style + Still (Flat) Style</p>}
   <p>
+    {contact && <a class="cta" href={contact} aria-label={`Contact / Request availability for ${name}`}>Contact / Request availability</a>}
     {store && <a class="cta" href={store}>Buy on the Bona Fide webstore</a>}
     {amazon.map((href) => <a class="cta" href={href}>{azImage && <img src={az.src} alt={az.alt} width={az.width} height={az.height} loading="lazy" decoding="async" />} Buy Securely On Amazon.com</a>)}
   </p>
