@@ -43,7 +43,7 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
       :root { --ink: #1c1712; --muted: #5b5147; --accent: #8a5a1f; --bg: #fffdf9; --card: #f6efe4; --gold: #e0a84a; --gold-ink: #2a1c08; --deep: #2b1d12; --espresso: #160e08; --cream: #f7efe1; --line: #e4d6bf; --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif; }
       * { box-sizing: border-box; }
       body { margin: 0; font: 17px/1.65 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); background: var(--bg); }
-      /* Header: espresso brand bar + readable main navigation. Presentation only; no scripts (mobile menu is a native <details>). */
+      /* Header: espresso brand bar + readable main navigation. Presentation only; no scripts (mobile menu is a native <details>; desktop list is a plain duplicate shown only at 62rem+, so no browser feature is required). */
       header.main-header { background: var(--espresso); border-bottom: 3px solid var(--gold); position: relative; z-index: 20; }
       header.main-header .site-branding { padding: .75rem 1rem; max-width: 76rem; margin: 0 auto; }
       header.main-header .site-logo { display: block; width: 190px; max-width: 100%; height: auto; }
@@ -66,16 +66,15 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
         header.main-header .site-branding { padding: 1rem 1rem .85rem; }
         header.main-header .site-logo { width: 230px; }
       }
-      @supports selector(::details-content) {
-        @media (min-width: 62rem) {
-          nav.site summary { display: none; }
-          nav.site .menu::details-content { content-visibility: visible; display: block; }
+      nav.site .menu-wide { display: none; }
+      @media (min-width: 62rem) {
+          nav.site .menu { display: none; }
+          nav.site .menu-wide { display: block; max-width: 76rem; margin: 0 auto; }
           nav.site ul { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem 0; padding: .35rem 1rem; }
           nav.site a { padding: .45rem .62rem; font-size: .95rem; white-space: nowrap; }
           nav.site a[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--gold); border-radius: .35rem .35rem 0 0; }
           nav.site li:last-child { margin-left: auto; }
           nav.site li:last-child a { margin: 0; padding: .45rem 1.1rem; border-radius: 999px; }
-        }
       }
       a { color: var(--accent); }
       main { max-width: 64rem; margin: 0 auto; padding: 1rem; }
@@ -343,6 +342,12 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
           {nav.external.map((i) => <li><a href={commerceHref(i.commerceId)}>{i.label}</a></li>)}
         </ul>
       </details>
+      <div class="menu-wide">
+        <ul>
+          {nav.launch.map((i) => <li><a href={i.path} aria-current={here === i.path ? 'page' : undefined}>{i.label}</a></li>)}
+          {nav.external.map((i) => <li><a href={commerceHref(i.commerceId)}>{i.label}</a></li>)}
+        </ul>
+      </div>
     </nav>
     </header>
     <main class={fullBleed ? 'full' : undefined}>
