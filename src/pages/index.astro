@@ -6,7 +6,7 @@ const store = commerceHref('webstore-root-apex');
 const bik = store; // only the evidenced webstore root is linked from the homepage
 const U = '/wp-content/uploads/';
 // Existing vetted uploads only (no new binaries). Alt is descriptive of what the image shows.
-const tap = { src: `${U}2018/06/Nitro-Coffeee-serving-from-tap-Bona-Fide.jpg`, alt: 'Nitro coffee with a creamy head in a Bona Fide Craft Draft glass on a tap', width: 1920, height: 1188 };
+const pour = { src: M.serving.src, alt: 'Nitro coffee pouring from a Bona Fide countertop dispenser into a Craft Draft glass', width: M.serving.width, height: M.serving.height };
 const bikImg = { src: M.classicBlend.src, alt: 'Bona Fide Classic Blend bag-in-box cold brew coffee', width: M.classicBlend.width, height: M.classicBlend.height };
 const kegs = { src: M.threeKegs.src, alt: 'Three Bona Fide Nitro Coffee & Tea keg types: stainless, steel and PET', width: M.threeKegs.width, height: M.threeKegs.height };
 const setup = { src: M.kegBikSet.src, alt: 'Bona Fide hot and cold nitro dispensers on a console table with kegs underneath', width: M.kegBikSet.width, height: M.kegBikSet.height };
@@ -22,8 +22,8 @@ const flavors = [
 <!-- scaffold: kept until the homepage testimonial section is evidenced. Review/AggregateRating schema is deliberately omitted (decision I7, Block 30). -->
 <Base title="Nitro Coffee Experts & Leaders - Bona Fide Nitro Coffee & Nitro Tea" canonicalPath="/" scaffold fullBleed>
   <section class="hero">
-    <img class="hero-bg" src={tap.src} alt="" width={tap.width} height={tap.height} fetchpriority="high" decoding="async" />
     <div class="hero-in">
+      <div class="hero-copy">
       <p class="eyebrow">Craft Draft nitrogen infused coffee &amp; tea</p>
       <h1>BONA FIDE - EXPERTS IN NITRO COFFEE AND NITRO TEA</h1>
       <p class="lead">Nitro Coffee Has Never Been Easier! Through trusted distribution partners and multiple coffee brands, Bona Fide produces, installs, delivers and services nationwide.</p>
@@ -38,6 +38,10 @@ const flavors = [
         <li>Superior taste</li>
         <li>Preferred by roast masters</li>
       </ul>
+      </div>
+      <figure class="hero-media">
+        <img src={pour.src} alt={pour.alt} width={pour.width} height={pour.height} fetchpriority="high" decoding="async" />
+      </figure>
     </div>
   </section>
 
@@ -48,11 +52,13 @@ const flavors = [
 
   <section class="wrap intro">
     <h2>Leaders In The Market For Nitrogen Infused Coffee and Tea</h2>
+    <div>
     <p>Bona Fide Brewing Company brews and kegs nitrogen infused coffee and nitro tea for coffee shops, offices, restaurants and homes. Learn more <a href="/about/">about Bona Fide</a> or read the <a href="/nitro-coffee-questions/">nitro coffee questions</a> and <a href="/nitro-cold-brew/">nitro cold brew</a> pages.</p>
+    </div>
   </section>
 
   <section class="wrap paths" aria-labelledby="paths-h">
-    <h2 id="paths-h" class="center">Choose your Bona Fide pathway</h2>
+    <h2 id="paths-h">Choose your Bona Fide pathway</h2>
     <div class="path-grid">
       <article class="path path-retail">
         <img src={bikImg.src} alt={bikImg.alt} width={bikImg.width} height={bikImg.height} loading="lazy" decoding="async" />
