@@ -36,6 +36,9 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
     {scaffold && <meta name="bonafide-qa" content="scaffold-placeholder" />} <!-- QA marker: strict migration QA fails on this -->
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet" />
     {canonicalPath && <link rel="canonical" href={abs(canonicalPath)} />}
     <script type="application/ld+json" set:html={jsonLd} />
     <GoogleTagManager id={gtmId} position="head" />
@@ -326,6 +329,12 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
       nav.pagination span[aria-current] { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
       .page-hero.wholesale + .band .wrap > ul { background: #fff; border: 1px solid #e4d6bf; border-left: 6px solid var(--gold); border-radius: .5rem; padding: 1rem 1rem 1rem 2.4rem; max-width: 46rem; }
       .prose h4 { margin: 1.5rem 0 .25rem; padding-left: .75rem; border-left: 6px solid var(--gold); font-size: 1.1rem; }
+      /* Global headline type: one consistent Anton face on all pages, including archives and the homepage. */
+      h1, h2, h3, h4, h5, h6, main.full h1, main.full h2, main.full h3, main.full h4, main.full h5, main.full h6, footer.site-footer .brand strong {
+        font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
+        font-weight: 400;
+        letter-spacing: .015em;
+      }
     </style>
   </head>
   <body>
