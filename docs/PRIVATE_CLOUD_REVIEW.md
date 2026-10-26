@@ -13,7 +13,7 @@ Order matters: protection first, code second.
    - the default `*.vercel.app` project URL
    - a preview (branch) URL
    - a per-commit URL
-   then run `npm run check:private-preview -- <url1> <url2> <url3>`. It must print PASS for all of them (HTTP 401 or redirect to vercel.com). **Any FAIL or error: delete the deployment/project, do not share the link.**
+   then run `npm run check:private-preview -- <url1> <url2> <url3>`. It must print PASS for all of them (HTTP 401 or an https redirect to vercel.com's login/SSO endpoint). **Any FAIL or error: delete the deployment/project, do not share the link.**
 5. Review while signed in to Vercel as an invited team member.
 
 ## Cleanup at cutover

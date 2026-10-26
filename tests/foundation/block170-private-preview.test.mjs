@@ -21,7 +21,15 @@ test('vercel.json is static-only, matches the Astro build, and carries no secret
 test('probe passes only login walls', () => {
   assert.equal(classify({ status: 401 }).ok, true);
   assert.equal(classify({ status: 307, location: 'https://vercel.com/sso-api?url=x' }).ok, true);
-  for (const c of [{ status: 200 }, { status: 404 }, { status: 500 }, { status: 307, location: 'https://evil.test/vercel.com' }, { status: 302, location: 'notaurl' }]) {
+  assert.equal(classify({ status: 302, location: 'https://vercel.com/login?next=%2Fx' }).ok, true);
+  for (const c of [
+    { status: 302, location: 'https://vercel.com/' },
+    { status: 302, location: 'https://vercel.com/docs' },
+    { status: 302, location: 'http://vercel.com/not-a-login' },
+    { status: 302, location: 'http://vercel.com/login' },
+    { status: 302, location: 'https://vercel.com/login/../docs' },
+    { status: 302, location: 'https://sub.vercel.com/login' },
+    { status: 200 }, { status: 404 }, { status: 500 }, { status: 307, location: 'https://evil.test/vercel.com' }, { status: 302, location: 'notaurl' }]) {
     assert.equal(classify(c).ok, false, JSON.stringify(c));
   }
 });

@@ -1,17 +1,22 @@
 // Issue #170: fail-closed privacy probe for a private hosted review.
 // Usage: node scripts/check-private-preview.mjs <url> [<url> ...]
-// Each URL must be anonymously UNREACHABLE: HTTP 401, or a redirect to a vercel.com login/SSO page.
+// Each URL must be anonymously UNREACHABLE: HTTP 401, or a redirect to the https://vercel.com login/SSO endpoint
+// (/sso-api or /login). Redirects to other vercel.com pages, subdomains or http do not prove a login wall.
 // Anything else (2xx, 404, 5xx, network error, no URLs given) fails, because "could not prove it is
 // private" is treated as "assume public". This is a probe, not access control: the access control is
 // Vercel Authentication set to "All Deployments". Pass the default, preview and per-commit URLs.
 import { pathToFileURL } from 'node:url';
 
+const AUTH_PATHS = ['/sso-api', '/login'];
+
 export const classify = ({ status, location }) => {
   if (status === 401) return { ok: true, why: 'HTTP 401 (login required)' };
   if ([301, 302, 303, 307, 308].includes(status) && location) {
     try {
-      const host = new URL(location).hostname;
-      if (host === 'vercel.com' || host.endsWith('.vercel.com')) return { ok: true, why: `redirect to ${host}` };
+      const dest = new URL(location);
+      if (dest.protocol === 'https:' && dest.hostname === 'vercel.com' && AUTH_PATHS.includes(dest.pathname)) {
+        return { ok: true, why: `redirect to https://vercel.com${dest.pathname}` };
+      }
     } catch { /* fall through */ }
   }
   return { ok: false, why: `HTTP ${status}${location ? ` -> ${location}` : ''} is NOT a login wall` };
