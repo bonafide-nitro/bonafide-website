@@ -13,6 +13,7 @@
     "preview": "astro preview",
     "check:dist": "node scripts/check-build-output.mjs",
     "check:a11y": "node scripts/check-accessibility.mjs",
+    "check:private-preview": "node scripts/check-private-preview.mjs",
     "check:links": "node scripts/check-internal-links.mjs",
     "check:artifact": "node scripts/check-release-artifact.mjs",
     "package:preview": "node scripts/package-preview.mjs",
