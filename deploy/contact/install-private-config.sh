@@ -2,7 +2,7 @@
 # Bona Fide contact form: PRIVATE-CONFIG PREPARATION for GoDaddy cPanel over SSH (Issue #174).
 #
 # What it does (nothing else):
-#   - checks PHP >= 8.0 and the cURL extension,
+#   - checks PHP >= 8.1 and the cURL and mbstring extensions,
 #   - checks ~/bonafide-private/ and ~/bonafide-private/ratelimit/,
 #   - copies contact-config.example.php to ~/bonafide-private/contact-config.php ONLY IF that file is absent,
 #   - restricts permissions (config 600, private dirs 700),
@@ -43,8 +43,9 @@ ok "home: $HOME_DIR"
 if [ -d "$HOME_DIR/public_html" ]; then ok "public_html found (this script never writes there)"; else warn "public_html not found at the usual place (not needed for this step)"; fi
 PHP_BIN="${BF_PHP:-php}"
 if command -v "$PHP_BIN" >/dev/null 2>&1; then
-  if "$PHP_BIN" -r 'exit(PHP_VERSION_ID >= 80000 ? 0 : 1);' 2>/dev/null; then ok "PHP >= 8.0"; else bad "PHP 8.0 or newer required (select it in cPanel > MultiPHP Manager / use the matching php binary via BF_PHP)"; fi
+  if "$PHP_BIN" -r 'exit(PHP_VERSION_ID >= 80100 ? 0 : 1);' 2>/dev/null; then ok "PHP >= 8.1"; else bad "PHP 8.1 or newer required (the endpoint uses array_is_list) (select it in cPanel > MultiPHP Manager / use the matching php binary via BF_PHP)"; fi
   if "$PHP_BIN" -r 'exit(extension_loaded("curl") ? 0 : 1);' 2>/dev/null; then ok "cURL extension loaded"; else bad "PHP cURL extension missing (enable in cPanel > Select PHP Version)"; fi
+  if "$PHP_BIN" -r 'exit(extension_loaded("mbstring") ? 0 : 1);' 2>/dev/null; then ok "mbstring extension loaded"; else bad "PHP mbstring extension missing (enable in cPanel > Select PHP Version)"; fi
 else
   bad "php not found on PATH"
 fi

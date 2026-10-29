@@ -85,3 +85,11 @@ t('check flags an empty sender_name as incomplete', () => {
   fs.writeFileSync(cfg, fs.readFileSync(cfg, 'utf8').replace(/'sender_name'\s*=>\s*'[^']*'/, "'sender_name' => ''"));
   assert.match(run(h, 'check').out, /todo\] sender_name: empty/);
 });
+
+t('requires PHP >= 8.1 and mbstring', () => {
+  const fake = (name, body) => { const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bf-php-')), name); fs.writeFileSync(f, `#!/bin/bash\n${body}\n`, { mode: 0o755 }); return f; };
+  const h = home(); fs.mkdirSync(path.join(h, 'public_html'));
+  const go = (php) => { const r = spawnSync('bash', [SCRIPT, 'check'], { env: { ...process.env, BF_HOME: h, BF_PHP: php }, encoding: 'utf8' }); return r.stdout + r.stderr; };
+  assert.match(go(fake('php80', 'case "$2" in *80100*) exit 1;; esac; exec php "$@"')), /FAIL\] PHP 8\.1 or newer required/);
+  assert.match(go(fake('php-nombstring', 'case "$2" in *mbstring*) exit 1;; esac; exec php "$@"')), /FAIL\] PHP mbstring extension missing/);
+});
