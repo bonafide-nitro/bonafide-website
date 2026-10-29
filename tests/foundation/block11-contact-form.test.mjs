@@ -53,6 +53,14 @@ t('contact page without configuration: disabled, no action, no GET, no remote sc
   assert.ok(!/https?:\/\/(?!bonafidenitro\.com|www\.nitrocoffee\.store)[^"'\s<]*(formspree|basin|web3forms|getform|formsubmit|brevo)/i.test(h));
 });
 
+t('contact controls ship disabled and are enabled only after the submit handler is installed', () => {
+  const h = fs.readFileSync(PAGE, 'utf8');
+  assert.ok(/<fieldset id="contact-fields" disabled>/.test(h), 'disabled in every build state');
+  const listener = h.indexOf("form.addEventListener('submit'");
+  const enable = h.indexOf("getElementById('contact-fields').disabled = false");
+  assert.ok(listener > 0 && enable > listener, 'enabled after the listener is attached');
+});
+
 t('contact page keeps URL, title, H1, canonical, indexability', () => {
   const h = fs.readFileSync(PAGE, 'utf8');
   assert.equal(h.match(/<title>([^<]*)<\/title>/)[1], 'Contact - Bona Fide Nitro Coffee And Tea');

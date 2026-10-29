@@ -117,7 +117,7 @@ test('built LIVE with a same-origin path: JS-only same-origin POST target, enabl
   const open = formOpen(r.contact);
   assert.ok(/data-state="live"/.test(open) && open.includes(`data-endpoint="${SYNTH_FORM}"`));
   assert.ok(!/\saction=/.test(open) && !/formaction=/.test(r.contact), 'no native action: nothing posts without the script');
-  assert.ok(!/<fieldset[^>]*\bdisabled\b/.test(r.contact), 'form enabled when configured');
+  assert.ok(/<fieldset[^>]*\bdisabled\b/.test(r.contact) && r.contact.includes("getElementById('contact-fields').disabled = false"), 'controls start disabled and the installed script enables them');
   assert.equal([...r.contact.matchAll(/<form\b/g)].length, 1);
   assert.ok(!/The online form is not available/.test(r.contact) && !/<strong>Demo mode/.test(r.contact));
   assert.ok(/href="mailto:contact@bonafidenitro\.com"/.test(r.contact) && /href="tel:\+18554821446"/.test(r.contact));
@@ -146,7 +146,7 @@ test('MOCK mode (also on Vercel): demo notice, no endpoint, no fetch, nothing ca
     const r = build(env);
     const open = formOpen(r.contact);
     assert.ok(/data-state="mock"/.test(open) && !/data-endpoint=|\saction=/.test(open));
-    assert.ok(/<strong>Demo mode/.test(r.contact) && !/<fieldset[^>]*\bdisabled\b/.test(r.contact));
+    assert.ok(/<strong>Demo mode/.test(r.contact) && /<fieldset[^>]*\bdisabled\b/.test(r.contact) && r.contact.includes("getElementById('contact-fields').disabled = false"));
     assert.ok(!r.contact.includes(SYNTH_FORM), 'handler path never emitted in mock mode');
     assertContactRoute(r, 'mock');
   }

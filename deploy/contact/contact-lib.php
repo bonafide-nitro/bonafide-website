@@ -46,6 +46,15 @@ function bf_config_ok(array $c): bool
     return is_dir($c['storage_dir']) && is_writable($c['storage_dir']);
 }
 
+// Remove counter files untouched for over an hour: every timestamp in them has expired, so inactive clients leave nothing behind.
+function bf_rate_sweep(array $c, int $now): void
+{
+    foreach (glob(rtrim($c['storage_dir'], '/\\') . '/rl-*.json') ?: [] as $f) {
+        $m = @filemtime($f);
+        if ($m !== false && $m < $now - 3600) @unlink($f);
+    }
+}
+
 // Sliding-window limit per hashed client and globally; the file holds only timestamps keyed by a salted hash.
 function bf_rate_limited(array $c, string $ip, int $now): ?int
 {
@@ -54,8 +63,11 @@ function bf_rate_limited(array $c, string $ip, int $now): ?int
         ['global', (int)($c['rate_global_hour'] ?? 60)],
     ];
     $retry = null;
+    bf_rate_sweep($c, $now);
     foreach ($limits as [$key, $max]) {
         $f = rtrim($c['storage_dir'], '/\\') . '/rl-' . $key . '.json';
+        // A new client file is refused once the number of tracked clients is capped (fail closed, bounded storage).
+        if (!is_file($f) && $key !== 'global' && count(glob(dirname($f) . '/rl-ip-*.json') ?: []) >= (int)($c['rate_max_clients'] ?? 5000)) return 3600;
         $h = @fopen($f, 'c+');
         if (!$h || !flock($h, LOCK_EX)) return 3600; // fail closed
         $raw = stream_get_contents($h);

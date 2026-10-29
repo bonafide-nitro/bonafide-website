@@ -16,8 +16,8 @@ const CONFIG = {
 };
 const ORIGIN = { HTTP_ORIGIN: 'https://site.example.test' };
 const good = (o = {}) => ({ name: 'Ada Lovelace', email: 'ada@example.test', category: 'retailer', message: 'Hello, I would like to stock your nitro coffee.', bf_hp: '', elapsed_ms: 9000, ...o });
-const run = (requests, { config = {}, transport } = {}) => {
-  const r = spawnSync('php', ['tests/contact/harness.php'], { input: JSON.stringify({ config: { ...CONFIG, ...config }, requests: requests.map((q) => ({ server: ORIGIN, ...q })), transport }), encoding: 'utf8' });
+const run = (requests, { config = {}, transport, pre_files } = {}) => {
+  const r = spawnSync('php', ['tests/contact/harness.php'], { input: JSON.stringify({ config: { ...CONFIG, ...config }, requests: requests.map((q) => ({ server: ORIGIN, ...q })), transport, pre_files }), encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
   return JSON.parse(r.stdout);
 };
@@ -105,6 +105,15 @@ t('rate limiting per client IP (and a global cap), with Retry-After', () => {
   assert.deepEqual(g.results.map((r) => r.status), [200, 200, 429]);
   const later = run([{ json: good(), now: 1000000 }, { json: good(), now: 1000000 + 3601 }], { config: { rate_per_ip_hour: 1 } });
   assert.deepEqual(later.results.map((r) => r.status), [200, 200], 'window expires');
+});
+
+t('rate-limit files of inactive clients expire; tracked clients are capped', () => {
+  const o = run([{ json: good() }], { config: {}, pre_files: { 'rl-ip-stale.json': 1000000 - 3601, 'rl-ip-fresh.json': 1000000 - 60 } });
+  assert.ok(!o.left.includes('rl-ip-stale.json'), 'stale client file removed');
+  assert.ok(o.left.includes('rl-ip-fresh.json'), 'recent client file kept');
+  const capped = run([{ json: good() }], { config: { rate_max_clients: 1 }, pre_files: { 'rl-ip-a.json': 1000000 - 60 } });
+  assert.equal(capped.results[0].status, 429, 'new client refused at the cap');
+  assert.ok(!capped.left.some((f) => f !== 'rl-ip-a.json'), 'no new file created beyond the cap');
 });
 
 t('Brevo errors: safe responses, no provider detail, nothing sensitive logged', () => {

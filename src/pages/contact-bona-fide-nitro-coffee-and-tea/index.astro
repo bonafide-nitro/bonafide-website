@@ -30,7 +30,7 @@ const enabled = contact.state !== 'disabled';
   )}
   <form method="post" class="contact-form" id="contact-form" novalidate data-state={contact.state} data-endpoint={contact.endpoint ?? undefined}>
     <div id="contact-errors" class="form-errors" role="alert" tabindex="-1" hidden></div>
-    <fieldset disabled={!enabled}>
+    <fieldset id="contact-fields" disabled>
       <legend>Contact form</legend>
       <p>
         <label for="contact-name">Name <span class="req">(required)</span></label><br />
@@ -82,6 +82,8 @@ const enabled = contact.state !== 'disabled';
   (function () {
     var form = document.getElementById('contact-form');
     if (!form || form.dataset.state === 'disabled') return;
+    // The controls ship disabled so a no-JS or blocked-JS visitor can never POST to this static page;
+    // they are enabled only once the submit handler below is installed.
     var mock = form.dataset.state === 'mock';
     var endpoint = form.dataset.endpoint;
     var status = document.getElementById('contact-status');
@@ -164,6 +166,7 @@ const enabled = contact.state !== 'disabled';
         })
         .catch(function () { clearTimeout(timer); setBusy(false); say(failMsg('network')); });
     });
+    document.getElementById('contact-fields').disabled = false;
   })();
   </script>
 

@@ -17,12 +17,14 @@ $transport = static function (string $url, array $headers, string $json) use (&$
     $calls[] = ['url' => $url, 'headers' => $headers, 'payload' => json_decode($json, true)];
     return $in['transport'] ?? ['status' => 201, 'error' => null];
 };
+foreach (($in['pre_files'] ?? []) as $name => $mtime) { file_put_contents("$dir/$name", '[]'); touch("$dir/$name", $mtime); }
 $out = [];
 foreach ($in['requests'] as $r) {
     $r += ['method' => 'POST', 'content_type' => 'application/json', 'ip' => '203.0.113.7', 'server' => ['HTTP_ORIGIN' => 'https://bonafidenitro.com']];
     if (isset($r['json'])) $r['body'] = json_encode($r['json']);
     $out[] = bf_handle($r, $cfg, $transport, $r['now'] ?? 1000000);
 }
+$left = array_map('basename', glob("$dir/*"));
 array_map('unlink', glob("$dir/*"));
 rmdir($dir);
-echo json_encode(['results' => $out, 'calls' => $calls, 'logs' => $logs]);
+echo json_encode(['results' => $out, 'calls' => $calls, 'logs' => $logs, 'left' => $left]);
