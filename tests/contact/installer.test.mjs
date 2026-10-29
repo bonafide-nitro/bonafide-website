@@ -64,3 +64,24 @@ t('check mode is read-only and fails when private files are missing', () => {
 });
 
 t('rejects unknown mode', () => { assert.equal(run(home(), 'bogus').status, 64); });
+
+t('symlinked bonafide-private into public_html is rejected before any change', () => {
+  for (const mode of ['apply', 'check', 'dry-run']) {
+    const h = home(); const pub = path.join(h, 'public_html'); fs.mkdirSync(pub);
+    fs.symlinkSync(pub, path.join(h, 'bonafide-private'));
+    const r = run(h, mode);
+    assert.equal(r.status, 1, r.out);
+    assert.match(r.out, /symlink/);
+    assert.deepEqual(fs.readdirSync(pub), [], `${mode} must not write into public_html`);
+  }
+});
+
+t('check flags an empty sender_name as incomplete', () => {
+  const h = home(); fs.mkdirSync(path.join(h, 'public_html'));
+  run(h, 'apply');
+  const cfg = path.join(h, 'bonafide-private', 'contact-config.php');
+  const r = run(h, 'check');
+  assert.match(r.out, /todo\] sender_name: (empty|still the placeholder)|sender_name set/);
+  fs.writeFileSync(cfg, fs.readFileSync(cfg, 'utf8').replace(/'sender_name'\s*=>\s*'[^']*'/, "'sender_name' => ''"));
+  assert.match(run(h, 'check').out, /todo\] sender_name: empty/);
+});

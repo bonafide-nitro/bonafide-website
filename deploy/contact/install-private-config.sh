@@ -49,7 +49,18 @@ else
   bad "php not found on PATH"
 fi
 
-echo "2. Private directories"
+echo "2. Path safety (before any change)"
+PUB_REAL="$(realpath -m "$HOME_DIR/public_html" 2>/dev/null)"
+PATH_BAD=0
+for t in "$PRIV" "$RATE" "$CONFIG"; do
+  if [ -L "$t" ]; then bad "$(basename "$t") is a symlink; refusing to follow it (replace it with a real path)"; PATH_BAD=1; continue; fi
+  r="$(realpath -m "$t" 2>/dev/null)"
+  case "$r/" in "$PUB_REAL"/*) bad "$(basename "$t") resolves inside public_html; private files must be OUTSIDE it"; PATH_BAD=1 ;; esac
+done
+if [ "$PATH_BAD" != 0 ]; then echo; echo "Result: FAILED -- nothing was changed."; exit 1; fi
+ok "private paths are real paths outside public_html"
+
+echo "2b. Private directories"
 if [ -d "$PRIV" ]; then ok "bonafide-private/ exists (left as is)"; else
   if [ "$MODE" = check ]; then bad "bonafide-private/ missing"; else
     act "create $PRIV (mode 700)"; [ "$MODE" = apply ] && mkdir -p "$PRIV"; fi
@@ -67,7 +78,6 @@ for d in "$PRIV" "$RATE"; do
   if [ "$p" = 700 ]; then ok "$(basename "$d")/ permissions 700"; else warn "$(basename "$d")/ permissions $p (apply sets 700)"; fi
   [ -w "$d" ] && ok "$(basename "$d")/ writable" || bad "$(basename "$d")/ not writable"
 done
-case "$PRIV" in "$HOME_DIR/public_html"*) bad "private dir must be OUTSIDE public_html" ;; esac
 
 echo "3. Config file"
 if [ -e "$CONFIG" ]; then
@@ -105,7 +115,7 @@ if [ -f "$CONFIG" ]; then
       $report = function ($k, $state) use (&$bad) {
         if ($state === "ok") { echo "  [ok]   $k set\n"; } else { echo "  [todo] $k: $state\n"; $bad = 1; }
       };
-      foreach (["brevo_api_key", "ip_salt", "sender_email", "test_recipient_email"] as $k) {
+      foreach (["brevo_api_key", "ip_salt", "sender_email", "sender_name", "test_recipient_email"] as $k) {
         $v = $str($k);
         $report($k, $v === "" ? "empty" : (strpos($v, "SET_") === 0 ? "still the placeholder" : "ok"));
       }
