@@ -1,4 +1,4 @@
-// Block 58 (Issue #133): offline release-safety contract for the contact and booking routes.
+// Block 58 (Issue #133), contact portion reworked for Issue #172: offline release-safety contract for the contact and booking routes.
 // Builds the site into a temp dir under controlled PUBLIC_* values (synthetic fixtures only, no real
 // provider URLs, no network) and asserts on the BUILT HTML. This proves build correctness only; real
 // submission delivery and real calendar booking need an approved provider and a controlled test
@@ -12,7 +12,8 @@ import { spawnSync } from 'node:child_process';
 
 const CONTACT = '/contact-bona-fide-nitro-coffee-and-tea/index.html';
 const BOOK = '/book-appointment/index.html';
-const SYNTH_FORM = 'https://forms.example.test/f/synthetic-fixture';
+const SYNTH_FORM = '/contact-submit.php';
+const LIVE = { PUBLIC_CONTACT_FORM_MODE: 'live' };
 const SYNTH_CAL = 'https://calendly.com/example-team/synthetic-intro';
 
 const REPO = process.cwd();
@@ -27,6 +28,8 @@ const build = (env) => {
   fs.symlinkSync(path.join(REPO, 'node_modules'), path.join(root, 'node_modules'));
   const clean = { ...process.env };
   delete clean.PUBLIC_CONTACT_FORM_ENDPOINT;
+  delete clean.PUBLIC_CONTACT_FORM_MODE;
+  delete clean.VERCEL;
   delete clean.PUBLIC_CALENDLY_URL;
   delete clean.PUBLIC_GTM_ID;
   try {
@@ -48,7 +51,8 @@ const assertContactDisabled = (h, label) => {
   assert.ok(!/\saction=/.test(formOpen(h)), `${label}: no action attribute`);
   assert.ok(/<fieldset[^>]*\bdisabled\b/.test(h), `${label}: fieldset disabled`);
   assert.ok(/role="status"/.test(h), `${label}: status notice`);
-  assert.ok(!/forms\.example\.test|formaction=/i.test(h), `${label}: no destination leaks`);
+  assert.ok(/data-state="disabled"/.test(formOpen(h)) && !/data-endpoint=/.test(formOpen(h)), `${label}: disabled state, no endpoint`);
+  assert.ok(!/forms\.example\.test|formaction=|contact-submit/i.test(h), `${label}: no destination leaks`);
   // usable fallback
   assert.ok(/href="mailto:contact@bonafidenitro\.com"/.test(h), `${label}: mailto fallback`);
   assert.ok(/href="tel:\+18554821446"/.test(h), `${label}: tel fallback`);
@@ -69,7 +73,8 @@ const assertBookingRoute = (r, label) => {
 const assertContactRoute = (r, label) => {
   assert.ok(!r.contact.includes('noindex'), `${label}: contact stays indexable`);
   assert.equal(r.contact.match(/<link rel="canonical" href="([^"]+)"/)[1], 'https://bonafidenitro.com/contact-bona-fide-nitro-coffee-and-tea/');
-  assert.ok(!/<script(?![^>]*application\/ld\+json)/.test(r.contact), `${label}: no scripts`);
+  const scripts = [...r.contact.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1]).filter((a) => !/application\/ld\+json/.test(a));
+  assert.ok(scripts.every((a) => !/\bsrc=/.test(a)), `${label}: only inline scripts (no third-party/remote script)`);
 };
 
 test('built with NO settings: contact disabled, booking disabled, fallbacks usable', () => {
@@ -82,48 +87,74 @@ test('built with NO settings: contact disabled, booking disabled, fallbacks usab
 
 test('built with INVALID settings: still no destination, no link, no submit target', () => {
   const bad = [
-    ['http://forms.example.test/f/x', 'https://calendly.com.evil.test/intro'],
-    ['javascript:alert(1)', 'http://calendly.com/example-team/intro'],
-    ['https://user:pw@forms.example.test/f/x', 'https://user:pw@calendly.com/example-team/intro'],
+    ['https://forms.example.test/f/x', 'https://calendly.com.evil.test/intro'],
+    ['http://forms.example.test/f/x', 'http://calendly.com/example-team/intro'],
+    ['javascript:alert(1)', 'https://user:pw@calendly.com/example-team/intro'],
+    ['//forms.example.test/f/x', 'https://calendly.com/'],
+    ['/a/../b.php', 'https://evilcalendly.com/example-team/intro'],
+    ['relative.php', 'https://calendly.com/example-team/intro?x'],
     ['   ', 'https://calendly.com/'],
-    ['/relative/path', 'https://evilcalendly.com/example-team/intro'],
   ];
   for (const [form, cal] of bad) {
-    const r = build({ PUBLIC_CONTACT_FORM_ENDPOINT: form, PUBLIC_CALENDLY_URL: cal });
+    const r = build({ ...LIVE, PUBLIC_CONTACT_FORM_ENDPOINT: form, PUBLIC_CALENDLY_URL: cal });
     const label = `invalid(${form} | ${cal})`;
     assert.ok(!r.contact.includes('pw@') && !r.book.includes('pw@'), `${label}: credentials never emitted`);
     assert.ok(!/\saction=/.test(formOpen(r.contact)), `${label}: no form action`);
     assert.ok(/<fieldset[^>]*\bdisabled\b/.test(r.contact), `${label}: fieldset disabled`);
-    assert.ok(!/forms\.example\.test|javascript:|relative\/path/.test(r.contact), `${label}: no destination leaks`);
-    assertBookingDisabled(r.book, label);
+    assert.ok(!/forms\.example\.test|javascript:|relative\.php|\.\.\/b/.test(r.contact), `${label}: no destination leaks`);
+    assertContactDisabled(r.contact, label);
     assertBookingRoute(r, label);
   }
 });
 
-test('built with SYNTHETIC valid settings: exactly the expected action and link, nothing else', () => {
-  const r = build({ PUBLIC_CONTACT_FORM_ENDPOINT: SYNTH_FORM, PUBLIC_CALENDLY_URL: SYNTH_CAL });
+test('live without an endpoint, or an endpoint without live mode, stays disabled', () => {
+  assertContactDisabled(build({ ...LIVE }).contact, 'live-no-endpoint');
+  assertContactDisabled(build({ PUBLIC_CONTACT_FORM_ENDPOINT: SYNTH_FORM }).contact, 'endpoint-no-mode');
+});
+
+test('built LIVE with a same-origin path: JS-only same-origin POST target, enabled form', () => {
+  const r = build({ ...LIVE, PUBLIC_CONTACT_FORM_ENDPOINT: SYNTH_FORM, PUBLIC_CALENDLY_URL: SYNTH_CAL });
   const open = formOpen(r.contact);
-  assert.ok(/method="post"/i.test(open) && !/method="get"/i.test(open));
-  assert.deepEqual([...open.matchAll(/\saction="([^"]*)"/g)].map((m) => m[1]), [SYNTH_FORM]);
-  assert.ok(!/<fieldset[^>]*\bdisabled\b/.test(r.contact), 'form enabled when configured');
-  assert.ok(!/formaction=/.test(r.contact), 'no per-control action override');
+  assert.ok(/data-state="live"/.test(open) && open.includes(`data-endpoint="${SYNTH_FORM}"`));
+  assert.ok(!/\saction=/.test(open) && !/formaction=/.test(r.contact), 'no native action: nothing posts without the script');
+  assert.ok(/<fieldset[^>]*\bdisabled\b/.test(r.contact) && r.contact.includes("getElementById('contact-fields').disabled = false"), 'controls start disabled and the installed script enables them');
   assert.equal([...r.contact.matchAll(/<form\b/g)].length, 1);
-  assert.ok(!/role="status"[^>]*>The online form is not available/.test(r.contact), 'unavailable notice absent');
-  // fallbacks stay present alongside a configured form
+  assert.ok(!/The online form is not available/.test(r.contact) && !/<strong>Demo mode/.test(r.contact));
   assert.ok(/href="mailto:contact@bonafidenitro\.com"/.test(r.contact) && /href="tel:\+18554821446"/.test(r.contact));
-  assert.ok(r.contact.split(SYNTH_FORM).length === 2, 'endpoint appears exactly once (the action)');
+  assert.ok(r.contact.split(SYNTH_FORM).length === 2, 'endpoint appears exactly once');
+  // every network call in the page script targets only the configured same-origin endpoint
+  const js = r.contact.match(/<script>([\s\S]*?)<\/script>|<script[^>]*is:inline[^>]*>([\s\S]*?)<\/script>/);
+  const script = [...r.contact.matchAll(/<script\b(?![^>]*ld\+json)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+  assert.ok(js || script);
+  assert.deepEqual([...script.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]), ['endpoint']);
+  assert.ok(!/https?:\/\/|XMLHttpRequest|sendBeacon|api-key|brevo/i.test(script), 'no absolute URL, no key, no Brevo in browser code');
   // booking: exactly one Calendly link, plain external link, no embed
   const links = externalHrefs(r.book).filter((u) => /calendly/i.test(u));
   assert.deepEqual(links, [SYNTH_CAL]);
-  assert.ok(/<a class="cta" href="[^"]+" rel="noopener noreferrer"/.test(r.book));
-  assert.ok(!/aria-disabled="true"/.test(mainOf(r.book)) && !/not available/i.test(mainOf(r.book)));
-  assertContactRoute(r, 'configured');
-  assertBookingRoute(r, 'configured');
+  assertContactRoute(r, 'live');
+  assertBookingRoute(r, 'live');
+});
+
+test('a Vercel build can never be live: VERCEL=1 forces disabled even with live + endpoint', () => {
+  const r = build({ ...LIVE, PUBLIC_CONTACT_FORM_ENDPOINT: SYNTH_FORM, VERCEL: '1' });
+  assertContactDisabled(r.contact, 'vercel-live');
+  assert.ok(!r.contact.includes(SYNTH_FORM), 'live handler path not present in the review build');
+});
+
+test('MOCK mode (also on Vercel): demo notice, no endpoint, no fetch, nothing can be sent', () => {
+  for (const env of [{ PUBLIC_CONTACT_FORM_MODE: 'mock' }, { PUBLIC_CONTACT_FORM_MODE: 'mock', VERCEL: '1', PUBLIC_CONTACT_FORM_ENDPOINT: SYNTH_FORM }]) {
+    const r = build(env);
+    const open = formOpen(r.contact);
+    assert.ok(/data-state="mock"/.test(open) && !/data-endpoint=|\saction=/.test(open));
+    assert.ok(/<strong>Demo mode/.test(r.contact) && /<fieldset[^>]*\bdisabled\b/.test(r.contact) && r.contact.includes("getElementById('contact-fields').disabled = false"));
+    assert.ok(!r.contact.includes(SYNTH_FORM), 'handler path never emitted in mock mode');
+    assertContactRoute(r, 'mock');
+  }
 });
 
 test('configuring one route never enables the other', () => {
-  const a = build({ PUBLIC_CONTACT_FORM_ENDPOINT: SYNTH_FORM });
-  assert.ok(/\saction=/.test(formOpen(a.contact)));
+  const a = build({ ...LIVE, PUBLIC_CONTACT_FORM_ENDPOINT: SYNTH_FORM });
+  assert.ok(/data-state="live"/.test(formOpen(a.contact)));
   assertBookingDisabled(a.book, 'contact-only');
   const b = build({ PUBLIC_CALENDLY_URL: SYNTH_CAL });
   assertContactDisabled(b.contact, 'booking-only');

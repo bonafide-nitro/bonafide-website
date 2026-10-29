@@ -20,15 +20,4 @@ Order matters: protection first, code second.
 Delete the Vercel project (removes all deployment URLs), disconnect the GitHub integration, remove any `PUBLIC_CONTACT_FORM_ENDPOINT` test value, and delete `vercel.json`. Real launch hosting is a separate, separately approved step.
 
 ## Making the contact form work
-What the code needs: one public **https** form URL in `PUBLIC_CONTACT_FORM_ENDPOINT` at build time (`src/lib/contact-form.mjs`). The form POSTs `name`, `email`, `message` and a hidden honeypot `bf_hp`. Without the value it stays disabled (covered by `block58` tests). No endpoint is invented here.
-
-Proposed provider (needs your approval): **Formspree**. Delivers each submission by email, has built-in spam filtering plus honeypot support, and has no secret in the page (the form URL is public). Create **two forms**:
-| Form | Recipient | Vercel env var scope |
-| --- | --- | --- |
-| Bona Fide TEST | your own address | Preview (and Production while the review project is private) |
-| Bona Fide PROD | contact@bonafidenitro.com | the real launch build only |
-Setup per form: set the recipient, turn on spam filtering, set the honeypot field name to `bf_hp` (or allow us to rename it to Formspree's `_gotcha` in a follow-up), set the success redirect to a thank-you location.
-
-Not done in this PR (each needs a decision): a thank-you / failure page (a new indexable-surface page, so it needs its own Block; with no JavaScript the provider's own confirmation page shows today), and any real submission test, which needs the endpoint, an approved TEST recipient and your go-ahead.
-
-**Owner decision needed:** approve Formspree (or name another provider).
+Superseded by Issue #172: the form no longer uses a hosted provider (Formspree is not used). The Vercel review copy can never send (a `VERCEL` build is forced to the disabled state) and must **not** be given `PUBLIC_CONTACT_FORM_*` values; set `PUBLIC_CONTACT_FORM_MODE=mock` only if you want to see the demo UI there. Live submissions run through the GoDaddy PHP + Brevo handler described in `docs/CONTACT_FORM_OPERATOR.md`.
