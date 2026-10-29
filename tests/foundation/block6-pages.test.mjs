@@ -34,7 +34,9 @@ for (const [p, [ti, h1]] of Object.entries(CONTRACT)) {
     assert.equal(found.length, 1);
     if (h1) assert.equal(found[0], h1);
     assert.equal(canonical(h), `https://bonafidenitro.com${p}`);
-    assert.ok(!/<script(?![^>]*application\/ld\+json)/.test(h), 'only JSON-LD script allowed');
+    // The contact page (Issue #172) alone carries one inline form script; no remote scripts anywhere.
+    assert.ok(!/<script(?![^>]*application\/ld\+json)(?![^>]*>[^<]*getElementById\('contact-form'\))/.test(h) || p === '/contact-bona-fide-nitro-coffee-and-tea/', 'only JSON-LD script allowed');
+    assert.ok(!/<script[^>]*\bsrc=/.test(h), 'no remote script');
     assert.ok(!/quickdelivr|coredelivr|mpackage|thrive|sydney/i.test(h));
     assert.ok(!/<form\b/i.test(h) || /<form[^>]*method="post"/i.test(h), 'any form is POST (Block 11 adds the Stage-7 form)');
     assert.ok(!h.includes('noindex'));

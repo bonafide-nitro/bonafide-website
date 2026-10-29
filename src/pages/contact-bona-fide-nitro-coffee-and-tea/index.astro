@@ -1,11 +1,16 @@
 ---
 import { commerceHref } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
-import { resolveContactEndpoint } from '../../lib/contact-form.mjs';
-// Provider endpoint is a public build-time value (see docs/migration/15-block11-contact-form-results.md).
-const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDPOINT);
+import { resolveContactConfig, CONTACT_CATEGORIES } from '../../lib/contact-form.mjs';
+// Public build-time values only (docs/CONTACT_FORM_OPERATOR.md). A Vercel build can never be "live".
+const contact = resolveContactConfig({
+  endpoint: import.meta.env.PUBLIC_CONTACT_FORM_ENDPOINT,
+  mode: import.meta.env.PUBLIC_CONTACT_FORM_MODE,
+  vercel: process.env.VERCEL,
+});
+const enabled = contact.state !== 'disabled';
 ---
-<!-- scaffold: kept until the page meta description is preserved and a provider endpoint is configured. Structure and visible contact details are migrated from the public rendered evidence in Issue #30. The form posts only to the configured endpoint; with none configured it renders disabled and nothing is submitted anywhere. -->
+<!-- scaffold: kept until the page meta description is preserved and a controlled live test is approved (Issue #172). The form posts JSON only to a same-origin handler path; disabled builds send nothing; mock builds simulate in the browser and send nothing. -->
 <Base title="Contact - Bona Fide Nitro Coffee And Tea" canonicalPath="/contact-bona-fide-nitro-coffee-and-tea/" breadcrumbs={[{ name: 'Contact', path: '/contact-bona-fide-nitro-coffee-and-tea/' }]} fullBleed scaffold>
   <section class="band dark page-hero"><div class="wrap">
   <p class="eyebrow">Get in touch</p>
@@ -17,40 +22,150 @@ const endpoint = resolveContactEndpoint(import.meta.env.PUBLIC_CONTACT_FORM_ENDP
   <h2>Send us a message</h2>
   <p>Consumer, distributor, retailer and co-packer inquiries are all welcome. Please tell us which in your message.</p>
   <p>Please check your SPAM folder as well to find our responses. Thank you.</p>
-  {!endpoint && (
+  {contact.state === 'disabled' && (
     <p class="muted" role="status">The online form is not available yet. Please use the email address or phone number below.</p>
   )}
-  <form method="post" action={endpoint ?? undefined} class="contact-form">
-    <fieldset disabled={!endpoint}>
+  {contact.state === 'mock' && (
+    <p class="muted" role="status"><strong>Demo mode.</strong> Nothing you type here is sent anywhere.</p>
+  )}
+  <form method="post" class="contact-form" id="contact-form" novalidate data-state={contact.state} data-endpoint={contact.endpoint ?? undefined}>
+    <div id="contact-errors" class="form-errors" role="alert" tabindex="-1" hidden></div>
+    <fieldset disabled={!enabled}>
       <legend>Contact form</legend>
       <p>
-        <label for="contact-name">Name</label><br />
-        <input id="contact-name" name="name" type="text" autocomplete="name" required />
+        <label for="contact-name">Name <span class="req">(required)</span></label><br />
+        <input id="contact-name" name="name" type="text" autocomplete="name" required maxlength="100" aria-describedby="contact-name-err" />
+        <span id="contact-name-err" class="field-error" hidden></span>
       </p>
       <p>
-        <label for="contact-email">Email</label><br />
-        <input id="contact-email" name="email" type="email" autocomplete="email" required />
+        <label for="contact-email">Email <span class="req">(required)</span></label><br />
+        <input id="contact-email" name="email" type="email" autocomplete="email" required maxlength="254" aria-describedby="contact-email-err" />
+        <span id="contact-email-err" class="field-error" hidden></span>
       </p>
       <p>
-        <label for="contact-message">Message</label><br />
-        <textarea id="contact-message" name="message" rows="6" required></textarea>
+        <label for="contact-category">I am a (optional)</label><br />
+        <select id="contact-category" name="category">
+          <option value="">Choose one</option>
+          {CONTACT_CATEGORIES.map(([value, label]) => <option value={value}>{label}</option>)}
+        </select>
+      </p>
+      <p>
+        <label for="contact-message">Message <span class="req">(required)</span></label><br />
+        <textarea id="contact-message" name="message" rows="6" required minlength="10" maxlength="4000" aria-describedby="contact-message-err"></textarea>
+        <span id="contact-message-err" class="field-error" hidden></span>
       </p>
       <p class="hp" aria-hidden="true">
         <label for="contact-hp">Leave this field empty</label>
         <input id="contact-hp" name="bf_hp" type="text" tabindex="-1" autocomplete="off" />
       </p>
-      <p><button type="submit" class="cta">Send message</button></p>
+      <p><button type="submit" class="cta" id="contact-send">Send message</button></p>
+      <p class="muted privacy">We use your name, email and message only to reply to your inquiry. We do not add you to any mailing list. Nothing is stored on this website; the message is delivered to our inbox by email.</p>
     </fieldset>
+    <p id="contact-status" class="form-status" role="status" aria-live="polite" tabindex="-1"></p>
+    <noscript><p class="muted">This form needs JavaScript. Please email <a href="mailto:contact@bonafidenitro.com">contact@bonafidenitro.com</a> instead.</p></noscript>
   </form>
   </div>
   <style is:global>
     .contact-form fieldset { border: 0; padding: 0; margin: 0; }
     .contact-form legend { position: absolute; left: -10000px; }
-    .contact-form input[type="text"], .contact-form input[type="email"], .contact-form textarea { width: 100%; max-width: 32rem; font: inherit; padding: .4rem; }
+    .contact-form input[type="text"], .contact-form input[type="email"], .contact-form textarea, .contact-form select { width: 100%; max-width: 32rem; font: inherit; padding: .5rem; box-sizing: border-box; }
     .contact-form .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
-    .contact-form button { font: inherit; background: none; color: var(--accent); cursor: pointer; }
-    .contact-form button:disabled { opacity: .5; cursor: not-allowed; }
+    .contact-form button { font: inherit; background: none; color: var(--accent); cursor: pointer; min-height: 2.75rem; padding: .5rem 1rem; }
+    .contact-form button:disabled, .contact-form button[aria-busy="true"] { opacity: .5; cursor: not-allowed; }
+    .contact-form .field-error, .contact-form .form-errors { display: block; color: #8a1c1c; font-weight: 600; }
+    .contact-form .form-errors { border: 2px solid #8a1c1c; padding: .75rem 1rem; margin-bottom: 1rem; }
+    .contact-form [aria-invalid="true"] { border: 2px solid #8a1c1c; }
+    .contact-form .form-status:empty { display: none; }
+    .contact-form .privacy { font-size: .9rem; }
   </style>
+  <script is:inline>
+  (function () {
+    var form = document.getElementById('contact-form');
+    if (!form || form.dataset.state === 'disabled') return;
+    var mock = form.dataset.state === 'mock';
+    var endpoint = form.dataset.endpoint;
+    var status = document.getElementById('contact-status');
+    var summary = document.getElementById('contact-errors');
+    var btn = document.getElementById('contact-send');
+    var fields = ['name', 'email', 'message'];
+    var labels = { name: 'Name', email: 'Email', message: 'Message' };
+    var shownAt = Date.now();
+    var busy = false;
+    function el(n) { return form.elements[n]; }
+    function errEl(n) { return document.getElementById('contact-' + n + '-err'); }
+    function clearErrors() {
+      summary.hidden = true; summary.textContent = '';
+      fields.forEach(function (n) { errEl(n).hidden = true; errEl(n).textContent = ''; el(n).removeAttribute('aria-invalid'); });
+    }
+    function showErrors(errs) {
+      var keys = Object.keys(errs);
+      if (!keys.length) return;
+      summary.textContent = '';
+      var p = document.createElement('p'); p.textContent = 'Please fix the following before sending:'; summary.appendChild(p);
+      var ul = document.createElement('ul');
+      keys.forEach(function (n) {
+        errEl(n).textContent = errs[n]; errEl(n).hidden = false; el(n).setAttribute('aria-invalid', 'true');
+        var li = document.createElement('li'); var a = document.createElement('a');
+        a.href = '#contact-' + n; a.textContent = labels[n] + ': ' + errs[n];
+        a.addEventListener('click', function (e) { e.preventDefault(); el(n).focus(); });
+        li.appendChild(a); ul.appendChild(li);
+      });
+      summary.appendChild(ul); summary.hidden = false; summary.focus();
+    }
+    function validate() {
+      var errs = {};
+      var name = el('name').value.trim(), email = el('email').value.trim(), msg = el('message').value.trim();
+      if (!name) errs.name = 'Please enter your name.';
+      if (!email) errs.email = 'Please enter your email address.';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Please enter a valid email address.';
+      if (msg.length < 10) errs.message = 'Please write at least 10 characters.';
+      return errs;
+    }
+    function setBusy(on) {
+      busy = on; btn.setAttribute('aria-busy', on ? 'true' : 'false'); btn.disabled = on;
+      btn.textContent = on ? 'Sending\u2026' : 'Send message';
+    }
+    function say(text) { status.textContent = text; status.focus(); }
+    function finishOk() {
+      form.reset(); shownAt = Date.now();
+      say(mock ? 'Demo mode: this is how the confirmation looks. Nothing was sent.' : 'Thank you. Your message has been sent. We will reply by email; please also check your spam folder.');
+    }
+    function failMsg(code, retry) {
+      if (code === 'rate_limited') return 'Too many messages were sent from your connection. Please wait a little while and try again, or email contact@bonafidenitro.com. Your text is still in the form.';
+      return 'Sorry, your message could not be sent. Your text is still in the form; please try again, or email contact@bonafidenitro.com.';
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (busy) return;
+      status.textContent = ''; clearErrors();
+      var errs = validate();
+      if (Object.keys(errs).length) { showErrors(errs); return; }
+      setBusy(true);
+      var payload = {
+        name: el('name').value.trim(), email: el('email').value.trim(), category: el('category').value,
+        message: el('message').value.trim(), bf_hp: el('bf_hp').value, elapsed_ms: Date.now() - shownAt
+      };
+      if (mock) {
+        setTimeout(function () {
+          setBusy(false);
+          if (payload.message.indexOf('MOCK_FAIL') !== -1) say(failMsg('error')); else finishOk();
+        }, 600);
+        return;
+      }
+      var ctl = new AbortController();
+      var timer = setTimeout(function () { ctl.abort(); }, 20000);
+      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin', signal: ctl.signal })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { status: r.status, body: b }; }); })
+        .then(function (res) {
+          clearTimeout(timer); setBusy(false);
+          if (res.body && res.body.ok) { finishOk(); return; }
+          if (res.status === 422 && res.body && res.body.fields) { showErrors(res.body.fields); return; }
+          say(failMsg(res.body && res.body.error));
+        })
+        .catch(function () { clearTimeout(timer); setBusy(false); say(failMsg('network')); });
+    });
+  })();
+  </script>
 
   <div class="side">
   <div class="panel dark">
