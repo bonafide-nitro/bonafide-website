@@ -1,0 +1,110 @@
+name: GoDaddy SSH connectivity check (manual, read-only)
+
+# Manual-only, read-only. The single remote command is `printf SSH_OK`.
+# No checkout, no repository write, no deploy, no remote file access.
+# See docs/GODADDY_SSH_CONNECTION.md for the required secrets and the approval gate.
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: godaddy-ssh-check
+  cancel-in-progress: false
+
+jobs:
+  ssh-check:
+    # Fail closed: only the default branch may reach the secrets.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Protected Environment: configure required reviewers on it so every run needs approval.
+    environment: godaddy-ssh-readonly
+    env:
+      GODADDY_SSH_HOST: ${{ secrets.GODADDY_SSH_HOST }}
+      GODADDY_SSH_PORT: ${{ secrets.GODADDY_SSH_PORT }}
+      GODADDY_SSH_USER: ${{ secrets.GODADDY_SSH_USER }}
+      GODADDY_SSH_PRIVATE_KEY: ${{ secrets.GODADDY_SSH_PRIVATE_KEY }}
+      GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
+      GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
+    steps:
+      - name: Verify pinned host key and run SSH_OK check
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+
+          for v in GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error::Required secret ${v} is not configured. Failing closed."
+              exit 1
+            fi
+          done
+          case "$GODADDY_SSH_PORT" in
+            ''|*[!0-9]*) echo "::error::GODADDY_SSH_PORT must be numeric."; exit 1 ;;
+          esac
+          case "$GODADDY_SSH_HOST_FINGERPRINT" in
+            SHA256:*) ;;
+            *) echo "::error::GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:"; exit 1 ;;
+          esac
+
+          echo "::add-mask::${GODADDY_SSH_HOST}"
+          echo "::add-mask::${GODADDY_SSH_USER}"
+          echo "::add-mask::${GODADDY_SSH_PORT}"
+
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+
+          # Host key: scan, then accept ONLY if its fingerprint equals the owner-supplied pin.
+          ssh-keyscan -T 10 -p "$GODADDY_SSH_PORT" -t ed25519,ecdsa,rsa "$GODADDY_SSH_HOST" > "$work/scan" 2>/dev/null || true
+          if [ ! -s "$work/scan" ]; then
+            echo "::error::Could not retrieve a host key. Failing closed."
+            exit 1
+          fi
+          : > "$work/known_hosts"
+          matched=0
+          while IFS= read -r line; do
+            printf '%s\n' "$line" > "$work/cand"
+            fp="$(ssh-keygen -lf "$work/cand" -E sha256 2>/dev/null | awk '{print $2}')"
+            if [ "$fp" = "$GODADDY_SSH_HOST_FINGERPRINT" ]; then
+              printf '%s\n' "$line" >> "$work/known_hosts"
+              matched=1
+            fi
+          done < "$work/scan"
+          if [ "$matched" -ne 1 ]; then
+            echo "::error::Server host key does not match the pinned fingerprint. Refusing to connect."
+            exit 1
+          fi
+
+          # Private key: from secret, never echoed.
+          printf '%s\n' "$GODADDY_SSH_PRIVATE_KEY" > "$work/key"
+          chmod 600 "$work/key"
+
+          # Optional passphrase via SSH_ASKPASS reading the environment; never on a command line.
+          if [ -n "${GODADDY_SSH_KEY_PASSPHRASE:-}" ]; then
+            printf '#!/bin/sh\nprintf "%%s\\n" "$GODADDY_SSH_KEY_PASSPHRASE"\n' > "$work/askpass"
+            chmod 700 "$work/askpass"
+            export SSH_ASKPASS="$work/askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=none:0
+          fi
+
+          out="$(ssh -i "$work/key" \
+            -p "$GODADDY_SSH_PORT" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=no \
+            -o PasswordAuthentication=no \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$work/known_hosts" \
+            -o GlobalKnownHostsFile=/dev/null \
+            -o LogLevel=ERROR \
+            -o ConnectTimeout=15 \
+            "${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}" 'printf SSH_OK' 2>/dev/null)" || {
+            echo "::error::SSH connection or authentication failed (details withheld)."
+            exit 1
+          }
+          if [ "$out" = "SSH_OK" ]; then
+            echo "SSH_OK received. Connectivity verified; nothing was read or written."
+          else
+            echo "::error::Unexpected response from remote command."
+            exit 1
+          fi
