@@ -49,6 +49,7 @@ case "${ssh}" in
   ok) printf SSH_OK ;;
   auth) echo "secretuser@secret-host.example.invalid: Permission denied (publickey)." >&2; exit 255 ;;
   keyload) echo 'Load key "/tmp/x/key": invalid format' >&2; exit 255 ;;
+  keyload_auth) echo 'Load key "/tmp/x/key": error in libcrypto' >&2; echo "secretuser@secret-host.example.invalid: Permission denied (publickey)." >&2; exit 255 ;;
   connect) echo "ssh: connect to host secret-host.example.invalid port 2222: Connection timed out" >&2; exit 255 ;;
   hostkey) echo "Host key verification failed." >&2; exit 255 ;;
   shell) echo "boom" >&2; exit 1 ;;
@@ -139,6 +140,7 @@ test("ssh stage classification never leaks ssh stderr", () => {
   const cases = {
     auth: "ssh-auth",
     keyload: "key-parse",
+    keyload_auth: "key-parse",
     connect: "ssh-connect",
     hostkey: "fingerprint-mismatch",
     shell: "remote-shell",

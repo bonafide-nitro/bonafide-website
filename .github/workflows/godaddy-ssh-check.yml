@@ -131,10 +131,11 @@ jobs:
             -o ConnectTimeout=15 \
             "${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}" 'printf SSH_OK' > "$work/out" 2> "$work/err" || rc=$?
           if [ "$rc" -ne 0 ]; then
-            if grep -qiE 'permission denied|authentication failed|too many authentication' "$work/err"; then
-              fail ssh-auth "SSH authentication was rejected (ssh exit ${rc}). Check the key is authorized for the user."
-            elif grep -qiE 'load key|invalid format|incorrect passphrase|bad passphrase|error in libcrypto|no suitable key|passphrase' "$work/err"; then
+            # Key-loading errors are classified first: a corrupt key also ends in a generic "Permission denied".
+            if grep -qiE 'load key|invalid format|incorrect passphrase|bad passphrase|error in libcrypto|no suitable key|passphrase' "$work/err"; then
               fail key-parse "ssh could not load the private key or passphrase (ssh exit ${rc})."
+            elif grep -qiE 'permission denied|authentication failed|too many authentication' "$work/err"; then
+              fail ssh-auth "SSH authentication was rejected (ssh exit ${rc}). Check the key is authorized for the user."
             elif grep -qiE 'host key verification failed|remote host identification' "$work/err"; then
               fail fingerprint-mismatch "ssh rejected the host key during the connection (ssh exit ${rc})."
             elif [ "$rc" -eq 255 ]; then
