@@ -57,7 +57,19 @@ and store the private half as `GODADDY_SSH_PRIVATE_KEY`.
 ## Running the test (owner only)
 
 Actions → "GoDaddy SSH connectivity check (manual, read-only)" → Run workflow on `main` → approve the Environment prompt.
-Expected log line: `SSH_OK received.` Failures print generic errors only (details are withheld on purpose).
+Expected log line: `SSH_OK received.` Failures print one stage-tagged line, `::error::[stage=<name>] ...`, and never include
+the host, user, port, key, passphrase, remote paths or raw ssh output (Block 179).
+
+| Stage | Meaning |
+| --- | --- |
+| `missing-secret` | A required secret is empty, the port is not numeric, or the fingerprint does not start with `SHA256:`. Names the variable only. |
+| `host-scan` | `ssh-keyscan` returned nothing (host/port unreachable or SSH not enabled). |
+| `host-key-parse` | The scan returned output but no line was a parseable host key. Banner comments and malformed lines are skipped, never trusted. |
+| `fingerprint-mismatch` | Parseable host keys were found but none equals `GODADDY_SSH_HOST_FINGERPRINT` (or ssh itself rejected the host key). Nothing connects. |
+| `key-parse` | `GODADDY_SSH_PRIVATE_KEY` is not a private key, or ssh could not load it or its passphrase. |
+| `ssh-auth` | The server rejected the key (not authorized for the user in cPanel → SSH Access). |
+| `ssh-connect` | ssh failed (exit 255) before authentication completed, e.g. timeout. |
+| `remote-shell` | Authenticated, but the remote command exited non-zero or did not return `SSH_OK`. |
 
 ## Out of scope
 
