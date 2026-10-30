@@ -7,6 +7,17 @@ Private operator instructions. **Nothing here has been done.** No deployment, DN
 - `deploy/contact/contact-submit.php` (+ `contact-lib.php`) runs on GoDaddy cPanel PHP, validates, rate-limits and sends **one transactional email** through Brevo's `POST /v3/smtp/email`. It never calls Brevo's contacts or lists APIs, so inquiries are never subscribed to marketing.
 - The key and sender live in a private config file **outside the web root**. They are not in Git, the Astro build or CI.
 
+## Private-config preparation over SSH (Issue #174, preparation only)
+`deploy/contact/install-private-config.sh` prepares the private config on GoDaddy. It never touches `public_html`, WordPress, DNS, Brevo or email, makes no network request, and never prints a value. Claude has no GoDaddy access: nothing below has been run on the server.
+
+1. On GoDaddy SSH, get the repo files to a scratch folder **outside** `public_html` (e.g. `~/bf-prep/deploy/contact/`: upload or `git clone`). Do not copy them into `public_html`.
+2. Preview (default, changes nothing): `bash install-private-config.sh`
+3. Apply: `bash install-private-config.sh apply`. It keeps your existing `bonafide-private/` and `ratelimit/`, tightens them to 700, copies the template to `bonafide-private/contact-config.php` **only if absent** (600, `storage_dir` filled in) and never overwrites an existing config.
+4. Edit the config yourself in the cPanel File Manager editor or `nano ~/bonafide-private/contact-config.php`: `brevo_api_key`, `sender_email` (Brevo-verified), `test_recipient_email`, `ip_salt` (any long random string you make up in the editor), and `storage_dir` if your path differs. Keep `mode` on `test`. Never type these on a command line, in GitHub, or in chat.
+5. Check without showing values: `bash install-private-config.sh check` lists each item as `[ok]`/`[todo]`.
+
+Still to do afterwards, each needing a separate explicit approval: upload the endpoint to `public_html`, the live build, DNS/Brevo sender authentication, and the controlled test above.
+
 ## Build modes (public values only)
 | `PUBLIC_CONTACT_FORM_MODE` | Result |
 | --- | --- |
