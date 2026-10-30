@@ -1,0 +1,271 @@
+name: GoDaddy Brevo private setup (manual, protected, private-only)
+
+# Issue #181. Manual-only. Stages the two audited files (install-private-config.sh, contact-config.example.php)
+# in a fresh scratch directory in the server HOME (outside public_html) over pinned, strict SSH/SCP and runs the
+# existing installer there. Never uploads the PHP endpoint, never touches public_html/WordPress/DNS, never reads or
+# writes an API key, never makes a Brevo call. See docs/GODADDY_BREVO_PRIVATE_SETUP.md.
+#   action=dry-run       (default) installer in dry-run mode: no private file is written. The transport itself
+#                        creates (and then removes) one scratch directory in the server home.
+#   action=apply-private installer in apply mode: creates ~/bonafide-private (700) and a placeholder config (600)
+#                        only if absent. Requires owner approval of the protected Environment.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "dry-run (default, no private file written) or apply-private (owner-approved private prep)"
+        type: choice
+        default: dry-run
+        options:
+          - dry-run
+          - apply-private
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godaddy-brevo-private-setup
+  cancel-in-progress: false
+
+jobs:
+  private-setup:
+    # Fail closed: only the default branch may reach the secrets.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Protected Environment: required reviewers (the owner) approve every run, dry-run and apply-private alike.
+    environment: godaddy-brevo-private-setup
+    env:
+      ACTION: ${{ inputs.action }}
+      GODADDY_SSH_HOST: ${{ secrets.GODADDY_SSH_HOST }}
+      GODADDY_SSH_PORT: ${{ secrets.GODADDY_SSH_PORT }}
+      GODADDY_SSH_USER: ${{ secrets.GODADDY_SSH_USER }}
+      GODADDY_SSH_PRIVATE_KEY: ${{ secrets.GODADDY_SSH_PRIVATE_KEY }}
+      GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
+      GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
+      # Audited content pins: the staged files must match these exactly or the run stops before connecting.
+      PIN_INSTALLER_SHA256: b9bb363d1ca0478ba52331ba5dcbd8e31db14a373496e2c3a13aef7e121d8481
+      PIN_TEMPLATE_SHA256: 7181af361071730062f52e8883056f2baf407d116c6c6176ca2c4134f73f0c27
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          sparse-checkout: deploy/contact
+          sparse-checkout-cone-mode: true
+
+      - name: Stage audited files and run the private installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+
+          # Every failure prints one stage-tagged line. No host, user, key, path or ssh stderr is ever printed.
+          fail() {
+            echo "::error::[stage=$1] $2"
+            exit 1
+          }
+
+          case "$ACTION" in
+            dry-run|apply-private) ;;
+            *) fail input "action must be dry-run or apply-private. Failing closed." ;;
+          esac
+
+          missing=""
+          for v in GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT; do
+            if [ -z "${!v:-}" ]; then
+              missing="${missing} ${v}"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            fail missing-secret "Required secret(s) not configured:${missing}. Failing closed."
+          fi
+          case "$GODADDY_SSH_PORT" in
+            ''|*[!0-9]*) fail missing-secret "GODADDY_SSH_PORT must be numeric. Failing closed." ;;
+          esac
+          case "$GODADDY_SSH_HOST_FINGERPRINT" in
+            SHA256:*) ;;
+            *) fail missing-secret "GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:. Failing closed." ;;
+          esac
+
+          echo "::add-mask::${GODADDY_SSH_HOST}"
+          echo "::add-mask::${GODADDY_SSH_USER}"
+          echo "::add-mask::${GODADDY_SSH_PORT}"
+
+          # Stage 1: only the two audited files, byte-identical to the pins, regular files, not symlinks.
+          src=deploy/contact
+          for f in install-private-config.sh contact-config.example.php; do
+            if [ -L "$src/$f" ] || [ ! -f "$src/$f" ]; then
+              fail local-files "Audited file $f is missing or not a regular file. Failing closed."
+            fi
+          done
+          [ "$(sha256sum "$src/install-private-config.sh" | awk '{print $1}')" = "$PIN_INSTALLER_SHA256" ] \
+            || fail local-files "install-private-config.sh does not match its audited hash. Re-audit and update the pin."
+          [ "$(sha256sum "$src/contact-config.example.php" | awk '{print $1}')" = "$PIN_TEMPLATE_SHA256" ] \
+            || fail local-files "contact-config.example.php does not match its audited hash. Re-audit and update the pin."
+          echo "Stage local-files: audited files verified."
+
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+
+          # Stage 2: pinned host key (same procedure as godaddy-ssh-check.yml; not weakened).
+          ssh-keyscan -T 10 -p "$GODADDY_SSH_PORT" -t ed25519,ecdsa,rsa "$GODADDY_SSH_HOST" > "$work/scan" 2>/dev/null || true
+          if [ ! -s "$work/scan" ]; then
+            fail host-scan "Could not retrieve a host key (no output from ssh-keyscan). Failing closed."
+          fi
+          : > "$work/known_hosts"
+          matched=0
+          parsed=0
+          skipped=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            case "$line" in
+              ''|'#'*) skipped=$((skipped + 1)); continue ;;
+            esac
+            printf '%s\n' "$line" > "$work/cand"
+            if ! fp_out="$(ssh-keygen -lf "$work/cand" -E sha256 2>/dev/null)"; then
+              skipped=$((skipped + 1))
+              continue
+            fi
+            fp="$(printf '%s\n' "$fp_out" | awk 'NR==1 {print $2}')"
+            case "$fp" in
+              SHA256:?*) ;;
+              *) skipped=$((skipped + 1)); continue ;;
+            esac
+            parsed=$((parsed + 1))
+            if [ "$fp" = "$GODADDY_SSH_HOST_FINGERPRINT" ]; then
+              printf '%s\n' "$line" >> "$work/known_hosts"
+              matched=1
+            fi
+          done < "$work/scan"
+          if [ "$parsed" -eq 0 ]; then
+            fail host-key-parse "ssh-keyscan returned no parseable host key (${skipped} unusable line(s)). Failing closed."
+          fi
+          if [ "$matched" -ne 1 ]; then
+            fail fingerprint-mismatch "Server host key does not match the pinned fingerprint (${parsed} key(s) checked, ${skipped} unusable line(s) skipped). Refusing to connect."
+          fi
+
+          printf '%s\n' "$GODADDY_SSH_PRIVATE_KEY" | tr -d '\r' > "$work/key"
+          chmod 600 "$work/key"
+          if ! grep -q -- '-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----' "$work/key"; then
+            fail key-parse "GODADDY_SSH_PRIVATE_KEY does not look like a PEM/OpenSSH private key. Failing closed."
+          fi
+
+          if [ -n "${GODADDY_SSH_KEY_PASSPHRASE:-}" ]; then
+            printf '#!/bin/sh\nprintf "%%s\\n" "$GODADDY_SSH_KEY_PASSPHRASE"\n' > "$work/askpass"
+            chmod 700 "$work/askpass"
+            export SSH_ASKPASS="$work/askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=none:0
+          fi
+
+          ssh_opts=(
+            -i "$work/key"
+            -o IdentitiesOnly=yes
+            -o BatchMode=no
+            -o PasswordAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$work/known_hosts"
+            -o GlobalKnownHostsFile=/dev/null
+            -o LogLevel=ERROR
+            -o ConnectTimeout=15
+          )
+          target="${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}"
+
+          # Classify a failed ssh/scp from its private stderr file; never print that file.
+          classify() {
+            local rc="$1" stage="$2"
+            if grep -qiE 'load key|invalid format|incorrect passphrase|bad passphrase|error in libcrypto|no suitable key|passphrase' "$work/err"; then
+              fail key-parse "ssh could not load the private key or passphrase (exit ${rc})."
+            elif grep -qiE 'permission denied|authentication failed|too many authentication' "$work/err"; then
+              fail ssh-auth "SSH authentication was rejected (exit ${rc}). Check the key is authorized for the user."
+            elif grep -qiE 'host key verification failed|remote host identification' "$work/err"; then
+              fail fingerprint-mismatch "ssh rejected the host key during the connection (exit ${rc})."
+            elif [ "$rc" -eq 255 ]; then
+              fail ssh-connect "SSH connection failed before the ${stage} step completed (exit 255)."
+            else
+              fail "$stage" "Remote step ${stage} failed (exit ${rc})."
+            fi
+          }
+          rssh() { ssh -p "$GODADDY_SSH_PORT" "${ssh_opts[@]}" "$target" "$@"; }
+
+          # Stage 3: create a UNIQUE scratch directory in HOME (mode 700). Refuse public_html, symlinks, odd names.
+          # This is the only thing the transport creates in dry-run; it is removed again at the end.
+          rc=0
+          rssh 'bash -s' > "$work/out" 2> "$work/err" <<'REMOTE' || rc=$?
+          set -eu
+          umask 077
+          [ -n "${HOME:-}" ] && [ -d "$HOME" ] || exit 21
+          scratch="$(mktemp -d "$HOME/.bonafide-stage.XXXXXXXX")" || exit 22
+          [ -d "$scratch" ] && [ ! -L "$scratch" ] || exit 23
+          real="$(realpath "$scratch")"
+          pub="$(realpath -m "$HOME/public_html")"
+          case "$real/" in "$pub"/*) rmdir "$scratch"; exit 24 ;; esac
+          case "$real/" in "$(realpath "$HOME")"/.bonafide-stage.*) ;; *) rmdir "$scratch"; exit 25 ;; esac
+          chmod 700 "$scratch"
+          printf 'HOME=%s\nSCRATCH=%s\n' "$HOME" "$(basename "$scratch")"
+          REMOTE
+          if [ "$rc" -ne 0 ]; then
+            case "$rc" in
+              2[1-5]) fail scratch-create "Remote scratch directory was refused by a safety check (code ${rc}). Nothing was uploaded." ;;
+              *) classify "$rc" scratch-create ;;
+            esac
+          fi
+          remote_home="$(sed -n 's/^HOME=//p' "$work/out" | head -n1)"
+          scratch_name="$(sed -n 's/^SCRATCH=//p' "$work/out" | head -n1)"
+          case "$scratch_name" in
+            .bonafide-stage.[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]) ;;
+            *) fail scratch-create "Unexpected scratch directory name returned. Nothing was uploaded." ;;
+          esac
+          case "$remote_home" in
+            /*) echo "::add-mask::${remote_home}" ;;
+            *) fail scratch-create "Unexpected home directory value returned. Nothing was uploaded." ;;
+          esac
+          echo "Stage scratch-create: unique scratch directory created in the server home (outside public_html)."
+
+          # Remove only that scratch directory (name re-validated above), whatever happens next.
+          cleanup_remote() {
+            rssh "d=\"\$HOME/${scratch_name}\"; [ -d \"\$d\" ] && [ ! -L \"\$d\" ] && rm -rf -- \"\$d\"" >/dev/null 2>&1 || true
+          }
+          trap 'cleanup_remote; rm -rf "$work"' EXIT
+
+          # Stage 4: upload ONLY the two audited files over pinned SSH (SCP), then verify hashes and permissions remotely.
+          rc=0
+          scp -P "$GODADDY_SSH_PORT" "${ssh_opts[@]}" -p \
+            "$src/install-private-config.sh" "$src/contact-config.example.php" \
+            "${target}:${scratch_name}/" > /dev/null 2> "$work/err" || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            classify "$rc" upload
+          fi
+          rc=0
+          rssh 'bash -s' -- "$scratch_name" "$PIN_INSTALLER_SHA256" "$PIN_TEMPLATE_SHA256" > "$work/out" 2> "$work/err" <<'REMOTE' || rc=$?
+          set -eu
+          umask 077
+          d="$HOME/$1"
+          [ -d "$d" ] && [ ! -L "$d" ] || exit 31
+          for f in install-private-config.sh contact-config.example.php; do
+            [ -f "$d/$f" ] && [ ! -L "$d/$f" ] || exit 32
+          done
+          [ "$(ls -A "$d" | wc -l)" -eq 2 ] || exit 33
+          [ "$(sha256sum "$d/install-private-config.sh" | cut -d' ' -f1)" = "$2" ] || exit 34
+          [ "$(sha256sum "$d/contact-config.example.php" | cut -d' ' -f1)" = "$3" ] || exit 34
+          chmod 700 "$d/install-private-config.sh"
+          chmod 600 "$d/contact-config.example.php"
+          echo "staged-and-verified"
+          REMOTE
+          if [ "$rc" -ne 0 ]; then
+            case "$rc" in
+              3[1-4]) fail upload-verify "Staged files failed the remote integrity check (code ${rc})." ;;
+              *) classify "$rc" upload-verify ;;
+            esac
+          fi
+          echo "Stage upload: two audited files staged and hash-verified."
+
+          # Stage 5: run the existing installer from the scratch directory. It makes no network request and prints no value.
+          # Output is filtered so the home path never appears.
+          mode=dry-run
+          [ "$ACTION" = apply-private ] && mode=apply
+          rc=0
+          rssh "bash \"\$HOME/${scratch_name}/install-private-config.sh\" ${mode}" > "$work/out" 2> "$work/err" || rc=$?
+          sed "s#${remote_home}#~#g" "$work/out"
+          if [ "$rc" -ne 0 ]; then
+            fail installer "Installer reported FAILED or exited non-zero (exit ${rc}) in ${mode} mode. See the filtered summary above."
+          fi
+          echo "Stage installer: ${mode} completed. No endpoint uploaded, no API key handled, no Brevo call made."
+          echo "Scratch directory is removed on exit. Owner enters the API key only in the cPanel private editor."
