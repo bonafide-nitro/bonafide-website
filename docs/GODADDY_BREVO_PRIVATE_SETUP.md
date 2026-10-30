@@ -59,8 +59,13 @@ The run fails at `upload` and nothing else happens (the scratch directory is rem
 ## Rollback
 
 - The scratch directory is removed automatically. If a run was cancelled mid-way, delete any `~/.bonafide-stage.*` folder in cPanel File Manager.
-- `apply-private` only ever adds `~/bonafide-private/` (and `ratelimit/`, `contact-config.php`) when absent. To undo: delete `~/bonafide-private/` in
-  cPanel File Manager. Nothing else on the server was changed; WordPress and `public_html` are unaffected.
+- `apply-private` only ever adds `~/bonafide-private/`, `ratelimit/` and `contact-config.php` when each is absent, and never overwrites an existing
+  `contact-config.php`. Before undoing anything, run `dry-run` first: items it reports as already existing (`exists (left as is)`,
+  `already exists (never overwritten)`) were NOT created by the run. Do not delete those; they may hold owner-entered credentials or rate-limit state,
+  and deleting them disables an already configured endpoint.
+- To undo only what a specific run created, delete just the items that run reported as `[did] create ...` / `[did] copy ...` (for a first-time run
+  that is the whole `~/bonafide-private/` folder; if the folder pre-existed, remove only the newly created `ratelimit/` and/or an untouched
+  template-copy `contact-config.php` that contains no key you entered). Nothing else on the server was changed; WordPress and `public_html` are unaffected.
 - Disable the workflow in Actions, or remove the Environment, to stop all further runs.
 
 ## Out of scope
