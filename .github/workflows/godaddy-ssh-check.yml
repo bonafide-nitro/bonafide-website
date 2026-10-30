@@ -35,18 +35,27 @@ jobs:
           set +x
           umask 077
 
+          # Every failure prints one stage-tagged line. No host, user, key, path or ssh stderr is ever printed.
+          fail() {
+            echo "::error::[stage=$1] $2"
+            exit 1
+          }
+
+          missing=""
           for v in GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT; do
             if [ -z "${!v:-}" ]; then
-              echo "::error::Required secret ${v} is not configured. Failing closed."
-              exit 1
+              missing="${missing} ${v}"
             fi
           done
+          if [ -n "$missing" ]; then
+            fail missing-secret "Required secret(s) not configured:${missing}. Failing closed."
+          fi
           case "$GODADDY_SSH_PORT" in
-            ''|*[!0-9]*) echo "::error::GODADDY_SSH_PORT must be numeric."; exit 1 ;;
+            ''|*[!0-9]*) fail missing-secret "GODADDY_SSH_PORT must be numeric. Failing closed." ;;
           esac
           case "$GODADDY_SSH_HOST_FINGERPRINT" in
             SHA256:*) ;;
-            *) echo "::error::GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:"; exit 1 ;;
+            *) fail missing-secret "GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:. Failing closed." ;;
           esac
 
           echo "::add-mask::${GODADDY_SSH_HOST}"
@@ -59,27 +68,47 @@ jobs:
           # Host key: scan, then accept ONLY if its fingerprint equals the owner-supplied pin.
           ssh-keyscan -T 10 -p "$GODADDY_SSH_PORT" -t ed25519,ecdsa,rsa "$GODADDY_SSH_HOST" > "$work/scan" 2>/dev/null || true
           if [ ! -s "$work/scan" ]; then
-            echo "::error::Could not retrieve a host key. Failing closed."
-            exit 1
+            fail host-scan "Could not retrieve a host key (no output from ssh-keyscan). Failing closed."
           fi
           : > "$work/known_hosts"
           matched=0
-          while IFS= read -r line; do
+          parsed=0
+          skipped=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            # Blank lines and "# host SSH-2.0-..." banner comments are not keys; ssh-keygen exits 255 on them.
+            case "$line" in
+              ''|'#'*) skipped=$((skipped + 1)); continue ;;
+            esac
             printf '%s\n' "$line" > "$work/cand"
-            fp="$(ssh-keygen -lf "$work/cand" -E sha256 2>/dev/null | awk '{print $2}')"
+            # A line ssh-keygen cannot parse is skipped and counted, never trusted, never fatal on its own.
+            if ! fp_out="$(ssh-keygen -lf "$work/cand" -E sha256 2>/dev/null)"; then
+              skipped=$((skipped + 1))
+              continue
+            fi
+            fp="$(printf '%s\n' "$fp_out" | awk 'NR==1 {print $2}')"
+            case "$fp" in
+              SHA256:?*) ;;
+              *) skipped=$((skipped + 1)); continue ;;
+            esac
+            parsed=$((parsed + 1))
             if [ "$fp" = "$GODADDY_SSH_HOST_FINGERPRINT" ]; then
               printf '%s\n' "$line" >> "$work/known_hosts"
               matched=1
             fi
           done < "$work/scan"
+          if [ "$parsed" -eq 0 ]; then
+            fail host-key-parse "ssh-keyscan returned no parseable host key (${skipped} unusable line(s)). Failing closed."
+          fi
           if [ "$matched" -ne 1 ]; then
-            echo "::error::Server host key does not match the pinned fingerprint. Refusing to connect."
-            exit 1
+            fail fingerprint-mismatch "Server host key does not match the pinned fingerprint (${parsed} key(s) checked, ${skipped} unusable line(s) skipped). Refusing to connect."
           fi
 
-          # Private key: from secret, never echoed.
-          printf '%s\n' "$GODADDY_SSH_PRIVATE_KEY" > "$work/key"
+          # Private key: from secret, never echoed. CRs from pasted secrets are dropped.
+          printf '%s\n' "$GODADDY_SSH_PRIVATE_KEY" | tr -d '\r' > "$work/key"
           chmod 600 "$work/key"
+          if ! grep -q -- '-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----' "$work/key"; then
+            fail key-parse "GODADDY_SSH_PRIVATE_KEY does not look like a PEM/OpenSSH private key. Failing closed."
+          fi
 
           # Optional passphrase via SSH_ASKPASS reading the environment; never on a command line.
           if [ -n "${GODADDY_SSH_KEY_PASSPHRASE:-}" ]; then
@@ -88,7 +117,9 @@ jobs:
             export SSH_ASKPASS="$work/askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=none:0
           fi
 
-          out="$(ssh -i "$work/key" \
+          # ssh stderr goes to a private file that is only classified, never printed.
+          rc=0
+          ssh -i "$work/key" \
             -p "$GODADDY_SSH_PORT" \
             -o IdentitiesOnly=yes \
             -o BatchMode=no \
@@ -98,13 +129,24 @@ jobs:
             -o GlobalKnownHostsFile=/dev/null \
             -o LogLevel=ERROR \
             -o ConnectTimeout=15 \
-            "${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}" 'printf SSH_OK' 2>/dev/null)" || {
-            echo "::error::SSH connection or authentication failed (details withheld)."
-            exit 1
-          }
+            "${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}" 'printf SSH_OK' > "$work/out" 2> "$work/err" || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            # Key-loading errors are classified first: a corrupt key also ends in a generic "Permission denied".
+            if grep -qiE 'load key|invalid format|incorrect passphrase|bad passphrase|error in libcrypto|no suitable key|passphrase' "$work/err"; then
+              fail key-parse "ssh could not load the private key or passphrase (ssh exit ${rc})."
+            elif grep -qiE 'permission denied|authentication failed|too many authentication' "$work/err"; then
+              fail ssh-auth "SSH authentication was rejected (ssh exit ${rc}). Check the key is authorized for the user."
+            elif grep -qiE 'host key verification failed|remote host identification' "$work/err"; then
+              fail fingerprint-mismatch "ssh rejected the host key during the connection (ssh exit ${rc})."
+            elif [ "$rc" -eq 255 ]; then
+              fail ssh-connect "SSH connection failed before authentication completed (ssh exit 255)."
+            else
+              fail remote-shell "Remote command exited non-zero (exit ${rc})."
+            fi
+          fi
+          out="$(cat "$work/out")"
           if [ "$out" = "SSH_OK" ]; then
             echo "SSH_OK received. Connectivity verified; nothing was read or written."
           else
-            echo "::error::Unexpected response from remote command."
-            exit 1
+            fail remote-shell "Unexpected response from remote command (expected SSH_OK)."
           fi
