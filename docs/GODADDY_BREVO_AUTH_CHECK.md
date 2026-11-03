@@ -12,12 +12,21 @@ Output is only a numeric HTTP status and a fixed classification. The response bo
 | Result | Meaning | Run status |
 | --- | --- | --- |
 | `http_status=200 authenticated` | The API key authenticates. **This does NOT verify the sender address/domain or transactional-send permission.** | success |
-| `401 unauthorized` | Brevo rejected the key (the earlier `provider_rejected http 401` points here if the new key was not the one in the file). | failed |
-| `403 forbidden` | Key recognised but not permitted / blocked by account or IP setting. | failed |
+| `401 unauthorized` / `403 forbidden` + `detail=<word>` | Brevo denied the call. `detail` is chosen in memory from Brevo's error body (never printed); see the table below. | failed |
 | other / `transport_error` | Investigate (network, TLS, Brevo outage, unexpected status). | failed |
 | `REFUSED` | Fail-closed before any request: config missing/symlink/not an array, `mode` not `test`, key missing/placeholder/malformed, PHP curl missing. | failed |
 
 A failed run is deliberate so the result is visible; it never means anything was sent or changed. No email is sent, nothing is written, no key is moved, printed, created or revoked.
+
+## Reading `detail=` (Issue #189)
+Brevo returns 401 both for an unknown key and for a call from an IP that is not on the account's Authorized IPs list, so a rotated key cannot fix the latter. The body (and any IP in it) is never printed.
+
+| `detail=` | Meaning | Owner action in the Brevo dashboard |
+| --- | --- | --- |
+| `ip_not_authorized` | The key is fine but the server's outbound IP is not allowed. | Security → Authorised IPs: deactivate IP blocking, or add the GoDaddy server's outbound IP. Do not rotate keys. |
+| `key_not_recognised` | Brevo does not know this key. | Confirm the file holds an API v3 key from the same account (not a deleted/other-account key); re-save it in the private config. |
+| `account_restricted` | Account not activated, suspended or lacks permission. | Complete account activation / contact Brevo support. |
+| `unauthorized_unclassified` | Denied, but the body matched no known pattern. | Report this exact line; do not rotate keys blindly. |
 
 ## How the owner runs it
 1. One-time: Settings → Environments → new `godaddy-brevo-auth-check`, required reviewer = owner, deployment branch = `main`. Merging the PR does nothing by itself.

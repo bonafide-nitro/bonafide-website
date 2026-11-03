@@ -38,7 +38,7 @@ jobs:
       GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
       GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
       # Audited content pin: the streamed script must match exactly or the run stops before connecting.
-      PIN_SCRIPT_SHA256: d9cb859f1d3d7ff4a243f8cc7cd9c9d634e0089e79dd3bb2d5123262541b9296
+      PIN_SCRIPT_SHA256: 1669c66ee06f84f8724314bdea8144bc0cb87abc121226dce7f1ba8afdb2ce48
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
