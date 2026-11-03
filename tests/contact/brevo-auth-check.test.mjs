@@ -67,3 +67,47 @@ test('symlinked config is refused', () => {
   fs.symlinkSync(real, path.join(h, 'bonafide-private', 'contact-config.php'));
   assert.equal(run(h).status, 2);
 });
+
+// Issue #189: 401/403 bodies are classified in memory; only a fixed reason word is printed (never the body, message, key or IP).
+const KEYCFG = cfg({ mode: 'test', brevo_api_key: SECRET });
+const runFake = (status, body, withHome = true) => {
+  const h = home(KEYCFG);
+  const f = path.join(h, 'resp');
+  fs.writeFileSync(f, `${status}\n${body}`);
+  const env = { ...process.env, BF_TEST_RESPONSE: f };
+  if (withHome) env.BF_HOME = h; else delete env.BF_HOME;
+  const r = spawnSync('bash', [SCRIPT], { env, encoding: 'utf8' });
+  return { status: r.status, out: r.stdout + r.stderr };
+};
+const IP = '203.0.113.77';
+
+test('401/403 reasons are classified without leaking body, IP or key', () => {
+  const cases = [
+    [401, JSON.stringify({ code: 'unauthorized', message: `We have detected you are using an unrecognised IP address ${IP}. If you performed this action make sure to add the new IP address in this link: https://app.brevo.com/security/authorised_ips` }), /http_status=401 classification=unauthorized reason=ip_not_authorized/],
+    [401, JSON.stringify({ code: 'unauthorized', message: 'Key not found' }), /reason=key_not_recognised/],
+    [403, JSON.stringify({ code: 'permission_denied', message: 'Permission denied' }), /http_status=403 classification=forbidden reason=account_restricted/],
+    [401, JSON.stringify({ code: 'unauthorized', message: 'Your account is suspended' }), /reason=account_restricted/],
+    [401, 'not json at all', /reason=unclassified/],
+    [401, '', /reason=unclassified/],
+  ];
+  for (const [st, body, re] of cases) {
+    const r = runFake(st, body);
+    assert.equal(r.status, 4, r.out);
+    assert.match(r.out, re);
+    assert.equal(r.out.trim().split('\n').length, 1);
+    for (const leak of [IP, 'unrecognised', 'Key not found', 'authorised_ips', 'suspended', SECRET, 'xkeysib', 'not json']) assert.ok(!r.out.includes(leak), `leaked ${leak}: ${r.out}`);
+  }
+});
+
+test('200 and unexpected statuses keep their meaning under the offline hook', () => {
+  assert.equal(runFake(200, '{"email":"x@example.test"}').status, 0);
+  const r = runFake(500, 'oops');
+  assert.equal(r.status, 5);
+  assert.match(r.out, /http_status=500 classification=investigate/);
+});
+
+test('offline response hook is honoured only together with BF_HOME (never in the workflow)', () => {
+  assert.match(SRC, /BF_TEST_RESPONSE="\$\{BF_HOME:\+\$\{BF_TEST_RESPONSE:-\}\}"/);
+  assert.ok(!/BF_TEST_RESPONSE|BF_HOME/.test(WF));
+  assert.match(WF, /rssh "bash -s" < "\$script"/);
+});
