@@ -1,0 +1,201 @@
+name: GoDaddy contact test cleanup and diagnosis (manual, protected, one exact path)
+
+# Issue #185. Manual-only, main-only, protected Environment. Operates on ONE hard-coded temporary folder
+# (public_html/bf-contact-test-syDS0pTcdO8q) through the audited script deploy/contact/test-path-cleanup.sh, streamed over pinned,
+# strict SSH (nothing is written to the server to run it). No recursive delete, no webroot listing, no WordPress/DNS change,
+# no Brevo call, no email, no private-config read. See docs/GODADDY_CONTACT_TEST_CLEANUP.md.
+#   inspect     (default) read-only: sanitized names/types/modes of the folder's direct occupants.
+#   cleanup     removes only contact-submit.php + contact-lib.php, then rmdir only if empty; unknown occupants => fail closed.
+#               Requires confirm=REMOVE_TEMP_TEST_FILES.
+#   log-status  read-only: counts of the handler's own "delivery failed (<category>, http <n>)" lines from that folder's
+#               error_log, everything else discarded. Requires confirm=APPROVE_LOG_STATUS_READ (separate owner approval).
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "inspect (default, read-only), cleanup (remove the 2 known files + empty folder), log-status (read-only failure counts)"
+        type: choice
+        default: inspect
+        options:
+          - inspect
+          - cleanup
+          - log-status
+      confirm:
+        description: "cleanup needs REMOVE_TEMP_TEST_FILES; log-status needs APPROVE_LOG_STATUS_READ; inspect needs nothing"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godaddy-contact-test-cleanup
+  cancel-in-progress: false
+
+jobs:
+  test-path:
+    # Fail closed: only the default branch may reach the secrets.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Protected Environment: required reviewers (the owner) approve every run.
+    environment: godaddy-contact-test-cleanup
+    env:
+      ACTION: ${{ inputs.action }}
+      CONFIRM: ${{ inputs.confirm }}
+      GODADDY_SSH_HOST: ${{ secrets.GODADDY_SSH_HOST }}
+      GODADDY_SSH_PORT: ${{ secrets.GODADDY_SSH_PORT }}
+      GODADDY_SSH_USER: ${{ secrets.GODADDY_SSH_USER }}
+      GODADDY_SSH_PRIVATE_KEY: ${{ secrets.GODADDY_SSH_PRIVATE_KEY }}
+      GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
+      GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
+      # Audited content pin: the streamed script must match exactly or the run stops before connecting.
+      PIN_SCRIPT_SHA256: e170cf8dc0096357f16aae5f1971efc31f5ea133752e5154aa076915ab1c6777
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          sparse-checkout: deploy/contact
+          sparse-checkout-cone-mode: true
+
+      - name: Run the audited script on the exact test path
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+
+          fail() {
+            echo "::error::[stage=$1] $2"
+            exit 1
+          }
+
+          case "$ACTION" in
+            inspect) ;;
+            cleanup) [ "$CONFIRM" = "REMOVE_TEMP_TEST_FILES" ] || fail input "cleanup requires confirm=REMOVE_TEMP_TEST_FILES. Failing closed." ;;
+            log-status) [ "$CONFIRM" = "APPROVE_LOG_STATUS_READ" ] || fail input "log-status requires confirm=APPROVE_LOG_STATUS_READ. Failing closed." ;;
+            *) fail input "action must be inspect, cleanup or log-status. Failing closed." ;;
+          esac
+
+          missing=""
+          for v in GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT; do
+            if [ -z "${!v:-}" ]; then
+              missing="${missing} ${v}"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            fail missing-secret "Required secret(s) not configured:${missing}. Failing closed."
+          fi
+          case "$GODADDY_SSH_PORT" in
+            ''|*[!0-9]*) fail missing-secret "GODADDY_SSH_PORT must be numeric. Failing closed." ;;
+          esac
+          case "$GODADDY_SSH_HOST_FINGERPRINT" in
+            SHA256:*) ;;
+            *) fail missing-secret "GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:. Failing closed." ;;
+          esac
+
+          echo "::add-mask::${GODADDY_SSH_HOST}"
+          echo "::add-mask::${GODADDY_SSH_USER}"
+          echo "::add-mask::${GODADDY_SSH_PORT}"
+
+          script=deploy/contact/test-path-cleanup.sh
+          if [ -L "$script" ] || [ ! -f "$script" ]; then
+            fail local-files "Audited script is missing or not a regular file. Failing closed."
+          fi
+          [ "$(sha256sum "$script" | awk '{print $1}')" = "$PIN_SCRIPT_SHA256" ] \
+            || fail local-files "test-path-cleanup.sh does not match its audited hash. Re-audit and update the pin."
+          echo "Stage local-files: audited script verified."
+
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+
+          # Stage 2: pinned host key (same procedure as godaddy-ssh-check.yml; not weakened).
+          ssh-keyscan -T 10 -p "$GODADDY_SSH_PORT" -t ed25519,ecdsa,rsa "$GODADDY_SSH_HOST" > "$work/scan" 2>/dev/null || true
+          if [ ! -s "$work/scan" ]; then
+            fail host-scan "Could not retrieve a host key (no output from ssh-keyscan). Failing closed."
+          fi
+          : > "$work/known_hosts"
+          matched=0
+          parsed=0
+          skipped=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            case "$line" in
+              ''|'#'*) skipped=$((skipped + 1)); continue ;;
+            esac
+            printf '%s\n' "$line" > "$work/cand"
+            if ! fp_out="$(ssh-keygen -lf "$work/cand" -E sha256 2>/dev/null)"; then
+              skipped=$((skipped + 1))
+              continue
+            fi
+            fp="$(printf '%s\n' "$fp_out" | awk 'NR==1 {print $2}')"
+            case "$fp" in
+              SHA256:?*) ;;
+              *) skipped=$((skipped + 1)); continue ;;
+            esac
+            parsed=$((parsed + 1))
+            if [ "$fp" = "$GODADDY_SSH_HOST_FINGERPRINT" ]; then
+              printf '%s\n' "$line" >> "$work/known_hosts"
+              matched=1
+            fi
+          done < "$work/scan"
+          if [ "$parsed" -eq 0 ]; then
+            fail host-key-parse "ssh-keyscan returned no parseable host key (${skipped} unusable line(s)). Failing closed."
+          fi
+          if [ "$matched" -ne 1 ]; then
+            fail fingerprint-mismatch "Server host key does not match the pinned fingerprint (${parsed} key(s) checked, ${skipped} unusable line(s) skipped). Refusing to connect."
+          fi
+
+          printf '%s\n' "$GODADDY_SSH_PRIVATE_KEY" | tr -d '\r' > "$work/key"
+          chmod 600 "$work/key"
+          if ! grep -q -- '-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----' "$work/key"; then
+            fail key-parse "GODADDY_SSH_PRIVATE_KEY does not look like a PEM/OpenSSH private key. Failing closed."
+          fi
+
+          if [ -n "${GODADDY_SSH_KEY_PASSPHRASE:-}" ]; then
+            printf '#!/bin/sh\nprintf "%%s\\n" "$GODADDY_SSH_KEY_PASSPHRASE"\n' > "$work/askpass"
+            chmod 700 "$work/askpass"
+            export SSH_ASKPASS="$work/askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=none:0
+          fi
+
+          ssh_opts=(
+            -i "$work/key"
+            -o IdentitiesOnly=yes
+            -o BatchMode=no
+            -o PasswordAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$work/known_hosts"
+            -o GlobalKnownHostsFile=/dev/null
+            -o LogLevel=ERROR
+            -o ConnectTimeout=15
+          )
+          target="${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}"
+
+          # Classify a failed ssh/scp from its private stderr file; never print that file.
+          classify() {
+            local rc="$1" stage="$2"
+            if grep -qiE 'load key|invalid format|incorrect passphrase|bad passphrase|error in libcrypto|no suitable key|passphrase' "$work/err"; then
+              fail key-parse "ssh could not load the private key or passphrase (exit ${rc})."
+            elif grep -qiE 'permission denied|authentication failed|too many authentication' "$work/err"; then
+              fail ssh-auth "SSH authentication was rejected (exit ${rc}). Check the key is authorized for the user."
+            elif grep -qiE 'host key verification failed|remote host identification' "$work/err"; then
+              fail fingerprint-mismatch "ssh rejected the host key during the connection (exit ${rc})."
+            elif [ "$rc" -eq 255 ]; then
+              fail ssh-connect "SSH connection failed before the ${stage} step completed (exit 255)."
+            else
+              fail "$stage" "Remote step ${stage} failed (exit ${rc})."
+            fi
+          }
+          rssh() { ssh -p "$GODADDY_SSH_PORT" "${ssh_opts[@]}" "$target" "$@"; }
+
+          # Stream the audited script on stdin (nothing is uploaded or left on the server). Output is filtered so the home path never appears.
+          rc=0
+          rssh "bash -s -- ${ACTION}" < "$script" > "$work/out" 2> "$work/err" || rc=$?
+          sed -E 's#/home[0-9]*/[A-Za-z0-9._-]+#~#g' "$work/out"
+          if [ "$rc" -eq 3 ]; then
+            fail fail-closed "Unknown occupants remain (or rmdir refused). Nothing beyond the two known files was deleted. See the owner decision above."
+          elif [ "$rc" -eq 2 ]; then
+            fail safety-check "A path safety check refused to proceed. Nothing was changed."
+          elif [ "$rc" -ne 0 ]; then
+            classify "$rc" remote-script
+          fi
+          echo "Stage done: ${ACTION} completed. No recursive delete, no webroot listing, no Brevo call, no email sent."
