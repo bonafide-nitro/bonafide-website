@@ -38,7 +38,7 @@ jobs:
       GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
       GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
       # Audited content pin: the streamed script must match exactly or the run stops before connecting.
-      PIN_SCRIPT_SHA256: d9cb859f1d3d7ff4a243f8cc7cd9c9d634e0089e79dd3bb2d5123262541b9296
+      PIN_SCRIPT_SHA256: a115af4546ba7ca3a3b68a183488d127ed1828d75e6f2e22157c94467bd36d36
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -179,7 +179,7 @@ jobs:
           elif [ "$rc" -eq 2 ]; then
             fail refused "The check refused to run (config/key/php precondition). No request was made."
           elif [ "$rc" -eq 4 ]; then
-            fail not-authenticated "Brevo did not accept the key (see RESULT line). No email sent."
+            fail not-authenticated "Brevo did not accept the request (see the RESULT line reason= and docs/GODADDY_BREVO_AUTH_CHECK.md). No email sent."
           elif [ "$rc" -eq 5 ]; then
             fail investigate "Unexpected result (see RESULT line). No email sent."
           else

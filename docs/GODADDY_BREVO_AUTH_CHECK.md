@@ -12,10 +12,19 @@ Output is only a numeric HTTP status and a fixed classification. The response bo
 | Result | Meaning | Run status |
 | --- | --- | --- |
 | `http_status=200 authenticated` | The API key authenticates. **This does NOT verify the sender address/domain or transactional-send permission.** | success |
-| `401 unauthorized` | Brevo rejected the key (the earlier `provider_rejected http 401` points here if the new key was not the one in the file). | failed |
-| `403 forbidden` | Key recognised but not permitted / blocked by account or IP setting. | failed |
+| `401`/`403` with `reason=...` | Brevo refused the request. The reason word (below) says why. | failed |
 | other / `transport_error` | Investigate (network, TLS, Brevo outage, unexpected status). | failed |
 | `REFUSED` | Fail-closed before any request: config missing/symlink/not an array, `mode` not `test`, key missing/placeholder/malformed, PHP curl missing. | failed |
+
+### What each 401/403 reason means and the exact fix (Issue #189)
+The script reads Brevo's error reply **in memory only** and prints one fixed word. The reply text, the key and any IP address in it are never printed.
+
+| `reason=` | Meaning | Owner action (Brevo dashboard), then rerun the check once |
+| --- | --- | --- |
+| `ip_not_authorized` | Brevo blocks API calls from IP addresses that are not on the account's allow-list and answers **401** for them. The key was never judged, which is why two different keys both "failed". | Brevo → profile menu → **Settings → Security → Authorized IPs**. Either click **Deactivate blocking** (allows any IP), or **Add IP** with the GoDaddy server's IP. Brevo usually also emails a "new IP detected" notice with an approve link; approving that is the same fix. The server's shared IP is shown in GoDaddy **cPanel → General Information → Shared IP Address**. |
+| `key_not_recognised` | Brevo does not know this key (deleted, mistyped, or created in a different Brevo account). | Brevo → **Settings → SMTP & API → API keys**: confirm the key exists in the account that sends as `info@bonafidenitro.com`, then re-save it in the private config. Do not create another key unless this reason appears. |
+| `account_restricted` | Key recognised, but the account or key is limited (validation, suspension, permissions). | Brevo → **Settings → Deliverability Center** (sending status must be *Validated*) and the key's permissions under **SMTP & API → API keys**. |
+| `unclassified` | Reply not recognised by this check. | Report the RESULT line only; do not retry repeatedly. |
 
 A failed run is deliberate so the result is visible; it never means anything was sent or changed. No email is sent, nothing is written, no key is moved, printed, created or revoked.
 
@@ -24,7 +33,7 @@ A failed run is deliberate so the result is visible; it never means anything was
 2. Actions → "GoDaddy Brevo auth check" → Run workflow (branch `main`) → `confirm` = `VERIFY_BREVO_AUTH`.
 3. Approve the Environment. Read the single `RESULT:` line. Paste nothing else anywhere.
 
-If 200: only API auth is proven; a real send may still fail on sender validation, so any later send test needs its own separate approval. If 401: the file does not hold a valid key; re-save the new key in the private config and rerun. The old key stays active until the owner decides otherwise.
+If 200: only API auth is proven; a real send may still fail on sender validation, so any later send test needs its own separate approval. If 401/403: act on the `reason=` word in the table above; do not rotate keys unless the reason is `key_not_recognised`. The old key stays active until the owner decides otherwise.
 
 ## Temporary public test folder (documentation only)
 `public_html/bf-contact-test-syDS0pTcdO8q/` still exists. After the known PHP files were removed, inspect run 41619389077 showed it contains only **`error_log` (85 bytes)**, an unknown-to-the-cleanup occupant, which is why `cleanup` fails closed on `rmdir`.
