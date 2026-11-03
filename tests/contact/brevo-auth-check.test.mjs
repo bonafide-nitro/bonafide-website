@@ -67,3 +67,33 @@ test('symlinked config is refused', () => {
   fs.symlinkSync(real, path.join(h, 'bonafide-private', 'contact-config.php'));
   assert.equal(run(h).status, 2);
 });
+
+// Issue #189: 401/403 sub-classification, derived in memory from the Brevo error body.
+const classifier = SRC.match(/\/\/ BF_CLASSIFY_BEGIN[^\n]*\n([\s\S]*?)\/\/ BF_CLASSIFY_END/)[1];
+const classify = (body) => {
+  const r = spawnSync('php', ['-r', `${classifier}\necho bf_classify_denied(file_get_contents('php://stdin'));`], { input: body, encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  return r.stdout;
+};
+
+test('401/403 bodies map to the fixed sub-classifications', () => {
+  const ip = '203.0.113.77';
+  assert.equal(classify(JSON.stringify({ message: `We have detected you are using an unrecognised IP address ${ip}. If you performed this action make sure to add the new address here: https://app.brevo.com/security/authorised_ips`, code: 'unauthorized' })), 'ip_not_authorized');
+  assert.equal(classify(JSON.stringify({ message: 'Key not found', code: 'unauthorized' })), 'key_not_recognised');
+  assert.equal(classify(JSON.stringify({ message: 'Your account is not yet activated', code: 'permission_denied' })), 'account_restricted');
+  assert.equal(classify(JSON.stringify({ message: 'something new', code: 'unauthorized' })), 'unauthorized_unclassified');
+  assert.equal(classify('<html>gateway</html>'), 'unauthorized_unclassified');
+  assert.equal(classify(''), 'unauthorized_unclassified');
+});
+
+test('classifier output never contains body text, IPs or keys', () => {
+  const words = new Set(['ip_not_authorized', 'key_not_recognised', 'account_restricted', 'unauthorized_unclassified']);
+  for (const m of ['unrecognised IP address 203.0.113.77 ' + SECRET, 'Key not found ' + SECRET, 'x']) assert.ok(words.has(classify(JSON.stringify({ message: m }))));
+});
+
+test('script prints only status, fixed classification and fixed detail word on denial; body is not echoed', () => {
+  assert.match(SRC, /detail=\$sub/);
+  assert.ok(!/echo[^\n]*\$body|bf_done\([^\n]*\$body|bf_done\([^\n]*\$data/.test(SRC));
+  assert.equal((SRC.match(/curl_init\(/g) || []).length, 1);
+  assert.ok(!/curl_setopt[^\n]*(VERBOSE|STDERR|HEADER\b)/.test(SRC));
+});

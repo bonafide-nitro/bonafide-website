@@ -2,6 +2,8 @@
 # Issue #187: ONE read-only Brevo API authentication check using the key in the server's private config.
 #   Makes exactly one request: GET https://api.brevo.com/v3/account (strict HTTPS/TLS verification, no redirects, short timeout).
 #   Prints ONLY: the numeric HTTP status and a fixed classification word. Never the key, config values, response body, headers or errors.
+#   On 401/403 the body is inspected IN MEMORY ONLY to choose one fixed sub-classification word (Issue #189):
+#   ip_not_authorized | key_not_recognised | account_restricted | unauthorized_unclassified. The body and any IP in it are never printed.
 #   A 200 proves the API key authenticates. It does NOT prove sender validation or transactional-send permission.
 #   Sends no email. Writes nothing. Fails closed (exit 2) if config is missing/unreadable, not mode=test, key malformed, or curl is missing.
 # Exit codes: 0 = HTTP 200 authenticated | 2 = refused before any request | 4 = HTTP 401/403 | 5 = any other result.
@@ -19,6 +21,18 @@ declare(strict_types=1);
 
 function bf_done(int $code, string $line): void { echo $line . "\n"; exit($code); }
 function bf_refuse(string $why): void { bf_done(2, "REFUSED: $why No request was made."); }
+
+// BF_CLASSIFY_BEGIN (extracted verbatim by offline tests)
+// Maps a Brevo 401/403 error body to ONE fixed word. The body is only matched, never echoed.
+function bf_classify_denied(string $body): string {
+    $data = json_decode($body, true);
+    $msg = is_array($data) && isset($data['message']) && is_string($data['message']) ? strtolower($data['message']) : strtolower($body);
+    if (preg_match('/unrecogni[sz]ed ip|authori[sz]ed[ _-]?ips?|ip address|whitelist/', $msg) === 1) return 'ip_not_authorized';
+    if (preg_match('/key not found|invalid (api )?key|api[ -]?key.*(not (found|valid|recogni)|invalid|revoked|disabled)/', $msg) === 1) return 'key_not_recognised';
+    if (preg_match('/not (yet )?activated|account.*(disabled|suspended|blocked|deactivated|restricted|locked)|permission|not allowed|forbidden/', $msg) === 1) return 'account_restricted';
+    return 'unauthorized_unclassified';
+}
+// BF_CLASSIFY_END
 
 if (!function_exists('curl_init')) bf_refuse('PHP curl extension is missing.');
 
@@ -39,7 +53,8 @@ $ch = curl_init('https://api.brevo.com/v3/account');
 curl_setopt_array($ch, [
     CURLOPT_HTTPGET => true,
     CURLOPT_HTTPHEADER => ['accept: application/json', 'api-key: ' . $key],
-    CURLOPT_RETURNTRANSFER => true,          // body is captured and discarded, never printed
+    CURLOPT_RETURNTRANSFER => true,          // body is captured in memory for classification only, never printed
+    CURLOPT_MAXFILESIZE => 65536,
     CURLOPT_CONNECTTIMEOUT => 5,
     CURLOPT_TIMEOUT => 10,
     CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
@@ -48,7 +63,7 @@ curl_setopt_array($ch, [
     CURLOPT_SSL_VERIFYPEER => true,
     CURLOPT_SSL_VERIFYHOST => 2,
 ]);
-curl_exec($ch);
+$body = curl_exec($ch);
 $transportError = curl_errno($ch) !== 0;
 $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 curl_close($ch);
@@ -56,8 +71,11 @@ unset($key);
 
 if ($transportError || $status === 0) bf_done(5, 'RESULT: http_status=none classification=transport_error (no HTTP response; investigate network/TLS). Not authenticated.');
 if ($status === 200) bf_done(0, 'RESULT: http_status=200 classification=authenticated (API key authenticates only; sender and transactional-send permission are NOT verified).');
-if ($status === 401) bf_done(4, 'RESULT: http_status=401 classification=unauthorized (Brevo rejected the API key).');
-if ($status === 403) bf_done(4, 'RESULT: http_status=403 classification=forbidden (key recognised but not permitted, or blocked by IP/account setting).');
+if ($status === 401 || $status === 403) {
+    $sub = bf_classify_denied(is_string($body) ? substr($body, 0, 8192) : '');
+    unset($body);
+    bf_done(4, "RESULT: http_status=$status classification=" . ($status === 401 ? 'unauthorized' : 'forbidden') . " detail=$sub");
+}
 bf_done(5, "RESULT: http_status=$status classification=investigate (unexpected status).");
 PHP
 rc=$?
