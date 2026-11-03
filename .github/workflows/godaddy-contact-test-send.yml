@@ -1,0 +1,195 @@
+name: GoDaddy contact test send (manual, protected, ONE [TEST] email, no public_html)
+
+# Issue #192. Manual-only, main-only, protected Environment. Streams the audited script deploy/contact/contact-test-send.sh and the audited
+# handler deploy/contact/contact-lib.php (both SHA-256 pinned) over pinned, strict SSH. On the server they run from a private temp dir in $HOME
+# that is removed afterwards; nothing is placed in public_html. The script refuses unless the private config is mode=test and no earlier attempt
+# marker exists, writes the marker BEFORE sending, then sends exactly ONE synthetic [TEST] email to test_recipient_email via Brevo.
+# Output is one fixed RESULT/REFUSED line: no key, config values, addresses, message, Brevo body or message ID. See docs/GODADDY_CONTACT_TEST_SEND.md.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type SEND_ONE_TEST_EMAIL to send exactly one [TEST] email to the configured test inbox (one-shot; a second run refuses)"
+        type: string
+        required: true
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godaddy-contact-test-send
+  cancel-in-progress: false
+
+jobs:
+  test-send:
+    # Fail closed: only the default branch may reach the secrets.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Protected Environment: required reviewers (the owner) approve every run.
+    environment: godaddy-contact-test-send
+    env:
+      CONFIRM: ${{ inputs.confirm }}
+      GODADDY_SSH_HOST: ${{ secrets.GODADDY_SSH_HOST }}
+      GODADDY_SSH_PORT: ${{ secrets.GODADDY_SSH_PORT }}
+      GODADDY_SSH_USER: ${{ secrets.GODADDY_SSH_USER }}
+      GODADDY_SSH_PRIVATE_KEY: ${{ secrets.GODADDY_SSH_PRIVATE_KEY }}
+      GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
+      GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
+      # Audited content pins: the streamed files must match exactly or the run stops before connecting.
+      PIN_LIB_SHA256: 74ba23274581c53ce9f3644d9f968d3865ded4e0f5aa263c891a3fd2aa461be2
+      PIN_SCRIPT_SHA256: 043653f619e80eb1b22ec668a4182ca779fd7eedb61f4194e27308b5f6b4193c
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          sparse-checkout: deploy/contact
+          sparse-checkout-cone-mode: true
+
+      - name: Send ONE audited [TEST] email through the server-side handler
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+
+          fail() {
+            echo "::error::[stage=$1] $2"
+            exit 1
+          }
+
+          [ "$CONFIRM" = "SEND_ONE_TEST_EMAIL" ] || fail input "confirm must be exactly SEND_ONE_TEST_EMAIL. Failing closed."
+
+          missing=""
+          for v in GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT; do
+            if [ -z "${!v:-}" ]; then
+              missing="${missing} ${v}"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            fail missing-secret "Required secret(s) not configured:${missing}. Failing closed."
+          fi
+          case "$GODADDY_SSH_PORT" in
+            ''|*[!0-9]*) fail missing-secret "GODADDY_SSH_PORT must be numeric. Failing closed." ;;
+          esac
+          case "$GODADDY_SSH_HOST_FINGERPRINT" in
+            SHA256:*) ;;
+            *) fail missing-secret "GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:. Failing closed." ;;
+          esac
+
+          echo "::add-mask::${GODADDY_SSH_HOST}"
+          echo "::add-mask::${GODADDY_SSH_USER}"
+          echo "::add-mask::${GODADDY_SSH_PORT}"
+
+          script=deploy/contact/contact-test-send.sh
+          lib=deploy/contact/contact-lib.php
+          for f in "$script" "$lib"; do
+            if [ -L "$f" ] || [ ! -f "$f" ]; then
+              fail local-files "Audited file $f is missing or not a regular file. Failing closed."
+            fi
+          done
+          [ "$(sha256sum "$script" | awk '{print $1}')" = "$PIN_SCRIPT_SHA256" ] \
+            || fail local-files "contact-test-send.sh does not match its audited hash. Re-audit and update the pin."
+          [ "$(sha256sum "$lib" | awk '{print $1}')" = "$PIN_LIB_SHA256" ] \
+            || fail local-files "contact-lib.php does not match its audited hash. Re-audit and update the pin."
+          echo "Stage local-files: audited script and handler verified."
+
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+
+          # Stage 2: pinned host key (same procedure as godaddy-ssh-check.yml; not weakened).
+          ssh-keyscan -T 10 -p "$GODADDY_SSH_PORT" -t ed25519,ecdsa,rsa "$GODADDY_SSH_HOST" > "$work/scan" 2>/dev/null || true
+          if [ ! -s "$work/scan" ]; then
+            fail host-scan "Could not retrieve a host key (no output from ssh-keyscan). Failing closed."
+          fi
+          : > "$work/known_hosts"
+          matched=0
+          parsed=0
+          skipped=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            case "$line" in
+              ''|'#'*) skipped=$((skipped + 1)); continue ;;
+            esac
+            printf '%s\n' "$line" > "$work/cand"
+            if ! fp_out="$(ssh-keygen -lf "$work/cand" -E sha256 2>/dev/null)"; then
+              skipped=$((skipped + 1))
+              continue
+            fi
+            fp="$(printf '%s\n' "$fp_out" | awk 'NR==1 {print $2}')"
+            case "$fp" in
+              SHA256:?*) ;;
+              *) skipped=$((skipped + 1)); continue ;;
+            esac
+            parsed=$((parsed + 1))
+            if [ "$fp" = "$GODADDY_SSH_HOST_FINGERPRINT" ]; then
+              printf '%s\n' "$line" >> "$work/known_hosts"
+              matched=1
+            fi
+          done < "$work/scan"
+          if [ "$parsed" -eq 0 ]; then
+            fail host-key-parse "ssh-keyscan returned no parseable host key (${skipped} unusable line(s)). Failing closed."
+          fi
+          if [ "$matched" -ne 1 ]; then
+            fail fingerprint-mismatch "Server host key does not match the pinned fingerprint (${parsed} key(s) checked, ${skipped} unusable line(s) skipped). Refusing to connect."
+          fi
+
+          printf '%s\n' "$GODADDY_SSH_PRIVATE_KEY" | tr -d '\r' > "$work/key"
+          chmod 600 "$work/key"
+          if ! grep -q -- '-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----' "$work/key"; then
+            fail key-parse "GODADDY_SSH_PRIVATE_KEY does not look like a PEM/OpenSSH private key. Failing closed."
+          fi
+
+          if [ -n "${GODADDY_SSH_KEY_PASSPHRASE:-}" ]; then
+            printf '#!/bin/sh\nprintf "%%s\\n" "$GODADDY_SSH_KEY_PASSPHRASE"\n' > "$work/askpass"
+            chmod 700 "$work/askpass"
+            export SSH_ASKPASS="$work/askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=none:0
+          fi
+
+          ssh_opts=(
+            -i "$work/key"
+            -o IdentitiesOnly=yes
+            -o BatchMode=no
+            -o PasswordAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$work/known_hosts"
+            -o GlobalKnownHostsFile=/dev/null
+            -o LogLevel=ERROR
+            -o ConnectTimeout=15
+          )
+          target="${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}"
+
+          # Classify a failed ssh/scp from its private stderr file; never print that file.
+          classify() {
+            local rc="$1" stage="$2"
+            if grep -qiE 'load key|invalid format|incorrect passphrase|bad passphrase|error in libcrypto|no suitable key|passphrase' "$work/err"; then
+              fail key-parse "ssh could not load the private key or passphrase (exit ${rc})."
+            elif grep -qiE 'permission denied|authentication failed|too many authentication' "$work/err"; then
+              fail ssh-auth "SSH authentication was rejected (exit ${rc}). Check the key is authorized for the user."
+            elif grep -qiE 'host key verification failed|remote host identification' "$work/err"; then
+              fail fingerprint-mismatch "ssh rejected the host key during the connection (exit ${rc})."
+            elif [ "$rc" -eq 255 ]; then
+              fail ssh-connect "SSH connection failed before the ${stage} step completed (exit 255)."
+            else
+              fail "$stage" "Remote step ${stage} failed (exit ${rc})."
+            fi
+          }
+          rssh() { ssh -p "$GODADDY_SSH_PORT" "${ssh_opts[@]}" "$target" "$@"; }
+
+          # Stream the audited handler (base64, one line) and script on stdin; they run from a private temp dir that the script removes.
+          # Output is filtered so the home path never appears.
+          rc=0
+          { printf 'export BF_LIB_B64=%s\n' "$(base64 -w0 "$lib")"; cat "$script"; } \
+            | rssh "bash -s" > "$work/out" 2> "$work/err" || rc=$?
+          sed -E 's#/home[0-9]*/[A-Za-z0-9._-]+#~#g' "$work/out" | grep -E '^(RESULT|REFUSED): ' || true
+          if [ "$rc" -eq 0 ]; then
+            echo "Stage done: ONE [TEST] email accepted by Brevo for the test inbox. Check it arrived (and not in spam). The one-shot marker prevents a second send."
+          elif [ "$rc" -eq 2 ]; then
+            fail refused "The test send refused to run (see REFUSED line). No request was made."
+          elif [ "$rc" -eq 4 ]; then
+            fail provider-refused "Brevo refused the email (see RESULT line reason=). Nothing was sent. Not retried."
+          elif [ "$rc" -eq 5 ]; then
+            fail investigate "No email confirmed (see RESULT line). Not retried."
+          else
+            classify "$rc" remote-script
+          fi
