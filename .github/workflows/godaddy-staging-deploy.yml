@@ -1,0 +1,331 @@
+name: GoDaddy STAGING deploy (manual, protected, private staging only)
+
+# Issue #195. Manual-only (workflow_dispatch), main-only. Target is ONLY staging.bonafidenitro.com, in its own docroot OUTSIDE public_html.
+# It can never deploy to bonafidenitro.com: the host name is a constant here, and deploy/staging/staging-remote.sh refuses any docroot
+# that is, contains, or sits inside public_html/htdocs/www or a symlink to it. No DNS, cPanel or subdomain write ever happens here.
+#
+#   mode=dry-run  (default)  build + package + read-only remote preflight + anonymous HTTPS probe. Writes NOTHING anywhere.
+#   mode=deploy              needs confirm=DEPLOY_STAGING and approved_sha=<this exact commit>. Order is fixed:
+#                              1. install a tiny PROTECTION-ONLY tree (HTTP Basic auth + X-Robots-Tag noindex + one nonce file),
+#                              2. PROVE over HTTPS: anonymous => 401, authenticated => 200 with the nonce (proves this host name maps
+#                                 to this docroot) and noindex header,
+#                              3. only then upload and swap in the build (previous docroot kept as a backup),
+#                              4. re-verify; on any failure roll back automatically.
+#   mode=rollback            needs confirm=ROLLBACK_STAGING. Swaps the newest PROTECTED backup back in.
+# Contact form: the build is made with PUBLIC_CONTACT_FORM_MODE=mock (browser-only simulation); the build is rejected if it references
+# the live handler or a provider. Auto-deploy on push to main is deliberately NOT enabled (separate owner permission).
+# See docs/GODADDY_STAGING_DEPLOY.md for the one-time owner setup.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run (default, writes nothing) | deploy | rollback"
+        type: choice
+        options: [dry-run, deploy, rollback]
+        default: dry-run
+      confirm:
+        description: "deploy: type DEPLOY_STAGING. rollback: type ROLLBACK_STAGING. dry-run: leave empty"
+        type: string
+        required: false
+        default: ""
+      approved_sha:
+        description: "deploy only: the exact 40-character commit SHA of main you approve to be deployed"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godaddy-staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    # Fail closed on anything but main, before any build or secret.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      MODE: ${{ inputs.mode }}
+      CONFIRM: ${{ inputs.confirm }}
+      APPROVED_SHA: ${{ inputs.approved_sha }}
+      THIS_SHA: ${{ github.sha }}
+    steps:
+      - name: Validate explicit approval inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$MODE" in
+            dry-run) ;;
+            deploy)
+              [ "$CONFIRM" = "DEPLOY_STAGING" ] || { echo "::error::[stage=confirm] deploy requires confirm=DEPLOY_STAGING"; exit 1; }
+              [ "$APPROVED_SHA" = "$THIS_SHA" ] || { echo "::error::[stage=approved-sha] approved_sha must equal the exact commit being deployed"; exit 1; }
+              ;;
+            rollback)
+              [ "$CONFIRM" = "ROLLBACK_STAGING" ] || { echo "::error::[stage=confirm] rollback requires confirm=ROLLBACK_STAGING"; exit 1; }
+              ;;
+            *) echo "::error::[stage=mode] unknown mode"; exit 1 ;;
+          esac
+          echo "Inputs accepted for mode=$MODE."
+
+  build:
+    # No secrets, no environment, no network write capability: only repository code and a read-only token.
+    needs: gate
+    if: inputs.mode != 'rollback'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PUBLIC_CONTACT_FORM_MODE: mock
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Focused staging tests
+        run: node --test tests/foundation/block195-godaddy-staging-deploy.test.mjs
+      - name: Build static site (mock contact form)
+        run: npm run build
+      - name: Artifact and forbidden-string checks
+        run: |
+          npm run check:dist
+          npm run check:artifact
+      - name: Prepare staging site tree (staging robots.txt, live-contact guard)
+        run: node scripts/staging-package.mjs site --dist dist --out staging-out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: staging-site
+          path: staging-out/site
+          retention-days: 1
+          if-no-files-found: error
+
+  staging:
+    needs: [gate, build]
+    # build is skipped for rollback; otherwise it must have succeeded.
+    if: ${{ always() && needs.gate.result == 'success' && (inputs.mode == 'rollback' || needs.build.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Protected Environments: dry-run and write modes are approved separately (required reviewer = owner, deployment branch = main).
+    environment: ${{ inputs.mode == 'dry-run' && 'godaddy-staging-preflight' || 'godaddy-staging-deploy' }}
+    env:
+      MODE: ${{ inputs.mode }}
+      STAGING_HOST: staging.bonafidenitro.com
+      GODADDY_SSH_HOST: ${{ secrets.GODADDY_SSH_HOST }}
+      GODADDY_SSH_PORT: ${{ secrets.GODADDY_SSH_PORT }}
+      GODADDY_SSH_USER: ${{ secrets.GODADDY_SSH_USER }}
+      GODADDY_SSH_PRIVATE_KEY: ${{ secrets.GODADDY_SSH_PRIVATE_KEY }}
+      GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
+      GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
+      # Owner-supplied, NOT derived: absolute paths on the host. The docroot is the one cPanel assigned to the staging subdomain.
+      STG_DOCROOT: ${{ secrets.GODADDY_STAGING_DOCROOT }}
+      STG_AUTH_FILE: ${{ secrets.GODADDY_STAGING_AUTH_FILE }}
+      STG_BASIC_USER: ${{ secrets.GODADDY_STAGING_BASIC_USER }}
+      STG_BASIC_PASSWORD: ${{ secrets.GODADDY_STAGING_BASIC_PASSWORD }}
+      # Audited content pin: the streamed remote script must match exactly or the run stops before connecting.
+      PIN_REMOTE_SHA256: 18adad7ca015186f59f3af33f60c559440357a97c07d923795af028c6eb0533a
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        if: inputs.mode != 'rollback'
+        with:
+          node-version: "22"
+      - name: Install locked dependencies without running package scripts
+        if: inputs.mode != 'rollback'
+        run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v4
+        if: inputs.mode != 'rollback'
+        with:
+          name: staging-site
+          path: staging-out/site
+
+      - name: Staging deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+
+          fail() { echo "::error::[stage=$1] $2"; exit 1; }
+
+          # ---- configuration: fail closed -------------------------------------------------------------------------
+          missing=""
+          for v in GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT STG_DOCROOT STG_AUTH_FILE STG_BASIC_USER STG_BASIC_PASSWORD; do
+            [ -n "${!v:-}" ] || missing="${missing} ${v}"
+          done
+          [ -z "$missing" ] || fail missing-secret "Required secret(s) not configured:${missing}. Failing closed."
+          case "$GODADDY_SSH_PORT" in ''|*[!0-9]*) fail missing-secret "GODADDY_SSH_PORT must be numeric." ;; esac
+          case "$GODADDY_SSH_HOST_FINGERPRINT" in SHA256:*) ;; *) fail missing-secret "GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:." ;; esac
+          [ "$STAGING_HOST" = "staging.bonafidenitro.com" ] || fail host "staging host constant changed"
+          for v in STG_DOCROOT STG_AUTH_FILE; do
+            printf '%s' "${!v}" | grep -qE '^/[A-Za-z0-9._/-]+$' || fail path-format "$v must be an absolute path of letters, digits, . _ - /"
+          done
+          case "$STG_DOCROOT" in *public_html*|*htdocs*|*/www|*/www/*) fail docroot-live "GODADDY_STAGING_DOCROOT must be outside public_html/htdocs/www." ;; esac
+          case "$STG_AUTH_FILE" in *public_html*|*htdocs*|*/www|*/www/*) fail authfile-live "GODADDY_STAGING_AUTH_FILE must be outside every web root." ;; esac
+          case "$STG_BASIC_USER$STG_BASIC_PASSWORD" in *'"'*|*'\'*|*$'\n'*|*$'\r'*) fail basic-format "Basic credentials must not contain quotes, backslashes or newlines." ;; esac
+
+          for v in GODADDY_SSH_HOST GODADDY_SSH_USER GODADDY_SSH_PORT STG_DOCROOT STG_AUTH_FILE STG_BASIC_USER STG_BASIC_PASSWORD; do
+            echo "::add-mask::${!v}"
+          done
+
+          work="$RUNNER_TEMP/stg"
+          rm -rf "$work"; mkdir -p "$work"
+          trap 'rm -rf "$work"' EXIT
+          parent="$(dirname "$STG_DOCROOT")"
+          incoming="$parent/.bf-stg-incoming.tgz"
+
+          # ---- pin the audited remote script before anything connects ----------------------------------------------
+          got="$(sha256sum deploy/staging/staging-remote.sh | awk '{print $1}')"
+          [ "$got" = "$PIN_REMOTE_SHA256" ] || fail script-pin "deploy/staging/staging-remote.sh does not match the audited SHA-256 pin. Refusing to connect."
+
+          # ---- pinned host key (never trusted automatically) ---------------------------------------------------------
+          ssh-keyscan -T 10 -p "$GODADDY_SSH_PORT" -t ed25519,ecdsa,rsa "$GODADDY_SSH_HOST" > "$work/scan" 2>/dev/null || true
+          [ -s "$work/scan" ] || fail host-scan "Could not retrieve a host key. Failing closed."
+          : > "$work/known_hosts"; matched=0; parsed=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            case "$line" in ''|'#'*) continue ;; esac
+            printf '%s\n' "$line" > "$work/cand"
+            fp_out="$(ssh-keygen -lf "$work/cand" -E sha256 2>/dev/null)" || continue
+            fp="$(printf '%s\n' "$fp_out" | awk 'NR==1 {print $2}')"
+            case "$fp" in SHA256:?*) ;; *) continue ;; esac
+            parsed=$((parsed + 1))
+            if [ "$fp" = "$GODADDY_SSH_HOST_FINGERPRINT" ]; then printf '%s\n' "$line" >> "$work/known_hosts"; matched=1; fi
+          done < "$work/scan"
+          [ "$parsed" -gt 0 ] || fail host-key-parse "ssh-keyscan returned no parseable host key."
+          [ "$matched" -eq 1 ] || fail fingerprint-mismatch "Server host key does not match the pinned fingerprint. Refusing to connect."
+
+          printf '%s\n' "$GODADDY_SSH_PRIVATE_KEY" | tr -d '\r' > "$work/key"
+          chmod 600 "$work/key"
+          grep -q -- '-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----' "$work/key" || fail key-parse "GODADDY_SSH_PRIVATE_KEY does not look like a private key."
+          if [ -n "${GODADDY_SSH_KEY_PASSPHRASE:-}" ]; then
+            printf '#!/bin/sh\nprintf "%%s\\n" "$GODADDY_SSH_KEY_PASSPHRASE"\n' > "$work/askpass"
+            chmod 700 "$work/askpass"
+            export SSH_ASKPASS="$work/askpass" SSH_ASKPASS_REQUIRE=force DISPLAY=none:0
+          fi
+
+          # ssh stderr is kept in a private file and classified, never printed.
+          ssh_run() { # ssh_run <remote command>  (stdin is forwarded)
+            ssh -i "$work/key" -p "$GODADDY_SSH_PORT" \
+              -o IdentitiesOnly=yes -o BatchMode=no -o PasswordAuthentication=no \
+              -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$work/known_hosts" -o GlobalKnownHostsFile=/dev/null \
+              -o LogLevel=ERROR -o ConnectTimeout=15 \
+              "${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}" "$1" 2> "$work/err"
+          }
+          remote_env="STG_DOCROOT='${STG_DOCROOT}' STG_AUTH_FILE='${STG_AUTH_FILE}'"
+          # run the pinned remote script in <mode>; only fixed STAGING_* lines are echoed.
+          remote() { # remote <mode> [extra env assignments]
+            local m="$1" extra="${2:-}" rc=0
+            ssh_run "${remote_env} ${extra} bash -s -- ${m}" < deploy/staging/staging-remote.sh > "$work/out" || rc=$?
+            grep -E '^STAGING_[A-Z_]+( [a-z_]+=[a-z0-9_-]+)*$' "$work/out" || true
+            if [ "$rc" -ne 0 ] || ! grep -qE '^STAGING_(PREFLIGHT_OK|INSTALL_OK|ROLLBACK_OK)' "$work/out"; then
+              return 1
+            fi
+          }
+          cleanup_remote() { ssh_run "rm -f -- '${incoming}'" < /dev/null > /dev/null || true; }
+
+          # ---- HTTPS probes: TLS verified, https only, no redirects followed, credentials only via a private curl config ------
+          printf 'user = "%s:%s"\n' "$STG_BASIC_USER" "$STG_BASIC_PASSWORD" > "$work/auth.curl"
+          chmod 600 "$work/auth.curl"
+          base="https://${STAGING_HOST}"
+          probe() { # probe anon|auth <path>  -> sets code, headers in $work/h, body in $work/b
+            local who="$1" p="$2" extra=()
+            [ "$who" = auth ] && extra=(-K "$work/auth.curl")
+            code="$(curl --silent --proto '=https' --tlsv1.2 --max-time 25 --connect-timeout 10 \
+              -o "$work/b" -D "$work/h" -w '%{http_code}' "${extra[@]}" "${base}${p}" 2>/dev/null)" || code="000"
+          }
+          probe_retry() { local n=0; while :; do probe "$@"; [ "$code" != 000 ] && [ "$code" -lt 500 ] && return 0; n=$((n + 1)); [ "$n" -ge 4 ] && return 0; sleep 3; done; }
+          has_noindex() { grep -qi '^x-robots-tag:.*noindex' "$work/h"; }
+
+          prove_protection() { # prove_protection <nonce>
+            local nonce="$1"
+            probe_retry anon "/bf-probe-${nonce}.txt"
+            [ "$code" = 401 ] || { echo "::error::[stage=protection-not-proven] anonymous request to the staging host was not rejected with 401 (HTTP ${code}). Auth is not enforced for this host. No build was uploaded."; return 1; }
+            grep -q "$nonce" "$work/b" && { echo "::error::[stage=protection-not-proven] nonce body leaked to an anonymous request."; return 1; }
+            probe_retry anon "/"
+            [ "$code" = 401 ] || { echo "::error::[stage=protection-not-proven] anonymous request to / was not 401 (HTTP ${code})."; return 1; }
+            probe_retry auth "/bf-probe-${nonce}.txt"
+            [ "$code" = 200 ] || { echo "::error::[stage=protection-not-proven] authenticated probe failed (HTTP ${code}); wrong credentials or the staging host does not map to the verified docroot."; return 1; }
+            [ "$(tr -d '\r\n' < "$work/b")" = "$nonce" ] || { echo "::error::[stage=vhost-mismatch] the staging host name does not serve the docroot that was just written. Refusing to upload."; return 1; }
+            has_noindex || { echo "::error::[stage=protection-not-proven] X-Robots-Tag noindex header missing."; return 1; }
+            echo "Protection PROVEN: anonymous=401, authenticated=200, nonce matches this docroot, X-Robots-Tag noindex present."
+          }
+          verify_release() {
+            probe_retry anon "/";                [ "$code" = 401 ] || { echo "::error::[stage=verify] anonymous / is not 401 (HTTP ${code})."; return 1; }
+            probe_retry anon "/.bonafide-staging"; [ "$code" = 401 ] || { echo "::error::[stage=verify] anonymous marker is not 401 (HTTP ${code})."; return 1; }
+            probe_retry auth "/";                [ "$code" = 200 ] || { echo "::error::[stage=verify] authenticated / returned HTTP ${code}."; return 1; }
+            has_noindex || { echo "::error::[stage=verify] noindex header missing on /."; return 1; }
+            probe_retry auth "/.bonafide-staging"; [ "$code" = 200 ] && grep -q "^commit=${GITHUB_SHA}\$" "$work/b" || { echo "::error::[stage=verify] marker does not name this commit."; return 1; }
+            probe_retry auth "/robots.txt";      [ "$code" = 200 ] && grep -q '^Disallow: /$' "$work/b" || { echo "::error::[stage=verify] staging robots.txt is not a blanket Disallow."; return 1; }
+            echo "Release verified: protected (401 anonymous), noindex header, robots Disallow, marker = ${GITHUB_SHA}."
+          }
+          production_reachable() { # informational only: one HEAD, nothing is changed
+            local pc; pc="$(curl --silent --proto '=https' --max-time 20 -o /dev/null -I -w '%{http_code}' https://bonafidenitro.com/ 2>/dev/null)" || pc=000
+            case "$pc" in 2??|3??) echo "Production bonafidenitro.com still reachable (HTTP ${pc}); this workflow never writes to it." ;;
+              *) echo "::warning::production HEAD returned HTTP ${pc} from the runner (may be a WAF decision); this workflow does not touch production." ;; esac
+          }
+
+          assemble() { # assemble <kind>
+            node scripts/staging-package.mjs assemble --site staging-out/site --kind "$1" --out staging-out
+          }
+          upload() { # upload <tgz>
+            ssh_run "umask 077; cat > '${incoming}'" < "$1" > /dev/null || { cleanup_remote; fail upload "Could not upload the package."; }
+          }
+
+          # ================= rollback =================
+          if [ "$MODE" = rollback ]; then
+            remote rollback || fail rollback "Remote rollback refused or failed (see STAGING_FAIL reason above)."
+            probe_retry anon "/"; [ "$code" = 401 ] || fail verify "After rollback anonymous / is HTTP ${code}, not 401. Treat staging as exposed and take the host offline."
+            echo "Rollback complete; staging still protected (anonymous 401)."
+            production_reachable
+            exit 0
+          fi
+
+          # ================= package locally (also the dry-run) =================
+          nonce="$(openssl rand -hex 16)"
+          assemble full
+          STG_NONCE="$nonce" assemble protect
+          full_sha="$(cat staging-out/staging-full.tgz.sha256)"
+          prot_sha="$(cat staging-out/staging-protect.tgz.sha256)"
+
+          # ================= read-only preflight (both modes) =================
+          remote preflight || fail preflight "Remote preflight refused (see STAGING_FAIL reason above). Nothing was written."
+          probe_retry anon "/"
+          case "$code" in
+            401) echo "Staging host currently answers anonymous requests with 401 (protected)." ;;
+            2??) fail staging-public "Staging host answers an anonymous request with HTTP ${code}: it is publicly readable right now. Nothing was written. Protect or take it down first." ;;
+            *)   echo "Staging host anonymous probe: HTTP ${code} (not yet serving a protected site; expected before the first deploy)." ;;
+          esac
+          production_reachable
+
+          if [ "$MODE" = dry-run ]; then
+            echo "DRY RUN COMPLETE: build, packaging, .htaccess preflight and remote preflight passed. Nothing was written to GoDaddy. No DNS or cPanel change was made."
+            exit 0
+          fi
+
+          # ================= deploy =================
+          # 1. protection first
+          upload staging-out/staging-protect.tgz
+          remote install "STG_TARBALL_SHA256='${prot_sha}'" || { cleanup_remote; fail install-protect "Protection-only install failed (see STAGING_FAIL reason above). No build was uploaded."; }
+          prove_protection "$nonce" || fail protection-not-proven "Stopped before uploading the build. A protection-only placeholder is in the staging docroot; no site content is exposed."
+
+          # 2. the build, only after protection is proven
+          upload staging-out/staging-full.tgz
+          remote install "STG_TARBALL_SHA256='${full_sha}'" || { cleanup_remote; fail install "Build install failed (see STAGING_FAIL reason above). The previous protected docroot is unchanged or restored."; }
+          if ! verify_release; then
+            echo "Verification failed: rolling back to the previous protected docroot."
+            remote rollback || echo "::error::[stage=rollback] automatic rollback failed; use mode=rollback or fix by hand."
+            fail verify "Release verification failed; rollback attempted."
+          fi
+          production_reachable
+          echo "Staging deployed: https://${STAGING_HOST}/ (HTTP Basic auth, noindex). Production was not touched."
+
+      - name: Remove temp material
+        if: always()
+        shell: bash
+        run: rm -rf "$RUNNER_TEMP/stg" staging-out
