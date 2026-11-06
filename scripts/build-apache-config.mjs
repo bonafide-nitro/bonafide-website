@@ -145,7 +145,26 @@ export const preflight = (text, target, { docroot } = {}) => {
     if (stack.length) problems.push('unclosed IfModule branch in staging overlay');
     const branches = eff.filter((l) => /^<IfModule\s+/i.test(l)).map((l) => l.toLowerCase());
     if (branches.length !== 2 || branches[0] !== '<ifmodule !mod_headers.c>' || branches[1] !== '<ifmodule mod_headers.c>') problems.push('staging overlay must use exactly two top-level mod_headers branches in order');
-  } else problems.push(`unknown target "${target}" (production|staging)`);
+  } else if (target === 'staging-public') {
+    // Issue #198: PUBLIC noindex staging. No authentication; the only allowed content is the server-enforced noindex header and the
+    // fail-closed branch for a missing mod_headers. Anything else (Auth*, Require valid-user, Require all granted, Header unset, ...) is blocked.
+    if (eff.some((l) => l.includes('@@'))) problems.push('unresolved @@placeholder@@ in public staging config');
+    if (!has(/^Header\s+always\s+set\s+X-Robots-Tag\s+"noindex, nofollow"$/i)) problems.push('missing server-enforced X-Robots-Tag: noindex, nofollow');
+    if (!has(/^<IfModule !mod_headers\.c>$/i) || !has(/^Require all denied$/i)) problems.push('missing fail-closed branch for absent mod_headers');
+    const stack = [];
+    for (const l of eff) {
+      const open = l.match(/^<IfModule\s+(!?mod_\w+\.c)>$/i);
+      if (open) { if (stack.length) problems.push('nested IfModule branch is forbidden in public staging config'); stack.push(open[1].toLowerCase()); continue; }
+      if (/^<\/IfModule>$/i.test(l)) { if (!stack.length) problems.push('unmatched closing IfModule'); else stack.pop(); continue; }
+      const top = stack[stack.length - 1];
+      if (/^Require\s+all\s+denied$/i.test(l)) { if (top !== '!mod_headers.c') problems.push('Require all denied outside the !mod_headers branch'); continue; }
+      if (/^Header\s+always\s+set\s+X-Robots-Tag\s+"noindex, nofollow"$/i.test(l)) { if (top !== 'mod_headers.c') problems.push('X-Robots-Tag set outside the mod_headers branch'); continue; }
+      problems.push(`unexpected directive in public staging config (only the noindex header and fail-closed lines are allowed): ${l}`);
+    }
+    if (stack.length) problems.push('unclosed IfModule branch');
+    const branches = eff.filter((l) => /^<IfModule\s+/i.test(l)).map((l) => l.toLowerCase());
+    if (branches.length !== 2 || branches[0] !== '<ifmodule !mod_headers.c>' || branches[1] !== '<ifmodule mod_headers.c>') problems.push('public staging config must use exactly two top-level mod_headers branches in order');
+  } else problems.push(`unknown target "${target}" (production|staging|staging-public)`);
   return problems;
 };
 

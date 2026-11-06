@@ -2,7 +2,8 @@
 # Issue #195: remote half of the manual GoDaddy STAGING deploy. Streamed over strict, fingerprint-pinned SSH by
 # .github/workflows/godaddy-staging-deploy.yml (SHA-256 pinned there). Never run by an agent.
 #
-# Usage (on the server): STG_DOCROOT=<abs> STG_AUTH_FILE=<abs> [STG_TARBALL_SHA256=<hex>] bash -s -- <preflight|install|rollback>
+# Usage (on the server): STG_DOCROOT=<abs> [STG_AUTH_FILE=<abs>] [STG_ACCESS=basic|public] [STG_TARBALL_SHA256=<hex>] bash -s -- <preflight|install|rollback>
+#   STG_ACCESS=public (Issue #198): public noindex staging, no Basic auth and no auth file; every other safety check is unchanged.
 #   preflight  read-only: verifies the docroot is a safe, isolated staging path and the auth file exists. Writes nothing.
 #   install    verifies + unpacks $parent/.bf-stg-incoming.tgz beside the docroot, then swaps it in with the previous docroot kept
 #              as "<docroot>.bf-prev-<UTC timestamp>" (last 3 kept). The docroot is never edited in place.
@@ -15,19 +16,22 @@ umask 022
 mode="${1:-}"
 docroot="${STG_DOCROOT:-}"
 authfile="${STG_AUTH_FILE:-}"
+access="${STG_ACCESS:-basic}"
+case "$access" in basic|public) ;; *) echo "STAGING_FAIL reason=bad-access"; exit 2 ;; esac
 KEEP=3
 MARKER=".bonafide-staging"
 
 die() { echo "STAGING_FAIL reason=$1"; exit "${2:-2}"; }
 
 # ---- path safety -------------------------------------------------------------------------------------------------------
-[ -n "$docroot" ] && [ -n "$authfile" ] || die missing-input
+[ -n "$docroot" ] || die missing-input
+[ "$access" = public ] || [ -n "$authfile" ] || die missing-input
 re='^/[A-Za-z0-9._/-]+$'
 [[ "$docroot" =~ $re ]] || die docroot-charset
-[[ "$authfile" =~ $re ]] || die authfile-charset
+[ "$access" = public ] || [[ "$authfile" =~ $re ]] || die authfile-charset
 case "$docroot" in */) die docroot-trailing-slash ;; esac
 case "$docroot/" in */../*|*/./*|*//*) die docroot-dotsegment ;; esac
-case "$authfile/" in */../*|*/./*|*//*) die authfile-dotsegment ;; esac
+[ "$access" = public ] || case "$authfile/" in */../*|*/./*|*//*) die authfile-dotsegment ;; esac
 
 home="$(cd ~ && pwd -P)"
 pub="$home/public_html"
@@ -40,7 +44,7 @@ within() { # within <child> <parent>: child is parent or below it
 }
 for seg in public_html htdocs www; do
   case "$docroot/" in */"$seg"/*) die docroot-in-webroot ;; esac
-  case "/$authfile/" in */"$seg"/*) die authfile-in-webroot ;; esac
+  [ "$access" = public ] || case "/$authfile/" in */"$seg"/*) die authfile-in-webroot ;; esac
 done
 within "$docroot" "$home" || die docroot-outside-home
 [ "$docroot" != "$home" ] || die docroot-is-home
@@ -48,9 +52,11 @@ for p in "$pub" "$pub_real"; do
   within "$docroot" "$p" && die docroot-in-live-docroot
   within "$p" "$docroot" && die docroot-contains-live-docroot
 done
-within "$authfile" "$home" || die authfile-outside-home
-within "$authfile" "$docroot" && die authfile-inside-docroot
-within "$authfile" "$pub" && die authfile-in-live-docroot
+if [ "$access" != public ]; then
+  within "$authfile" "$home" || die authfile-outside-home
+  within "$authfile" "$docroot" && die authfile-inside-docroot
+  within "$authfile" "$pub" && die authfile-in-live-docroot
+fi
 
 parent="$(dirname "$docroot")"
 [ -d "$parent" ] || die parent-missing
@@ -61,7 +67,7 @@ within "$parent_real" "$pub_real" && die parent-in-live-docroot
 [ -w "$parent" ] || die parent-not-writable
 [ ! -L "$docroot" ] || die docroot-symlink
 [ ! -e "$docroot" ] || [ -d "$docroot" ] || die docroot-not-directory
-[ -f "$authfile" ] && [ ! -L "$authfile" ] && [ -s "$authfile" ] && [ -r "$authfile" ] || die authfile-unusable
+[ "$access" = public ] || { [ -f "$authfile" ] && [ ! -L "$authfile" ] && [ -s "$authfile" ] && [ -r "$authfile" ] || die authfile-unusable; }
 
 # State of an existing docroot: our own tree, an empty cPanel-created one, or something we must not touch.
 docroot_state() {
@@ -88,8 +94,12 @@ backups() { # newest first; exact name pattern only, never symlinks
 protected_tree() { # a tree we may serve: marker + auth + noindex header present, auth file not inside it
   local t="$1"
   [ -f "$t/$MARKER" ] && [ -f "$t/.htaccess" ] && [ ! -L "$t/.htaccess" ] || return 1
+  grep -q 'X-Robots-Tag "noindex, nofollow"' "$t/.htaccess" || return 1
+  grep -qE '^[[:space:]]*Require all denied$' "$t/.htaccess" || return 1
+  # Public mode (Issue #198) needs only the server-enforced noindex header; basic mode additionally needs the auth lines.
+  [ "$access" = public ] && return 0
   grep -qE '^[[:space:]]*AuthType Basic$' "$t/.htaccess" && grep -qE '^[[:space:]]*Require valid-user$' "$t/.htaccess" \
-    && grep -q 'X-Robots-Tag "noindex, nofollow"' "$t/.htaccess" && grep -qE '^[[:space:]]*AuthUserFile /' "$t/.htaccess"
+    && grep -qE '^[[:space:]]*AuthUserFile /' "$t/.htaccess"
 }
 
 state="$(docroot_state)"
@@ -99,7 +109,7 @@ case "$mode" in
 preflight)
   avail_kb="$(df -Pk "$parent" | awk 'NR==2 {print $4}')"
   [ "${avail_kb:-0}" -gt 204800 ] || die low-disk
-  echo "STAGING_PREFLIGHT_OK docroot_state=$state backups=$(backups | wc -l | tr -d ' ') live_docroot_untouched=yes"
+  echo "STAGING_PREFLIGHT_OK access=$access docroot_state=$state backups=$(backups | wc -l | tr -d ' ') live_docroot_untouched=yes"
   ;;
 
 install)

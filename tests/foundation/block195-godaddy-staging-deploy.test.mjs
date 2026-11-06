@@ -7,6 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { makeSite, assemble, renderHtaccess, contactProblems, STAGING_ROBOTS } from '../../scripts/staging-package.mjs';
+import { preflight } from '../../scripts/build-apache-config.mjs';
 
 const wf = fs.readFileSync('.github/workflows/godaddy-staging-deploy.yml', 'utf8');
 const doc = fs.readFileSync('docs/GODADDY_STAGING_DEPLOY.md', 'utf8');
@@ -165,7 +166,7 @@ test('remote preflight accepts a safe isolated docroot and writes nothing', () =
   const before = snapshot(sb.home);
   const r = run(sb, 'preflight');
   assert.equal(r.code, 0, r.out);
-  assert.match(r.out, /^STAGING_PREFLIGHT_OK docroot_state=absent .*live_docroot_untouched=yes$/);
+  assert.match(r.out, /^STAGING_PREFLIGHT_OK access=basic docroot_state=absent .*live_docroot_untouched=yes$/);
   assert.equal(snapshot(sb.home), before);
 });
 
@@ -292,4 +293,101 @@ test('remote script output is limited to fixed tokens (no paths, no file content
   const r = run(sb, 'preflight');
   assert.ok(!r.out.includes(sb.home));
   for (const bad of ['rm -rf /', 'set -x']) assert.ok(!fs.readFileSync(REMOTE, 'utf8').includes(bad));
+});
+
+// ---------- Issue #198: PUBLIC noindex staging (no Basic auth, no auth file) ----------
+const wfAccess = () => wf.slice(wf.indexOf('staging:\n    needs'));
+
+test('#198 public .htaccess is noindex + fail-closed only, with no authentication', () => {
+  const h = renderHtaccess({ docroot: '/home/u/staging.bonafidenitro.com', access: 'public' });
+  assert.match(h, /Header always set X-Robots-Tag "noindex, nofollow"/);
+  assert.match(h, /Require all denied/);
+  assert.doesNotMatch(h, /AuthType|AuthUserFile|valid-user|Require all granted/);
+  assert.throws(() => renderHtaccess({ docroot: '/x', access: 'open' }), /access must be/);
+});
+
+test('#198 public preflight rejects anything beyond noindex + fail-closed', () => {
+  const ok = renderHtaccess({ docroot: '/home/u/stg', access: 'public' });
+  for (const bad of ['Require all granted', 'Header unset X-Robots-Tag', 'AuthType Basic', 'Redirect 301 / https://bonafidenitro.com/']) {
+    const t = ok.replace('</IfModule>\n', `  ${bad}\n</IfModule>\n`);
+    assert.ok(preflight(t, 'staging-public').length > 0, bad);
+  }
+  assert.ok(preflight(ok.replace('Header always set X-Robots-Tag "noindex, nofollow"', ''), 'staging-public').length > 0, 'noindex required');
+});
+
+test('#198 public assemble needs no auth file, keeps noindex + robots Disallow + marker, still deterministic', () => {
+  const site = tmp(); fs.writeFileSync(path.join(site, 'index.html'), '<p>home</p>');
+  const out = tmp();
+  const base = { site, out, docroot: '/home/u/staging.bonafidenitro.com', commit: COMMIT, nonce: NONCE, access: 'public' };
+  const full = assemble({ ...base, kind: 'full' });
+  assert.equal(assemble({ ...base, kind: 'full' }).digest, full.digest);
+  assemble({ ...base, kind: 'protect' });
+  for (const k of ['full', 'protect']) {
+    const t = path.join(out, `tree-${k}`);
+    assert.doesNotMatch(fs.readFileSync(path.join(t, '.htaccess'), 'utf8'), /Auth|valid-user/);
+    assert.match(fs.readFileSync(path.join(t, '.htaccess'), 'utf8'), /X-Robots-Tag "noindex, nofollow"/);
+    assert.equal(fs.readFileSync(path.join(t, 'robots.txt'), 'utf8'), STAGING_ROBOTS);
+    assert.match(fs.readFileSync(path.join(t, '.bonafide-staging'), 'utf8'), /access=public/);
+  }
+});
+
+test('#198 remote script in public mode: no auth file needed, every docroot safety check stays', () => {
+  const sb = sandbox();
+  const env = { STG_ACCESS: 'public', STG_AUTH_FILE: '' };
+  const r = run(sb, 'preflight', env);
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /^STAGING_PREFLIGHT_OK access=public docroot_state=absent/);
+  for (const docroot of [path.join(sb.home, 'public_html'), path.join(sb.home, 'public_html', 'staging'), sb.home]) {
+    const x = run(sb, 'preflight', { ...env, STG_DOCROOT: docroot });
+    assert.notEqual(x.code, 0, docroot);
+    assert.match(x.out, /^STAGING_FAIL reason=/);
+  }
+  assert.match(run(sb, 'preflight', { STG_ACCESS: 'bogus' }).out, /bad-access/);
+});
+
+test('#198 public install/rollback: noindex-only tree is accepted, a tree without noindex is not', () => {
+  const sb = sandbox();
+  const env = { STG_ACCESS: 'public', STG_AUTH_FILE: '' };
+  const mk = (kind) => {
+    const site = tmp(); fs.writeFileSync(path.join(site, 'index.html'), `<p>${kind}</p>`);
+    const a = assemble({ site, out: tmp(), kind, docroot: sb.docroot, commit: COMMIT, nonce: NONCE, access: 'public' });
+    fs.copyFileSync(a.tgz, path.join(sb.home, '.bf-stg-incoming.tgz'));
+    return a.digest;
+  };
+  const a = run(sb, 'install', { ...env, STG_TARBALL_SHA256: mk('protect') });
+  assert.equal(a.code, 0, a.out);
+  assert.ok(fs.existsSync(path.join(sb.docroot, `bf-probe-${NONCE}.txt`)));
+  assert.equal(run(sb, 'install', { ...env, STG_TARBALL_SHA256: mk('full') }).code, 0);
+  assert.equal(run(sb, 'rollback', env).out, 'STAGING_ROLLBACK_OK');
+  assert.ok(fs.existsSync(path.join(sb.docroot, `bf-probe-${NONCE}.txt`)));
+  // a tree whose .htaccess lacks the noindex header is refused
+  const bad = tmp(); fs.writeFileSync(path.join(bad, 'index.html'), 'x'); fs.writeFileSync(path.join(bad, '.bonafide-staging'), 'commit=x\n'); fs.writeFileSync(path.join(bad, '.htaccess'), '# nothing\n');
+  const tgz = path.join(sb.home, '.bf-stg-incoming.tgz');
+  spawnSync('tar', ['-czf', tgz, '-C', bad, '.']);
+  const sha = crypto.createHash('sha256').update(fs.readFileSync(tgz)).digest('hex');
+  assert.match(run(sb, 'install', { ...env, STG_TARBALL_SHA256: sha }).out, /release-not-protected/);
+});
+
+test('#198 workflow: public mode is the default, needs its own consent phrase, no auth secrets, TLS+vhost proven before build upload', () => {
+  assert.match(wf, /access:[\s\S]*default: public-noindex/);
+  assert.match(wf, /DEPLOY_PUBLIC_STAGING/);
+  assert.match(wf, /NOT private|not private|NOT access control|not access control/i);
+  // Basic-auth secrets are required only in basic-auth mode
+  assert.match(wf, /if \[ "\$ACCESS" = basic-auth \]; then required="\$required STG_DOCROOT STG_AUTH_FILE STG_BASIC_USER STG_BASIC_PASSWORD"/);
+  // docroot derived read-only over the existing SSH connection, then re-validated
+  assert.match(wf, /cd ~ && pwd -P/);
+  assert.match(wf, /check_paths/);
+  // nonce/vhost probe still precedes the build upload; TLS failure stops before any write
+  const deploy = wf.slice(wf.indexOf('# ================= deploy'));
+  assert.ok(deploy.indexOf('prove_protection "$nonce"') > -1 && deploy.indexOf('prove_protection "$nonce"') < deploy.indexOf('upload staging-out/staging-full.tgz'));
+  assert.match(wf, /prove_vhost_public/);
+  assert.match(wf, /\[stage=tls-or-dns\]/);
+  // the host name stays a constant and production is never a write target
+  assert.match(wf, /STAGING_HOST: staging\.bonafidenitro\.com/);
+  assert.doesNotMatch(wf, /STAGING_HOST: \$\{\{/);
+  assert.ok(wfAccess().includes('STG_ACCESS'));
+});
+
+test('#198 docs state that public staging is not private and name the single remaining step', () => {
+  for (const s of ['DEPLOY_PUBLIC_STAGING', 'public-noindex', 'not private', 'noindex is not access control', 'AutoSSL']) assert.ok(doc.includes(s), s);
 });

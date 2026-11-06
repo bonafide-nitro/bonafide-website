@@ -6,6 +6,22 @@ Target: `https://staging.bonafidenitro.com/`, its **own docroot outside `public_
 
 Files: `.github/workflows/godaddy-staging-deploy.yml`, `deploy/staging/staging-remote.sh` (SHA-256 pinned in the workflow), `scripts/staging-package.mjs`, `tests/foundation/block195-godaddy-staging-deploy.test.mjs`.
 
+## Fast public preview (Issue #198, default `access = public-noindex`)
+
+The owner chose speed over a password: the default `access` input is `public-noindex`.
+
+**Public staging is not private.** Anyone who has the link can view `https://staging.bonafidenitro.com/`. noindex is not access control: it only asks search engines not to index the site (server-sent `X-Robots-Tag: noindex, nofollow` plus a blanket-Disallow `robots.txt`). Do not put anything on it that must stay confidential. The build is production-faithful static content with a **mock** contact form; the build is rejected if it references the live handler, a provider key, or any forbidden string, and no secret, WordPress export, draft or private file is ever packaged.
+
+What changes in public mode (everything else is identical to the private flow below):
+
+- **No Basic auth**: no `.htaccess` auth, no password file, and none of `GODADDY_STAGING_AUTH_FILE`, `GODADDY_STAGING_BASIC_USER`, `GODADDY_STAGING_BASIC_PASSWORD` is needed. Only the existing SSH secrets are required.
+- **Docroot derived, then verified**: if `GODADDY_STAGING_DOCROOT` is unset, the workflow reads the SSH account home (`cd ~ && pwd -P`, read-only) and uses `<home>/staging.bonafidenitro.com` as a *candidate*. It is trusted only after (1) the pinned remote script proves it is outside `public_html`/`htdocs`/`www`, neither contains nor sits inside them, is not a symlink and holds only empty/our content, and (2) an HTTPS **nonce probe** proves the staging host name serves exactly that directory. If the real cPanel docroot differs, the probe fails with `vhost-mismatch` and the build is never uploaded (setting `GODADDY_STAGING_DOCROOT` overrides the derivation).
+- **TLS first**: certificate verification is never relaxed. If the host is not reachable over valid HTTPS (subdomain missing, AutoSSL not issued yet) a deploy stops with `[stage=tls-or-dns]` before writing anything; a dry-run only warns.
+- **Wrong-host guard**: a blank or default host answering the request cannot pass; the random nonce file must be returned with HTTP 200 by the staging host name.
+- **Explicit consent**: `deploy` needs `confirm = DEPLOY_PUBLIC_STAGING` (instead of `DEPLOY_STAGING`) and `approved_sha` = the exact commit, plus the `godaddy-staging-deploy` Environment approval. `rollback` is unchanged (`ROLLBACK_STAGING`).
+
+Owner steps for public mode: create the subdomain in cPanel with a document root **outside `public_html`** (expected `/home/<cpanel user>/staging.bonafidenitro.com`) and make sure AutoSSL has issued a certificate for it (you said the subdomain already exists; no DNS or production change is made by the workflow). Then Actions → *GoDaddy STAGING deploy* → run on `main` with `mode = dry-run` (default access) and approve `godaddy-staging-preflight`; then `mode = deploy`, `confirm = DEPLOY_PUBLIC_STAGING`, `approved_sha` = the SHA of `main`, and approve `godaddy-staging-deploy`. Selecting `access = basic-auth` restores the private flow described in the rest of this document.
+
 ## What the workflow does
 
 `workflow_dispatch` only, `main` only. Three modes (input `mode`, default **dry-run**):

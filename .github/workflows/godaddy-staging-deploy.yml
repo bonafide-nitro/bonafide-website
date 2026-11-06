@@ -1,4 +1,4 @@
-name: GoDaddy STAGING deploy (manual, protected, private staging only)
+name: GoDaddy STAGING deploy (manual, staging subdomain only; public-noindex or Basic-auth)
 
 # Issue #195. Manual-only (workflow_dispatch), main-only. Target is ONLY staging.bonafidenitro.com, in its own docroot OUTSIDE public_html.
 # It can never deploy to bonafidenitro.com: the host name is a constant here, and deploy/staging/staging-remote.sh refuses any docroot
@@ -14,6 +14,13 @@ name: GoDaddy STAGING deploy (manual, protected, private staging only)
 #   mode=rollback            needs confirm=ROLLBACK_STAGING. Swaps the newest PROTECTED backup back in.
 # Contact form: the build is made with PUBLIC_CONTACT_FORM_MODE=mock (browser-only simulation); the build is rejected if it references
 # the live handler or a provider. Auto-deploy on push to main is deliberately NOT enabled (separate owner permission).
+#
+# Issue #198: input access=public-noindex (default) skips Basic auth. PUBLIC STAGING IS NOT PRIVATE: anyone with the link can view it; noindex
+# (X-Robots-Tag + robots.txt Disallow) only asks search engines not to index it and is not access control. Public mode needs no Basic-auth secrets
+# and no password file. Unless GODADDY_STAGING_DOCROOT is set, the docroot is derived over the existing SSH connection as <home>/staging.bonafidenitro.com
+# and is NEVER trusted until (a) the remote script proves it is isolated from public_html and (b) the HTTPS nonce probe proves the staging host name
+# serves exactly that directory. Every deploy still stops before uploading build bytes if either check fails.
+# Public deploy needs confirm=DEPLOY_PUBLIC_STAGING (explicit consent to a publicly viewable URL). access=basic-auth keeps the #195 behaviour.
 # See docs/GODADDY_STAGING_DEPLOY.md for the one-time owner setup.
 on:
   workflow_dispatch:
@@ -23,8 +30,13 @@ on:
         type: choice
         options: [dry-run, deploy, rollback]
         default: dry-run
+      access:
+        description: "public-noindex (default; anyone with the link can view, NOT private) | basic-auth (needs the Basic-auth secrets)"
+        type: choice
+        options: [public-noindex, basic-auth]
+        default: public-noindex
       confirm:
-        description: "deploy: type DEPLOY_STAGING. rollback: type ROLLBACK_STAGING. dry-run: leave empty"
+        description: "deploy: DEPLOY_PUBLIC_STAGING (access=public-noindex) or DEPLOY_STAGING (access=basic-auth). rollback: ROLLBACK_STAGING. dry-run: leave empty"
         type: string
         required: false
         default: ""
@@ -49,6 +61,7 @@ jobs:
     timeout-minutes: 2
     env:
       MODE: ${{ inputs.mode }}
+      ACCESS: ${{ inputs.access }}
       CONFIRM: ${{ inputs.confirm }}
       APPROVED_SHA: ${{ inputs.approved_sha }}
       THIS_SHA: ${{ github.sha }}
@@ -57,10 +70,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          case "$ACCESS" in public-noindex|basic-auth) ;; *) echo "::error::[stage=access] unknown access"; exit 1 ;; esac
           case "$MODE" in
             dry-run) ;;
             deploy)
-              [ "$CONFIRM" = "DEPLOY_STAGING" ] || { echo "::error::[stage=confirm] deploy requires confirm=DEPLOY_STAGING"; exit 1; }
+              if [ "$ACCESS" = public-noindex ]; then
+                [ "$CONFIRM" = "DEPLOY_PUBLIC_STAGING" ] || { echo "::error::[stage=confirm] public deploy requires confirm=DEPLOY_PUBLIC_STAGING (the staging URL will be viewable by anyone with the link)"; exit 1; }
+              else
+                [ "$CONFIRM" = "DEPLOY_STAGING" ] || { echo "::error::[stage=confirm] deploy requires confirm=DEPLOY_STAGING"; exit 1; }
+              fi
               [ "$APPROVED_SHA" = "$THIS_SHA" ] || { echo "::error::[stage=approved-sha] approved_sha must equal the exact commit being deployed"; exit 1; }
               ;;
             rollback)
@@ -114,6 +132,7 @@ jobs:
     environment: ${{ inputs.mode == 'dry-run' && 'godaddy-staging-preflight' || 'godaddy-staging-deploy' }}
     env:
       MODE: ${{ inputs.mode }}
+      ACCESS: ${{ inputs.access }}
       STAGING_HOST: staging.bonafidenitro.com
       GODADDY_SSH_HOST: ${{ secrets.GODADDY_SSH_HOST }}
       GODADDY_SSH_PORT: ${{ secrets.GODADDY_SSH_PORT }}
@@ -121,13 +140,13 @@ jobs:
       GODADDY_SSH_PRIVATE_KEY: ${{ secrets.GODADDY_SSH_PRIVATE_KEY }}
       GODADDY_SSH_KEY_PASSPHRASE: ${{ secrets.GODADDY_SSH_KEY_PASSPHRASE }}
       GODADDY_SSH_HOST_FINGERPRINT: ${{ secrets.GODADDY_SSH_HOST_FINGERPRINT }}
-      # Owner-supplied, NOT derived: absolute paths on the host. The docroot is the one cPanel assigned to the staging subdomain.
+      # basic-auth: owner-supplied absolute paths. public-noindex: only STG_DOCROOT is optional (derived over SSH when empty) and no auth file/credentials are used.
       STG_DOCROOT: ${{ secrets.GODADDY_STAGING_DOCROOT }}
       STG_AUTH_FILE: ${{ secrets.GODADDY_STAGING_AUTH_FILE }}
       STG_BASIC_USER: ${{ secrets.GODADDY_STAGING_BASIC_USER }}
       STG_BASIC_PASSWORD: ${{ secrets.GODADDY_STAGING_BASIC_PASSWORD }}
       # Audited content pin: the streamed remote script must match exactly or the run stops before connecting.
-      PIN_REMOTE_SHA256: 18adad7ca015186f59f3af33f60c559440357a97c07d923795af028c6eb0533a
+      PIN_REMOTE_SHA256: 3aaa43b536666673d4aea814907a120c69f7a9d626497cd2ab6730c75347b51a
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -156,29 +175,35 @@ jobs:
 
           # ---- configuration: fail closed -------------------------------------------------------------------------
           missing=""
-          for v in GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT STG_DOCROOT STG_AUTH_FILE STG_BASIC_USER STG_BASIC_PASSWORD; do
+          required="GODADDY_SSH_HOST GODADDY_SSH_PORT GODADDY_SSH_USER GODADDY_SSH_PRIVATE_KEY GODADDY_SSH_HOST_FINGERPRINT"
+          if [ "$ACCESS" = basic-auth ]; then required="$required STG_DOCROOT STG_AUTH_FILE STG_BASIC_USER STG_BASIC_PASSWORD"; fi
+          for v in $required; do
             [ -n "${!v:-}" ] || missing="${missing} ${v}"
           done
           [ -z "$missing" ] || fail missing-secret "Required secret(s) not configured:${missing}. Failing closed."
           case "$GODADDY_SSH_PORT" in ''|*[!0-9]*) fail missing-secret "GODADDY_SSH_PORT must be numeric." ;; esac
           case "$GODADDY_SSH_HOST_FINGERPRINT" in SHA256:*) ;; *) fail missing-secret "GODADDY_SSH_HOST_FINGERPRINT must start with SHA256:." ;; esac
           [ "$STAGING_HOST" = "staging.bonafidenitro.com" ] || fail host "staging host constant changed"
-          for v in STG_DOCROOT STG_AUTH_FILE; do
-            printf '%s' "${!v}" | grep -qE '^/[A-Za-z0-9._/-]+$' || fail path-format "$v must be an absolute path of letters, digits, . _ - /"
-          done
-          case "$STG_DOCROOT" in *public_html*|*htdocs*|*/www|*/www/*) fail docroot-live "GODADDY_STAGING_DOCROOT must be outside public_html/htdocs/www." ;; esac
-          case "$STG_AUTH_FILE" in *public_html*|*htdocs*|*/www|*/www/*) fail authfile-live "GODADDY_STAGING_AUTH_FILE must be outside every web root." ;; esac
-          case "$STG_BASIC_USER$STG_BASIC_PASSWORD" in *'"'*|*'\'*|*$'\n'*|*$'\r'*) fail basic-format "Basic credentials must not contain quotes, backslashes or newlines." ;; esac
+          check_paths() { # fail closed on the docroot (and, in basic-auth mode, the auth file); runs again after the docroot is derived
+            local pv="STG_DOCROOT"; [ "$ACCESS" = basic-auth ] && pv="STG_DOCROOT STG_AUTH_FILE"
+            for v in $pv; do
+              printf '%s' "${!v}" | grep -qE '^/[A-Za-z0-9._/-]+$' || fail path-format "$v must be an absolute path of letters, digits, . _ - /"
+            done
+            case "$STG_DOCROOT" in *public_html*|*htdocs*|*/www|*/www/*) fail docroot-live "The staging docroot must be outside public_html/htdocs/www." ;; esac
+            if [ "$ACCESS" = basic-auth ]; then
+              case "$STG_AUTH_FILE" in *public_html*|*htdocs*|*/www|*/www/*) fail authfile-live "GODADDY_STAGING_AUTH_FILE must be outside every web root." ;; esac
+              case "$STG_BASIC_USER$STG_BASIC_PASSWORD" in *'"'*|*'\'*|*$'\n'*|*$'\r'*) fail basic-format "Basic credentials must not contain quotes, backslashes or newlines." ;; esac
+            fi
+          }
+          [ -z "$STG_DOCROOT" ] || check_paths
 
           for v in GODADDY_SSH_HOST GODADDY_SSH_USER GODADDY_SSH_PORT STG_DOCROOT STG_AUTH_FILE STG_BASIC_USER STG_BASIC_PASSWORD; do
-            echo "::add-mask::${!v}"
+            [ -z "${!v:-}" ] || echo "::add-mask::${!v}"
           done
 
           work="$RUNNER_TEMP/stg"
           rm -rf "$work"; mkdir -p "$work"
           trap 'rm -rf "$work"' EXIT
-          parent="$(dirname "$STG_DOCROOT")"
-          incoming="$parent/.bf-stg-incoming.tgz"
 
           # ---- pin the audited remote script before anything connects ----------------------------------------------
           got="$(sha256sum deploy/staging/staging-remote.sh | awk '{print $1}')"
@@ -217,7 +242,23 @@ jobs:
               -o LogLevel=ERROR -o ConnectTimeout=15 \
               "${GODADDY_SSH_USER}@${GODADDY_SSH_HOST}" "$1" 2> "$work/err"
           }
-          remote_env="STG_DOCROOT='${STG_DOCROOT}' STG_AUTH_FILE='${STG_AUTH_FILE}'"
+          # public-noindex without an explicit docroot: derive <home>/staging.bonafidenitro.com over the existing SSH connection (read-only `pwd`).
+          # This is only a candidate: the remote script re-checks isolation from public_html and the HTTPS nonce probe proves the vhost mapping
+          # before any build byte is uploaded. If the real cPanel docroot differs, the probe fails and nothing is published.
+          if [ -z "$STG_DOCROOT" ]; then
+            [ "$ACCESS" = public-noindex ] || fail missing-secret "GODADDY_STAGING_DOCROOT is required for access=basic-auth."
+            remote_home="$(ssh_run 'cd ~ && pwd -P' < /dev/null | tr -d '\r\n')" || fail docroot-derive "Could not read the SSH account home directory. Nothing was written."
+            printf '%s' "$remote_home" | grep -qE '^/[A-Za-z0-9._/-]+$' || fail docroot-derive "Unexpected home directory format. Nothing was written."
+            echo "::add-mask::${remote_home}"
+            STG_DOCROOT="${remote_home}/${STAGING_HOST}"
+            echo "::add-mask::${STG_DOCROOT}"
+            check_paths
+            echo "Staging docroot derived as <ssh home>/${STAGING_HOST} (candidate only; verified below by the remote safety checks and the HTTPS nonce probe)."
+          fi
+          parent="$(dirname "$STG_DOCROOT")"
+          incoming="$parent/.bf-stg-incoming.tgz"
+          if [ "$ACCESS" = public-noindex ]; then access_env="STG_ACCESS=public"; else access_env="STG_ACCESS=basic"; fi
+          remote_env="STG_DOCROOT='${STG_DOCROOT}' STG_AUTH_FILE='${STG_AUTH_FILE}' ${access_env}"
           # run the pinned remote script in <mode>; only fixed STAGING_* lines are echoed.
           remote() { # remote <mode> [extra env assignments]
             local m="$1" extra="${2:-}" rc=0
@@ -230,8 +271,10 @@ jobs:
           cleanup_remote() { ssh_run "rm -f -- '${incoming}'" < /dev/null > /dev/null || true; }
 
           # ---- HTTPS probes: TLS verified, https only, no redirects followed, credentials only via a private curl config ------
-          printf 'user = "%s:%s"\n' "$STG_BASIC_USER" "$STG_BASIC_PASSWORD" > "$work/auth.curl"
-          chmod 600 "$work/auth.curl"
+          if [ "$ACCESS" = basic-auth ]; then
+            printf 'user = "%s:%s"\n' "$STG_BASIC_USER" "$STG_BASIC_PASSWORD" > "$work/auth.curl"
+            chmod 600 "$work/auth.curl"
+          fi
           base="https://${STAGING_HOST}"
           probe() { # probe anon|auth <path>  -> sets code, headers in $work/h, body in $work/b
             local who="$1" p="$2" extra=()
@@ -242,7 +285,7 @@ jobs:
           probe_retry() { local n=0; while :; do probe "$@"; [ "$code" != 000 ] && [ "$code" -lt 500 ] && return 0; n=$((n + 1)); [ "$n" -ge 4 ] && return 0; sleep 3; done; }
           has_noindex() { grep -qi '^x-robots-tag:.*noindex' "$work/h"; }
 
-          prove_protection() { # prove_protection <nonce>
+          prove_protection_basic() { # prove_protection_basic <nonce>
             local nonce="$1"
             probe_retry anon "/bf-probe-${nonce}.txt"
             [ "$code" = 401 ] || { echo "::error::[stage=protection-not-proven] anonymous request to the staging host was not rejected with 401 (HTTP ${code}). Auth is not enforced for this host. No build was uploaded."; return 1; }
@@ -255,7 +298,7 @@ jobs:
             has_noindex || { echo "::error::[stage=protection-not-proven] X-Robots-Tag noindex header missing."; return 1; }
             echo "Protection PROVEN: anonymous=401, authenticated=200, nonce matches this docroot, X-Robots-Tag noindex present."
           }
-          verify_release() {
+          verify_release_basic() {
             probe_retry anon "/";                [ "$code" = 401 ] || { echo "::error::[stage=verify] anonymous / is not 401 (HTTP ${code})."; return 1; }
             probe_retry anon "/.bonafide-staging"; [ "$code" = 401 ] || { echo "::error::[stage=verify] anonymous marker is not 401 (HTTP ${code})."; return 1; }
             probe_retry auth "/";                [ "$code" = 200 ] || { echo "::error::[stage=verify] authenticated / returned HTTP ${code}."; return 1; }
@@ -264,6 +307,24 @@ jobs:
             probe_retry auth "/robots.txt";      [ "$code" = 200 ] && grep -q '^Disallow: /$' "$work/b" || { echo "::error::[stage=verify] staging robots.txt is not a blanket Disallow."; return 1; }
             echo "Release verified: protected (401 anonymous), noindex header, robots Disallow, marker = ${GITHUB_SHA}."
           }
+          prove_vhost_public() { # public-noindex: the nonce file just written must be served by exactly this host name, over verified TLS
+            local nonce="$1"
+            probe_retry anon "/bf-probe-${nonce}.txt"
+            [ "$code" != 000 ] || { echo "::error::[stage=tls-or-dns] ${STAGING_HOST} is not reachable over verified HTTPS (DNS missing or certificate not valid yet). Enable AutoSSL for the subdomain first. No build was uploaded."; return 1; }
+            [ "$code" = 200 ] || { echo "::error::[stage=vhost-mismatch] the nonce file was not served (HTTP ${code}): the staging host name does not map to the docroot that was just written (a blank/other host may be answering). Refusing to upload."; return 1; }
+            [ "$(tr -d '\r\n' < "$work/b")" = "$nonce" ] || { echo "::error::[stage=vhost-mismatch] the staging host name does not serve the docroot that was just written. Refusing to upload."; return 1; }
+            has_noindex || { echo "::error::[stage=protection-not-proven] X-Robots-Tag noindex header missing."; return 1; }
+            echo "Public staging PROVEN: valid TLS, host serves this exact docroot (nonce matches), X-Robots-Tag noindex present. This URL is NOT private."
+          }
+          verify_release_public() {
+            probe_retry anon "/";                  [ "$code" = 200 ] || { echo "::error::[stage=verify] anonymous / returned HTTP ${code}."; return 1; }
+            has_noindex || { echo "::error::[stage=verify] noindex header missing on /."; return 1; }
+            probe_retry anon "/.bonafide-staging"; [ "$code" = 200 ] && grep -q "^commit=${GITHUB_SHA}\$" "$work/b" || { echo "::error::[stage=verify] marker does not name this commit."; return 1; }
+            probe_retry anon "/robots.txt";        [ "$code" = 200 ] && grep -q '^Disallow: /$' "$work/b" || { echo "::error::[stage=verify] staging robots.txt is not a blanket Disallow."; return 1; }
+            echo "Release verified: public noindex staging, X-Robots-Tag noindex, robots Disallow, marker = ${GITHUB_SHA}."
+          }
+          prove_protection() { if [ "$ACCESS" = public-noindex ]; then prove_vhost_public "$@"; else prove_protection_basic "$@"; fi; }
+          verify_release() { if [ "$ACCESS" = public-noindex ]; then verify_release_public "$@"; else verify_release_basic "$@"; fi; }
           production_reachable() { # informational only: one HEAD, nothing is changed
             local pc; pc="$(curl --silent --proto '=https' --max-time 20 -o /dev/null -I -w '%{http_code}' https://bonafidenitro.com/ 2>/dev/null)" || pc=000
             case "$pc" in 2??|3??) echo "Production bonafidenitro.com still reachable (HTTP ${pc}); this workflow never writes to it." ;;
@@ -271,7 +332,7 @@ jobs:
           }
 
           assemble() { # assemble <kind>
-            node scripts/staging-package.mjs assemble --site staging-out/site --kind "$1" --out staging-out
+            STG_ACCESS="${access_env#STG_ACCESS=}" node scripts/staging-package.mjs assemble --site staging-out/site --kind "$1" --out staging-out
           }
           upload() { # upload <tgz>
             ssh_run "umask 077; cat > '${incoming}'" < "$1" > /dev/null || { cleanup_remote; fail upload "Could not upload the package."; }
@@ -280,8 +341,13 @@ jobs:
           # ================= rollback =================
           if [ "$MODE" = rollback ]; then
             remote rollback || fail rollback "Remote rollback refused or failed (see STAGING_FAIL reason above)."
-            probe_retry anon "/"; [ "$code" = 401 ] || fail verify "After rollback anonymous / is HTTP ${code}, not 401. Treat staging as exposed and take the host offline."
-            echo "Rollback complete; staging still protected (anonymous 401)."
+            if [ "$ACCESS" = public-noindex ]; then
+              probe_retry anon "/"; if [ "$code" = 200 ]; then has_noindex || fail verify "After rollback the public staging page lacks the noindex header."; fi
+              echo "Rollback complete; public noindex staging restored (anonymous HTTP ${code})."
+            else
+              probe_retry anon "/"; [ "$code" = 401 ] || fail verify "After rollback anonymous / is HTTP ${code}, not 401. Treat staging as exposed and take the host offline."
+              echo "Rollback complete; staging still protected (anonymous 401)."
+            fi
             production_reachable
             exit 0
           fi
@@ -297,8 +363,9 @@ jobs:
           remote preflight || fail preflight "Remote preflight refused (see STAGING_FAIL reason above). Nothing was written."
           probe_retry anon "/"
           case "$code" in
+            000) if [ "$MODE" = deploy ]; then fail tls-or-dns "${STAGING_HOST} is not reachable over verified HTTPS. Create the subdomain and enable AutoSSL first. Nothing was written."; else echo "::warning::[stage=tls-or-dns] ${STAGING_HOST} is not reachable over verified HTTPS yet (DNS or certificate). A deploy would stop before writing anything."; fi ;;
             401) echo "Staging host currently answers anonymous requests with 401 (protected)." ;;
-            2??) fail staging-public "Staging host answers an anonymous request with HTTP ${code}: it is publicly readable right now. Nothing was written. Protect or take it down first." ;;
+            2??) if [ "$ACCESS" = public-noindex ]; then echo "Staging host already answers anonymous requests with HTTP ${code} (public mode: expected)."; else fail staging-public "Staging host answers an anonymous request with HTTP ${code}: it is publicly readable right now. Nothing was written. Protect or take it down first."; fi ;;
             *)   echo "Staging host anonymous probe: HTTP ${code} (not yet serving a protected site; expected before the first deploy)." ;;
           esac
           production_reachable
@@ -323,7 +390,11 @@ jobs:
             fail verify "Release verification failed; rollback attempted."
           fi
           production_reachable
-          echo "Staging deployed: https://${STAGING_HOST}/ (HTTP Basic auth, noindex). Production was not touched."
+          if [ "$ACCESS" = public-noindex ]; then
+            echo "Staging deployed: https://${STAGING_HOST}/ — PUBLIC noindex preview, viewable by anyone with the link (noindex is not access control). Production was not touched."
+          else
+            echo "Staging deployed: https://${STAGING_HOST}/ (HTTP Basic auth, noindex). Production was not touched."
+          fi
 
       - name: Remove temp material
         if: always()
