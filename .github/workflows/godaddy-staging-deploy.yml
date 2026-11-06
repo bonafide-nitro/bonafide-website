@@ -342,8 +342,13 @@ jobs:
           if [ "$MODE" = rollback ]; then
             remote rollback || fail rollback "Remote rollback refused or failed (see STAGING_FAIL reason above)."
             if [ "$ACCESS" = public-noindex ]; then
-              probe_retry anon "/"; if [ "$code" = 200 ]; then has_noindex || fail verify "After rollback the public staging page lacks the noindex header."; fi
-              echo "Rollback complete; public noindex staging restored (anonymous HTTP ${code})."
+              probe_retry anon "/"
+              case "$code" in
+                200) has_noindex || fail verify "After rollback the public staging page lacks the noindex header." ;;
+                000) fail tls-or-dns "After rollback ${STAGING_HOST} is not reachable over verified HTTPS; restoration is not confirmed." ;;
+                *)   fail verify "After rollback anonymous / returned HTTP ${code}, expected 200 with X-Robots-Tag noindex; restoration is not confirmed." ;;
+              esac
+              echo "Rollback complete; public noindex staging restored (anonymous HTTP ${code}, noindex present)."
             else
               probe_retry anon "/"; [ "$code" = 401 ] || fail verify "After rollback anonymous / is HTTP ${code}, not 401. Treat staging as exposed and take the host offline."
               echo "Rollback complete; staging still protected (anonymous 401)."
@@ -365,7 +370,15 @@ jobs:
           case "$code" in
             000) if [ "$MODE" = deploy ]; then fail tls-or-dns "${STAGING_HOST} is not reachable over verified HTTPS. Create the subdomain and enable AutoSSL first. Nothing was written."; else echo "::warning::[stage=tls-or-dns] ${STAGING_HOST} is not reachable over verified HTTPS yet (DNS or certificate). A deploy would stop before writing anything."; fi ;;
             401) echo "Staging host currently answers anonymous requests with 401 (protected)." ;;
-            2??) if [ "$ACCESS" = public-noindex ]; then echo "Staging host already answers anonymous requests with HTTP ${code} (public mode: expected)."; else fail staging-public "Staging host answers an anonymous request with HTTP ${code}: it is publicly readable right now. Nothing was written. Protect or take it down first."; fi ;;
+            2??) if [ "$ACCESS" = public-noindex ]; then echo "Staging host already answers anonymous requests with HTTP ${code} (public mode: expected)."; else
+              # basic-auth over an existing release of THIS workflow's public mode is the supported way to make it private again
+              pub_code="$code"; probe_retry anon "/.bonafide-staging"
+              if [ "$code" = 200 ] && grep -q '^access=public' "$work/b" && has_noindex; then
+                echo "Staging host currently serves a recognized public-noindex release of this workflow; basic-auth deploy will protect it before uploading the build."
+              else
+                fail staging-public "Staging host answers an anonymous request with HTTP ${pub_code}: it is publicly readable right now and is not a recognized public-noindex staging release. Nothing was written. Protect or take it down first."
+              fi
+            fi ;;
             *)   echo "Staging host anonymous probe: HTTP ${code} (not yet serving a protected site; expected before the first deploy)." ;;
           esac
           production_reachable

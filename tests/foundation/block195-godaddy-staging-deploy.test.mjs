@@ -391,3 +391,13 @@ test('#198 workflow: public mode is the default, needs its own consent phrase, n
 test('#198 docs state that public staging is not private and name the single remaining step', () => {
   for (const s of ['DEPLOY_PUBLIC_STAGING', 'public-noindex', 'not private', 'noindex is not access control', 'AutoSSL']) assert.ok(doc.includes(s), s);
 });
+
+test('#198 correction: basic-auth can re-protect a recognized public release; public rollback rejects unproven restoration', () => {
+  assert.match(wf, /recognized public-noindex release/);
+  assert.match(wf, /grep -q '\^access=public' "\$work\/b" && has_noindex/);
+  assert.match(wf, /not a recognized public-noindex staging release/);
+  const rb = wf.slice(wf.indexOf('# ================= rollback'), wf.indexOf('# ================= package locally'));
+  assert.match(rb, /000\) fail tls-or-dns/);
+  assert.match(rb, /\*\)\s+fail verify/);
+  assert.match(rb, /200\) has_noindex \|\| fail verify/);
+});
