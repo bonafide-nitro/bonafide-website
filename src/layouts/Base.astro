@@ -79,8 +79,6 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
       a { color: var(--accent); }
       main { max-width: 64rem; margin: 0 auto; padding: 1rem; }
       main.full { max-width: none; padding: 0; }
-      .crumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; color: var(--muted); }
-      .crumbs li + li::before { content: "/"; margin-right: .5rem; }
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1rem; padding: 0; list-style: none; }
       .card { background: var(--card); border-radius: .5rem; padding: 1rem; }
       .card h3 { margin-top: 0; }
@@ -199,8 +197,6 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
       }
       @media (max-width: 30rem) { .hero .chips { grid-template-columns: 1fr; } .path-retail > img { height: 19rem; } }
       /* Inner pages (Phase 1 visual restoration). Presentation only; reuses the homepage palette, buttons and bands. */
-      main.full .crumbs { max-width: 72rem; margin: 0 auto; padding: .6rem 1rem 0; font-size: .9rem; }
-      main.full .crumbs ol { margin: 0; padding: 0; }
       .banner-full .page-media { margin: 0; text-align: initial; }
       .banner-full img { display: block; width: 100%; height: auto; max-height: 24rem; object-fit: cover; object-position: 50% 40%; }
       .page-hero { background: radial-gradient(ellipse at 85% 20%, rgba(224,168,74,.28) 0%, rgba(224,168,74,0) 55%), linear-gradient(135deg, #1c1712 0%, #2b1d12 60%, #4a3017 100%); color: #fff; border-bottom: 4px solid var(--gold); }
@@ -357,14 +353,6 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
     </nav>
     </header>
     <main class={fullBleed ? 'full' : undefined}>
-      {canonicalPath && breadcrumbs.length > 0 && (
-        <nav class="crumbs" aria-label="Breadcrumb">
-          <ol>
-            <li><a href="/">Home</a></li>
-            {breadcrumbs.map((c, i) => <li>{i === breadcrumbs.length - 1 ? c.name : <a href={c.path}>{c.name}</a>}</li>)}
-          </ol>
-        </nav>
-      )}
       <slot />
     </main>
     <footer class="site-footer">
