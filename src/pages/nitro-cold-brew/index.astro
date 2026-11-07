@@ -83,4 +83,12 @@ import Base from '../../layouts/Base.astro';
 <section class="band dark cta-final" aria-label="Next steps"><div class="wrap center">
     <p class="actions"><a class="btn btn-primary" href="/products/">See products</a> <a class="btn btn-ghost" href="/howtobuy/">How to buy</a></p>
   </div></section>
+  <style>
+    /* Give these explanatory cards breathing room without changing cards on other pages. */
+    .topic { padding: 1.5rem 1.75rem 1.6rem; }
+    .topic h2 { margin: 0 0 .65rem; }
+    @media (max-width: 40rem) {
+      .topic { padding: 1.25rem 1.35rem 1.4rem; }
+    }
+  </style>
 </Base>
