@@ -14,6 +14,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
      captured. The marker is NOT removable on commerce completion alone: it also stays until the remaining
      page copy/parity is verified (product images Block 39 and page-level images Block 40 are placed; the 212-char meta description is now emitted, Block 36) (docs/migration/08-block4-source-capture-results.md). -->
 <Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" description="Nitro cold brew coffee kegs on tap are becoming a necessity for coffee shops. We have them in stock. Ready to be delivered to your office, restaurant, coffee shop, or cafe. Buy our nitro coffee kegs online today." canonicalPath="/products/" breadcrumbs={[{ name: 'Products', path: '/products/' }]} fullBleed scaffold>
+  <div class="products-page">
   <div class="banner-full"><PageImage id="banner" eager /></div>
   <section class="band dark page-hero retail"><div class="wrap">
   <p class="eyebrow">Retail · Craft Draft nitro coffee &amp; tea</p>
@@ -123,4 +124,64 @@ const specialty = items.filter((p) => p.line === 'specialty');
 <section class="band dark cta-final" aria-label="Order or enquire"><div class="wrap center">
   <p class="actions"><a class="btn btn-primary" href={commerceHref('webstore-root-apex')}>Visit the webstore</a> <a class="btn btn-ghost" href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a></p>
   </div></section>
+  </div>
+  <style is:global>
+    /* Retail products only: do not alter the wholesale or shared ProductCard component. */
+    .products-page { --retail-espresso:#21150f; --retail-cream:#f6eee1; --retail-caramel:#dda552; color:#291c15; overflow-x:clip; }
+    .products-page > section { width:100%; }
+    .products-page .wrap { width:min(100% - clamp(2.5rem,7vw,7rem), 1380px); max-width:1380px; margin-inline:auto; padding:clamp(3.5rem,6vw,7rem) 0; }
+    .products-page .wrap.prose > * { max-width: 80ch; }
+    .products-page .wrap.prose { max-width:1380px; }
+    .products-page h1,.products-page h2,.products-page h3 { text-wrap:balance; letter-spacing:.025em; line-height:1.16; }
+    .products-page h2 { font-size:clamp(2.1rem,3vw,3.6rem); max-width:27ch; margin:0 0 1.4rem; }
+    .products-page h3 { font-size:clamp(1.5rem,2vw,2.1rem); line-height:1.24; }
+    .products-page section p { font-size:clamp(1rem,1.12vw,1.14rem); line-height:1.75; max-width:85ch; }
+    .products-page .band.tint { background:var(--retail-cream); }
+    .products-page .band.dark { background:var(--retail-espresso); }
+    .products-page .banner-full { width:100%; background:var(--retail-espresso); }
+    .products-page .banner-full .page-media { margin:0; }
+    .products-page .banner-full img { display:block; width:100%; height:clamp(280px,34vw,510px); max-height:none; object-fit:cover; object-position:center 46%; }
+    .products-page .page-hero.retail { background:linear-gradient(135deg,#291a10 0%,#1b100b 70%); }
+    .products-page .page-hero.retail .wrap { padding-block:clamp(4rem,7vw,7rem); }
+    .products-page .page-hero.retail h1 { font-size:clamp(3.1rem,5.1vw,6rem); max-width:20ch; margin:0 0 1.5rem; }
+    .products-page .page-hero.retail h2 { color:#f5c67c; font-size:clamp(1.7rem,2.4vw,2.8rem); max-width:32ch; }
+    .products-page .page-hero.retail p { max-width:80ch; color:#f0e4d7; }
+    .products-page .page-hero .chips { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; max-width:none; margin:2rem 0; }
+    .products-page .page-hero .chips li { border:1px solid #e0a84a66; background:#ffffff0e; border-radius:.65rem; padding:.9rem 1rem; font-size:clamp(.9rem,1vw,1.02rem); line-height:1.5; }
+    .products-page .media-trio { display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:clamp(.75rem,2vw,1.5rem); align-items:stretch; }
+    .products-page .media-trio > :first-child { grid-column:auto; }
+    .products-page .media-trio .page-media { margin:0; min-width:0; overflow:hidden; border-radius:1rem; background:#e7d5bb; }
+    .products-page .media-trio img,
+    .products-page .media-trio > :not(:first-child) img { display:block; width:100%; height:clamp(240px,25vw,430px); object-fit:cover; object-position:center; padding:0; border-radius:1rem; }
+    .products-page .grid.product-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(1rem,2vw,1.75rem); margin:2.5rem 0 0; padding:0; list-style:none; max-width:none; }
+    .products-page .product-grid .card { min-width:0; padding:clamp(1.3rem,2vw,2rem); border-radius:1.1rem; border:1px solid #e4d6bf; box-shadow:0 12px 30px #36251411; }
+    .products-page .product-grid .card h3 { font-size:clamp(1.3rem,1.8vw,1.8rem); min-height:2.4em; margin:0 0 1rem; }
+    .products-page .product-grid .card > img { width:100%; height:clamp(190px,19vw,290px); max-height:none; object-fit:contain; background:#f7f2e9; padding:1.25rem; margin:0 0 1rem; }
+    .products-page .product-grid .card p { font-size:1rem; line-height:1.65; }
+    .products-page .product-grid .card .price { font-size:1.25rem; font-weight:800; }
+    .products-page .product-grid .card .cta { min-height:46px; padding:.75rem 1rem; line-height:1.35; }
+    .products-page .equip { width:100%; max-width:850px; gap:1.5rem; }
+    .products-page .equip .page-media { padding:1.2rem; border:1px solid #e7d9c4; border-radius:1rem; }
+    .products-page .equip img { display:block; width:100%; height:350px; object-fit:contain; }
+    .products-page .prose .page-media { max-width:900px; }
+    .products-page .prose .page-media img { max-height:560px; object-fit:contain; }
+    @media(max-width:900px) {
+      .products-page .page-hero .chips { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .products-page .grid.product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .products-page .media-trio { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .products-page .media-trio > :first-child { grid-column:1/-1; }
+    }
+    @media(max-width:600px) {
+      .products-page .wrap { width:calc(100% - 2.5rem); padding-block:3.5rem; }
+      .products-page .page-hero.retail h1 { font-size:clamp(2.5rem,10vw,4rem); }
+      .products-page .page-hero .chips { grid-template-columns:1fr; }
+      .products-page .grid.product-grid { grid-template-columns:1fr; }
+      .products-page .product-grid .card h3 { min-height:0; }
+      .products-page .product-grid .card > img { height:260px; }
+      .products-page .media-trio { grid-template-columns:1fr; }
+      .products-page .media-trio > :first-child { grid-column:auto; }
+      .products-page .media-trio img,.products-page .media-trio > :not(:first-child) img { height:260px; }
+      .products-page .equip { grid-template-columns:1fr; }
+    }
+  </style>
 </Base>
