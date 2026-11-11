@@ -50,6 +50,28 @@ import Base from '../../layouts/Base.astro';
   <p>Our distribution network is growing weekly and we work with distributors in several States. For the most updated information please fill out our contact form at the button below.</p>
   <p class="actions"><a class="btn btn-outline" href="/contact-bona-fide-nitro-coffee-and-tea/">Contact form</a></p>
     </div><figure class="editorial-photo"><img src="/images/product-renders/bona-fide-keg-lineup-walk-in-cooler.webp" alt="Bona Fide coffee kegs in a commercial cold room" width="1536" height="1024" loading="lazy" decoding="async" /></figure></div></section>
+  <section class="product-showcase band dark" aria-labelledby="showcase-heading">
+    <div class="wrap">
+      <p class="eyebrow">Bona Fide · Draft coffee essentials</p>
+      <h2 id="showcase-heading">A better way to serve nitro.</h2>
+      <p class="showcase-intro">From the perfect pour to the equipment and kegs behind it, explore the Bona Fide nitro experience.</p>
+      <div class="showcase-grid">
+        <article class="showcase-card">
+          <img src="/images/product-renders/bona-fide-nitro-cold-brew-pint.webp" alt="Nitro cold brew with a velvety foam head" width="1200" height="800" loading="lazy" decoding="async" />
+          <div class="showcase-copy"><h3>The pour</h3><p>Beautifully cascading nitro coffee with a creamy finish.</p></div>
+        </article>
+        <article class="showcase-card">
+          <img src="/images/product-renders/bona-fide-nitro-coffee-single-and-double-tap-kegerators.webp" alt="Bona Fide single and double tap nitro dispensing equipment" width="1200" height="800" loading="lazy" decoding="async" />
+          <div class="showcase-copy"><h3>The equipment</h3><p>Countertop dispensing solutions for serving coffee on tap.</p></div>
+        </article>
+        <article class="showcase-card">
+          <img src="/images/product-renders/bona-fide-nitro-coffee-keg-lineup-front-view.webp" alt="Bona Fide nitro coffee keg options in silver and black" width="1200" height="800" loading="lazy" decoding="async" />
+          <div class="showcase-copy"><h3>The supply</h3><p>Explore keg options for your business and distribution needs.</p></div>
+        </article>
+      </div>
+      <p class="actions"><a class="btn btn-primary" href="/contact-bona-fide-nitro-coffee-and-tea/">Discuss your nitro program</a></p>
+    </div>
+  </section>
   <section class="band dark tech-section"><div class="wrap">
   <h4>WHAT THE TECH?</h4>
   <p>Common Considerations For A Successful NITRO Program</p>
@@ -132,6 +154,16 @@ import Base from '../../layouts/Base.astro';
   .editorial-text p { max-width: 64ch; }
   .editorial-photo { aspect-ratio: 4 / 5; box-shadow: 0 16px 40px #24170e20; }
   .editorial-grid.reverse .editorial-photo img { object-position: 52% center; }
+  .product-showcase { padding-block: clamp(4.5rem, 7vw, 7.5rem); }
+  .product-showcase h2 { max-width: 18ch; font-size: clamp(2.5rem, 5vw, 5rem); line-height: 1.06; margin-block: .8rem 1.25rem; }
+  .showcase-intro { max-width: 58ch; margin-bottom: 2.5rem; }
+  .showcase-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: clamp(.9rem,2vw,1.5rem); }
+  .showcase-card { overflow: hidden; border: 1px solid #ffffff2b; border-radius: 1rem; background:#39261f; }
+  .showcase-card img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; }
+  .showcase-copy { padding: 1.25rem 1.35rem 1.5rem; }
+  .showcase-copy h3 { font-size: 1.45rem; margin:0 0 .4rem; }
+  .showcase-copy p { margin:0; line-height:1.55; }
+  .product-showcase .actions { margin-top: 2rem; }
   .tech-section { padding-block: clamp(4rem, 7vw, 7rem); }
   .tech-section h4 { font-size: clamp(2rem, 4vw, 4rem); line-height:1.05; }
   .tech-section .checklist { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem 1rem; padding:0; list-style:none; }
@@ -145,6 +177,8 @@ import Base from '../../layouts/Base.astro';
   .alliance-photo { aspect-ratio: 16 / 7; margin-top:3rem; }
   @media(max-width: 850px) {
     .wholesale-hero-grid, .editorial-grid { grid-template-columns:1fr; }
+    .showcase-grid { grid-template-columns: 1fr; }
+    .showcase-card img { max-height: 320px; }
     .hero-photo { aspect-ratio: 4 / 3; }
     .editorial-photo { aspect-ratio: 4 / 3; }
     .editorial-grid.reverse .editorial-photo, .editorial-grid.reverse .editorial-text { grid-column:auto; grid-row:auto; }
