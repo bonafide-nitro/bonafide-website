@@ -112,6 +112,9 @@ t('every <img> on a page is an upload the export evidences for that route, prese
     const e = entry(route.replaceAll('/', ''));
     const html = fs.readFileSync(`dist${route}index.html`, 'utf8').replace(/<header id="masthead"[\s\S]*?<\/header>/, '');
     for (const [, src] of html.matchAll(/<img\b[^>]*\ssrc="([^"]+)"/g)) {
+      // PR #208: Žaneta placed owner-supplied photography on /howtobuy/ only; those files are
+      // pinned by path, size and SHA-256 in block49-product-renders.test.mjs.
+      if (route === '/howtobuy/' && src.startsWith('/images/product-renders/')) { assert.ok(fs.existsSync(`public${src}`), `${route}: ${src} binary absent`); continue; }
       assert.ok(e.uploadRefs.includes(src) || e.blocks.some((b) => b.src === src), `${route}: ${src} not evidenced by the export`);
       assert.ok(fs.existsSync(`public${src}`), `${route}: ${src} binary absent`);
     }
