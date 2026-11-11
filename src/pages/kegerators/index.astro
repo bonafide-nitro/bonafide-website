@@ -3,7 +3,7 @@ import { commerceHref, commerceIsKnownDead } from '../../lib/commerce.mjs';
 import Base from '../../layouts/Base.astro';
 ---
 <Base title="Kegerators - Bona Fide Nitro Coffee" canonicalPath="/kegerators/" breadcrumbs={[{ name: 'Kegerators', path: '/kegerators/' }]} scaffold fullBleed>
-<main class="keg-page">
+<div class="keg-page">
   <section class="keg-hero">
     <img class="keg-hero-bg" src="/images/product-renders/bona-fide-single-double-tap-office.webp" alt="" width="1536" height="1024" fetchpriority="high" decoding="async" />
     <div class="keg-hero-shade"></div>
@@ -92,7 +92,7 @@ import Base from '../../layouts/Base.astro';
       </div>
     </div>
   </section>
-</main>
+</div>
 <style>
 .keg-page { --espresso:#20130c; --roast:#302018; --cream:#f4ecdc; --caramel:#d5a057; --ink:#251a13; overflow-x:clip; }
 .keg-wrap { width:min(100% - clamp(2.5rem,8vw,9rem), 1380px); margin-inline:auto; }
