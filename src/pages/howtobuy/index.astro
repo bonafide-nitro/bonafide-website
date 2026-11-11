@@ -167,14 +167,15 @@ import Base from '../../layouts/Base.astro';
   .tech-section { padding-block: clamp(4rem, 7vw, 7rem); }
   .tech-section h4 { font-size: clamp(2rem, 4vw, 4rem); line-height:1.05; }
   .tech-section .checklist { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem 1rem; padding:0; list-style:none; }
-  .tech-section .checklist li { padding: .85rem 1rem; border-radius:.55rem; background:#fffdf5; color:#2c1d15; line-height:1.45; }
+  .tech-section .checklist li { padding: .85rem 1rem .85rem 2.6rem; border-radius:.55rem; background:#fffdf5; color:#2c1d15; line-height:1.45; }
+  .tech-section .checklist li::before { left: 1rem; top: .85rem; }
   .tech-section .stat-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; }
   .tech-section .stat-row p { border-left:3px solid #d39d59; padding:1rem; background:#ffffff12; }
   .tech-photo { max-width: 1000px; margin:3rem auto 0; aspect-ratio: 16 / 9; }
   .partners-section .partner-list, .alliance-section .partner-list { overflow-wrap:anywhere; }
   .alliance-section { padding-block: clamp(4rem,7vw,7rem); }
   .alliance-section .prose { max-width: 1080px; }
-  .alliance-photo { aspect-ratio: 16 / 7; margin-top:3rem; }
+  .alliance-photo { aspect-ratio: 3 / 2; max-width: 820px; margin-top:3rem; }
   @media(max-width: 850px) {
     .wholesale-hero-grid, .editorial-grid { grid-template-columns:1fr; }
     .showcase-grid { grid-template-columns: 1fr; }
@@ -183,7 +184,6 @@ import Base from '../../layouts/Base.astro';
     .editorial-photo { aspect-ratio: 4 / 3; }
     .editorial-grid.reverse .editorial-photo, .editorial-grid.reverse .editorial-text { grid-column:auto; grid-row:auto; }
     .tech-section .checklist, .tech-section .stat-row { grid-template-columns:1fr; }
-    .alliance-photo { aspect-ratio: 4 / 3; }
   }
 </style>
 </Base>
