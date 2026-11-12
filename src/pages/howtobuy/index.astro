@@ -8,7 +8,7 @@ import Base from '../../layouts/Base.astro';
 <div class="htb">
   <!-- 1 · Cinematic hero: lifestyle photo bleeds to the right edge, espresso gradient carries the type. -->
   <section class="htb-hero">
-    <figure class="htb-hero-photo"><img src="/images/product-renders/bona-fide-nitro-pint-cozy-cafe.webp" alt="Bona Fide Nitro Coffee with creamy head in a warm café" width="1536" height="1024" fetchpriority="high" decoding="async" /></figure>
+    <figure class="htb-hero-photo"><img src="/images/product-renders/bona-fide-nitro-coffee-pint-with-coffee-beans.webp" alt="Bona Fide nitro coffee pint surrounded by coffee beans" width="1536" height="1024" fetchpriority="high" decoding="async" /></figure>
     <div class="htb-wrap htb-hero-inner">
       <p class="htb-eyebrow">How to buy · Retail &amp; wholesale nitro coffee and tea</p>
       <h1 class="htb-hero-title">Nitro Coffee Distributors and Wholesale Coffee Keg Suppliers</h1>
@@ -42,7 +42,7 @@ import Base from '../../layouts/Base.astro';
   <!-- 3 · Brand story: full-bleed lifestyle banner carries the headline; copy sits in a wide two-column grid. -->
   <section class="htb-feature htb-cream">
     <div class="htb-cinema htb-banner">
-      <figure class="htb-cinema-photo"><img src="/images/product-renders/bona-fide-classic-blend-office-breakroom.webp" alt="Bona Fide Classic Blend bag in box in a bright coffee setting" width="1536" height="1024" loading="lazy" decoding="async" style="object-position: 70% 50%;" /></figure>
+      <figure class="htb-cinema-photo"><img src="/images/product-renders/bona_fide_cold_brew_breakroom_scene.webp" alt="Bona Fide Dark Roast cold brew coffee Bag-in-Box on a bright breakroom counter" width="1536" height="1024" loading="lazy" decoding="async" style="object-position: 50% 50%;" /></figure>
       <div class="htb-wrap htb-cinema-inner">
         <div class="htb-banner-head">
           <h2 class="htb-kicker-h">BONA FIDE BREWING COMPANY</h2>
@@ -68,7 +68,7 @@ import Base from '../../layouts/Base.astro';
   <!-- 4 · Webstore: dark studio stage; studio render shown whole (contain), never cropped. -->
   <section class="htb-stage">
     <div class="htb-wrap htb-stage-grid">
-      <figure class="htb-studio htb-studio-xl"><img src="/images/product-renders/bona-fide-nitro-coffee-keg-lineup-top-view.webp" alt="Bona Fide nitro coffee kegs in silver and black, viewed from above" width="1200" height="800" loading="lazy" decoding="async" /></figure>
+      <figure class="htb-studio htb-studio-xl"><img src="/images/product-renders/bona-fide-nitro-coffee-keg-lineup-top-view.webp" alt="Bona Fide nitro coffee keg lineup with corrected Sankey D fittings" width="1200" height="800" loading="lazy" decoding="async" /></figure>
       <div class="htb-stage-text">
         <p class="htb-label"><strong>Nitro Coffee and Tea Webstore</strong></p>
         <p class="htb-lead">Our one-way, recyclable, 5 gallon nitro coffee and tea kegs, are available in several different coffee and tea flavors and varieties</p>
@@ -84,7 +84,7 @@ import Base from '../../layouts/Base.astro';
 
   <!-- 5 · Distribution: full-bleed photo-backed section with gradient overlay for legible type. -->
   <section class="htb-cinema htb-cinema-left">
-    <figure class="htb-cinema-photo"><img src="/images/product-renders/bona-fide-keg-lineup-warehouse.webp" alt="Bona Fide coffee kegs prepared for business distribution" width="1536" height="1024" loading="lazy" decoding="async" style="object-position: 60% 55%;" /></figure>
+    <figure class="htb-cinema-photo"><img src="/images/product-renders/bona-fide-kegs-sankey-corrected.webp" alt="Bona Fide nitro coffee kegs with corrected Sankey D fittings" width="1536" height="1024" loading="lazy" decoding="async" style="object-position: 60% 55%;" /></figure>
     <div class="htb-wrap htb-cinema-inner">
       <div class="htb-cinema-panel">
         <h3 class="htb-display htb-on-dark">Keg Distribution of Nitro Coffee andTea by Office Coffee Distributors and Beverage Suppliers</h3>
@@ -202,7 +202,7 @@ import Base from '../../layouts/Base.astro';
 
   <!-- 10 · Alliance opener: full-bleed lifestyle photo with the testimonial line over a gradient. -->
   <section class="htb-cinema htb-cinema-quote">
-    <figure class="htb-cinema-photo"><img src="/images/product-renders/bona-fide-stainless-keg-industrial-cafe.webp" alt="Bona Fide stainless steel nitro keg in a café setting" width="1536" height="1024" loading="lazy" decoding="async" style="object-position: 50% 45%;" /></figure>
+    <figure class="htb-cinema-photo"><img src="/images/product-renders/bona_fide_nitro_coffee_on_roasted_beans.webp" alt="Bona Fide nitro coffee glass presented on roasted coffee beans" width="1536" height="1024" loading="lazy" decoding="async" style="object-position: 55% 50%;" /></figure>
     <div class="htb-wrap htb-cinema-inner">
       <div class="htb-quote">
         <p class="htb-quote-big">Splendid, Luxurious, Smooth &amp; Velvety!</p>
@@ -259,8 +259,9 @@ import Base from '../../layouts/Base.astro';
 
   /* 1 · Hero */
   .htb .htb-hero { position: relative; background: var(--esp); color: #fff; min-height: min(86svh, 52rem); display: flex; align-items: flex-end; isolation: isolate; }
-  .htb .htb-hero-photo { position: absolute; inset: 0 0 0 auto; width: 66%; z-index: -1; }
-  .htb .htb-hero-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; }
+  .htb .htb-hero-photo { position: absolute; inset: 0 0 0 auto; width: 64%; z-index: -1; background: var(--esp); }
+  /* Show the entire nitro glass instead of enlarging/cropping its head above the hero. */
+  .htb .htb-hero-photo img { width: 100%; height: 100%; object-fit: contain; object-position: center center; }
   .htb .htb-hero-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--esp) 0%, rgb(20 12 7 / .85) 18%, rgb(20 12 7 / .2) 52%, rgb(20 12 7 / 0) 75%), linear-gradient(0deg, rgb(20 12 7 / .75) 0%, rgb(20 12 7 / 0) 35%); }
   .htb .htb-hero-inner { width: 100%; padding-block: clamp(5rem, 12vh, 9rem) clamp(3.5rem, 8vh, 6rem); }
   .htb .htb-hero-title { font-size: clamp(3rem, 6.2vw, 6.6rem); line-height: .98; letter-spacing: .005em; max-width: 15ch; margin: 0 0 2rem; color: #fff; text-shadow: 0 2px 30px rgb(0 0 0 / .45); }
@@ -363,6 +364,7 @@ import Base from '../../layouts/Base.astro';
   @media (max-width: 960px) {
     .htb .htb-hero { min-height: auto; display: block; }
     .htb .htb-hero-photo { position: relative; inset: auto; width: 100%; height: 62svh; max-height: 34rem; }
+    .htb .htb-hero-photo img { object-fit: cover; object-position: center 24%; }
     .htb .htb-hero-photo::after { background: linear-gradient(0deg, var(--esp) 0%, rgb(20 12 7 / .55) 30%, rgb(20 12 7 / 0) 60%); }
     .htb .htb-hero-inner { margin-top: -9rem; position: relative; padding-block: 0 3rem; }
     .htb .htb-pitch-grid, .htb .htb-stage-grid, .htb .htb-showcase-head, .htb .htb-showcase-grid, .htb .htb-tech-grid, .htb .htb-metrics-head, .htb .htb-stats, .htb .htb-alliance-grid { grid-template-columns: minmax(0, 1fr); }
