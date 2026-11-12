@@ -259,8 +259,9 @@ import Base from '../../layouts/Base.astro';
 
   /* 1 · Hero */
   .htb .htb-hero { position: relative; background: var(--esp); color: #fff; min-height: min(86svh, 52rem); display: flex; align-items: flex-end; isolation: isolate; }
-  .htb .htb-hero-photo { position: absolute; inset: 0 0 0 auto; width: 66%; z-index: -1; }
-  .htb .htb-hero-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; }
+  .htb .htb-hero-photo { position: absolute; inset: 0 0 0 auto; width: 64%; z-index: -1; background: var(--esp); }
+  /* Show the entire nitro glass instead of enlarging/cropping its head above the hero. */
+  .htb .htb-hero-photo img { width: 100%; height: 100%; object-fit: contain; object-position: center center; }
   .htb .htb-hero-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--esp) 0%, rgb(20 12 7 / .85) 18%, rgb(20 12 7 / .2) 52%, rgb(20 12 7 / 0) 75%), linear-gradient(0deg, rgb(20 12 7 / .75) 0%, rgb(20 12 7 / 0) 35%); }
   .htb .htb-hero-inner { width: 100%; padding-block: clamp(5rem, 12vh, 9rem) clamp(3.5rem, 8vh, 6rem); }
   .htb .htb-hero-title { font-size: clamp(3rem, 6.2vw, 6.6rem); line-height: .98; letter-spacing: .005em; max-width: 15ch; margin: 0 0 2rem; color: #fff; text-shadow: 0 2px 30px rgb(0 0 0 / .45); }
@@ -363,6 +364,7 @@ import Base from '../../layouts/Base.astro';
   @media (max-width: 960px) {
     .htb .htb-hero { min-height: auto; display: block; }
     .htb .htb-hero-photo { position: relative; inset: auto; width: 100%; height: 62svh; max-height: 34rem; }
+    .htb .htb-hero-photo img { object-fit: cover; object-position: center 24%; }
     .htb .htb-hero-photo::after { background: linear-gradient(0deg, var(--esp) 0%, rgb(20 12 7 / .55) 30%, rgb(20 12 7 / 0) 60%); }
     .htb .htb-hero-inner { margin-top: -9rem; position: relative; padding-block: 0 3rem; }
     .htb .htb-pitch-grid, .htb .htb-stage-grid, .htb .htb-showcase-head, .htb .htb-showcase-grid, .htb .htb-tech-grid, .htb .htb-metrics-head, .htb .htb-stats, .htb .htb-alliance-grid { grid-template-columns: minmax(0, 1fr); }
