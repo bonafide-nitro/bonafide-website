@@ -14,6 +14,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
      captured. The marker is NOT removable on commerce completion alone: it also stays until the remaining
      page copy/parity is verified (product images Block 39 and page-level images Block 40 are placed; the 212-char meta description is now emitted, Block 36) (docs/migration/08-block4-source-capture-results.md). -->
 <Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" description="Nitro cold brew coffee kegs on tap are becoming a necessity for coffee shops. We have them in stock. Ready to be delivered to your office, restaurant, coffee shop, or cafe. Buy our nitro coffee kegs online today." canonicalPath="/products/" breadcrumbs={[{ name: 'Products', path: '/products/' }]} fullBleed scaffold>
+  <div class="products-page">
   <div class="banner-full"><PageImage id="banner" eager /></div>
   <section class="band dark page-hero retail"><div class="wrap">
   <p class="eyebrow">Retail · Craft Draft nitro coffee &amp; tea</p>
@@ -87,40 +88,159 @@ const specialty = items.filter((p) => p.line === 'specialty');
   <ul class="grid product-grid">{specialty.map((p) => <ProductCard product={p} view="retail" />)}</ul>
 
   </div></section>
-<section><div class="wrap prose">
-  <h2>Craft Draft: cold brew vs. cold-brewed</h2>
-  <h3>Our Cold Coffee &amp; Tea Nitro Products</h3>
-  <p>Our patent-pending process embeds flavor stability into our kegs for at least 180 days. That is 3-4 times the life of our competitor’s cold brew kegs. Every keg we produce is created using this process.</p>
-  <p>We extract the best that each coffee or tea has to give, accentuate their unique nuance flavors and preserve them inside a keg using strict sanitation and preservation standards. The flavor profile of each of our products remains authentic, unique, and extraordinary. Best of all our nitro products are made with the best organic and natural ingredients available, pure water, organic coffee (or tea), and pure nitrogen gas. No artificial preservatives or stabilizers are used in our process.</p>
-  <p>Bona Fide Craft Draft is Cold Coffee done correctly.</p>
-  <p>Masterfully prepared, infused with nitrogen, Served “On Tap”.</p>
-  <p>Our process captures all the flavors and aromatics aficionados LOVE.</p>
-  <p>Preservative Free!</p>
-  <h3>What is the difference between Cold Brew and Cold Brewed Coffee?</h3>
-  <p>We, at Bona Fide, have been frequently asked what is the difference between these two methods, here is the answer.</p>
-  <p>Cold brew coffee started out as a term for coffee made with cold water only. However, it evolved into a loose term that refers to cold coffee methods in general.</p>
-  <p>Cold-brewed coffee is only brewed with cold water and needs to be refrigerated the entire time it is held. It generally has a short shelf life and goes sour quickly due to microbiological contamination in the handling process. Our proprietary process is called Craft Draft because it is not a traditional cold-brewed process. It can be called a cold brew coffee, but not cold-brewed, because we do use a hot step in the method.</p>
-
-  </div></section>
-<section class="band dark"><div class="wrap">
-  <h2>Bag In Box: Baby in Box</h2>
-  <h3>Or Better, You Can Taste our Better Than Cold Brew Coffee and Tea in 3L Bag In Box Coffee and Tea</h3>
-  <p>Introducing our new Bag in Box, aka “Baby in Box”—your perfect pour, stored with love!</p>
-  <p>Take a peek at our fresh collection of <a href={commerceHref('bag-in-box-collection')}>Bag in Box coffee and tea</a>—crafted for every craving!</p>
-
-  </div></section>
-<section><div class="wrap prose">
-  <h2>Coffee &amp; Tea For Office</h2>
-  <p>What makes a warm and friendly office environment? You’ve guessed it - Coffee break.</p>
-  <p>If you look at it in a deeper sense, coffee time in the office is where everyone gathers around, engage in conversations, and form relationships. So who cares about the lengthy shift, the unbearable manager, or the heated meeting when there’s a fantastic tasting,glass of nitro coffee or tea on tap in the break room?</p>
-  <p>When you request Bona Fide's kegs of Nitro Coffee &amp; Tea from our web store or one of our distributors, you can expect a positive, productive, and healthy office environment. You might even hear your team express gratitude about how much Bona Fide Nitro Coffee &amp; Tea is appreciated in the office!</p>
-  <PageImage id="kegBikSet" />
-  <h2>Coffee Shop Supply</h2>
-  <p>Do you have a coffee bar that can use a lift? Bona Fide caters to independent food and beverage retailers. We offer wholesale prices on coffee &amp; tea kegs at reasonable delivered prices so you can have a healthy margin and start making money as soon as you are up and pouring! Contact us so we can help you select the best solution.</p>
-  <h3>Nitro Coffee For Home</h3>
-  <p>Enjoy the best-kegged coffee or tea in the comforts of your home or home office without ever going to a specialty coffee shop! With Bona Fide’s products, you get to splurge in unlimited brews at home with your favorite nitrogen-infused drink!</p>
+<section class="retail-story"><div class="wrap">
+  <div class="retail-story-heading"><p class="eyebrow">Behind every pour</p><h2>Craft Draft: cold brew vs. cold-brewed</h2><p>Our Cold Coffee &amp; Tea Nitro Products</p></div>
+  <div class="retail-story-grid">
+    <article class="retail-story-panel">
+      <h3>Our Craft Draft process</h3>
+      <p>Our patent-pending process embeds flavor stability into our kegs for at least 180 days. That is 3-4 times the life of our competitor’s cold brew kegs. Every keg we produce is created using this process.</p>
+      <p>We extract the best that each coffee or tea has to give, accentuate their unique nuance flavors and preserve them inside a keg using strict sanitation and preservation standards. The flavor profile of each of our products remains authentic, unique, and extraordinary. Best of all our nitro products are made with the best organic and natural ingredients available, pure water, organic coffee (or tea), and pure nitrogen gas. No artificial preservatives or stabilizers are used in our process.</p>
+      <div class="retail-story-points"><p>Bona Fide Craft Draft is Cold Coffee done correctly.</p><p>Masterfully prepared, infused with nitrogen, Served “On Tap”.</p><p>Our process captures all the flavors and aromatics aficionados LOVE.</p><p><strong>Preservative Free!</strong></p></div>
+    </article>
+    <article class="retail-story-panel retail-story-comparison">
+      <h3>What is the difference between Cold Brew and Cold Brewed Coffee?</h3>
+      <p>We, at Bona Fide, have been frequently asked what is the difference between these two methods, here is the answer.</p>
+      <p>Cold brew coffee started out as a term for coffee made with cold water only. However, it evolved into a loose term that refers to cold coffee methods in general.</p>
+      <p>Cold-brewed coffee is only brewed with cold water and needs to be refrigerated the entire time it is held. It generally has a short shelf life and goes sour quickly due to microbiological contamination in the handling process. Our proprietary process is called Craft Draft because it is not a traditional cold-brewed process. It can be called a cold brew coffee, but not cold-brewed, because we do use a hot step in the method.</p>
+    </article>
+  </div>
+</div></section>
+<section class="retail-bib band dark"><div class="wrap retail-bib-grid">
+  <div>
+    <p class="eyebrow">A different way to pour</p>
+    <h2>Bag In Box: Baby in Box</h2>
+    <h3>Or Better, You Can Taste our Better Than Cold Brew Coffee and Tea in 3L Bag In Box Coffee and Tea</h3>
+    <p>Introducing our new Bag in Box, aka “Baby in Box”—your perfect pour, stored with love!</p>
+    <p>Take a peek at our fresh collection of <a href={commerceHref('bag-in-box-collection')}>Bag in Box coffee and tea</a>—crafted for every craving!</p>
+    <p><a class="btn btn-primary" href={commerceHref('bag-in-box-collection')}>Explore Bag in Box</a></p>
+  </div>
+  <figure class="retail-bib-photo"><img src="/images/product-renders/bona_fide_cold_brew_breakroom_scene.webp" alt="Bona Fide Dark Roast Bag-in-Box coffee served in a bright breakroom" loading="lazy" decoding="async" /></figure>
+</div></section>
+<section class="retail-audiences"><div class="wrap">
+  <p class="eyebrow">Where Bona Fide fits</p>
+  <h2>Cold coffee on tap, wherever you serve it.</h2>
+  <div class="retail-audience-grid">
+    <article class="retail-audience-card retail-office">
+      <div class="retail-audience-copy">
+        <h3>Coffee &amp; Tea For Office</h3>
+        <p>What makes a warm and friendly office environment? You’ve guessed it - Coffee break.</p>
+        <p>If you look at it in a deeper sense, coffee time in the office is where everyone gathers around, engage in conversations, and form relationships. So who cares about the lengthy shift, the unbearable manager, or the heated meeting when there’s a fantastic tasting,glass of nitro coffee or tea on tap in the break room?</p>
+        <p>When you request Bona Fide's kegs of Nitro Coffee &amp; Tea from our web store or one of our distributors, you can expect a positive, productive, and healthy office environment. You might even hear your team express gratitude about how much Bona Fide Nitro Coffee &amp; Tea is appreciated in the office!</p>
+      </div>
+      <figure class="retail-office-photo"><img src="/images/product-renders/bona-fide-classic-blend-office-breakroom.webp" alt="Bona Fide coffee in an office breakroom" loading="lazy" decoding="async" /></figure>
+    </article>
+    <article class="retail-audience-card retail-supply">
+      <h3>Coffee Shop Supply</h3>
+      <p>Do you have a coffee bar that can use a lift? Bona Fide caters to independent food and beverage retailers. We offer wholesale prices on coffee &amp; tea kegs at reasonable delivered prices so you can have a healthy margin and start making money as soon as you are up and pouring! Contact us so we can help you select the best solution.</p>
+      <PageImage id="kegBikSet" />
+    </article>
+    <article class="retail-audience-card retail-home">
+      <h3>Nitro Coffee For Home</h3>
+      <p>Enjoy the best-kegged coffee or tea in the comforts of your home or home office without ever going to a specialty coffee shop! With Bona Fide’s products, you get to splurge in unlimited brews at home with your favorite nitrogen-infused drink!</p>
+      <a class="btn btn-primary" href={commerceHref('webstore-root-apex')}>Browse nitro coffee</a>
+    </article>
+  </div>
 </div></section>
 <section class="band dark cta-final" aria-label="Order or enquire"><div class="wrap center">
   <p class="actions"><a class="btn btn-primary" href={commerceHref('webstore-root-apex')}>Visit the webstore</a> <a class="btn btn-ghost" href="/contact-bona-fide-nitro-coffee-and-tea/">Contact Bona Fide</a></p>
   </div></section>
+  </div>
+  <style is:global>
+    /* Retail products only: do not alter the wholesale or shared ProductCard component. */
+    .products-page { --retail-espresso:#21150f; --retail-cream:#f6eee1; --retail-caramel:#dda552; color:#291c15; overflow-x:clip; }
+    .products-page > section { width:100%; }
+    .products-page .wrap { width:min(100% - clamp(2.5rem,7vw,7rem), 1380px); max-width:1380px; margin-inline:auto; padding:clamp(3.5rem,6vw,7rem) 0; }
+    .products-page .wrap.prose > * { max-width: 80ch; }
+    .products-page .wrap.prose { max-width:1380px; }
+    .products-page h1,.products-page h2,.products-page h3 { text-wrap:balance; letter-spacing:.025em; line-height:1.16; }
+    .products-page h2 { font-size:clamp(2.1rem,3vw,3.6rem); max-width:27ch; margin:0 0 1.4rem; }
+    .products-page h3 { font-size:clamp(1.5rem,2vw,2.1rem); line-height:1.24; }
+    .products-page section p { font-size:clamp(1rem,1.12vw,1.14rem); line-height:1.75; max-width:85ch; }
+    .products-page .band.tint { background:var(--retail-cream); }
+    .products-page .band.dark { background:var(--retail-espresso); }
+    .products-page .banner-full { width:100%; background:var(--retail-espresso); }
+    .products-page .banner-full .page-media { margin:0; }
+    .products-page .banner-full img { display:block; width:100%; height:clamp(280px,34vw,510px); max-height:none; object-fit:cover; object-position:center 46%; }
+    .products-page .page-hero.retail { background:linear-gradient(135deg,#291a10 0%,#1b100b 70%); }
+    .products-page .page-hero.retail .wrap { padding-block:clamp(4rem,7vw,7rem); }
+    .products-page .page-hero.retail h1 { font-size:clamp(3.1rem,5.1vw,6rem); max-width:20ch; margin:0 0 1.5rem; }
+    .products-page .page-hero.retail h2 { color:#f5c67c; font-size:clamp(1.7rem,2.4vw,2.8rem); max-width:32ch; }
+    .products-page .page-hero.retail p { max-width:80ch; color:#f0e4d7; }
+    .products-page .page-hero .chips { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; max-width:none; margin:2rem 0; }
+    .products-page .page-hero .chips li { border:1px solid #e0a84a66; background:#ffffff0e; border-radius:.65rem; padding:.9rem 1rem; font-size:clamp(.9rem,1vw,1.02rem); line-height:1.5; }
+    .products-page .media-trio { display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:clamp(.75rem,2vw,1.5rem); align-items:stretch; }
+    .products-page .media-trio > :first-child { grid-column:auto; }
+    .products-page .media-trio .page-media { margin:0; min-width:0; overflow:hidden; border-radius:1rem; background:#e7d5bb; }
+    .products-page .media-trio img,
+    .products-page .media-trio > :not(:first-child) img { display:block; width:100%; height:clamp(240px,25vw,430px); object-fit:cover; object-position:center; padding:0; border-radius:1rem; }
+    .products-page .grid.product-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(1rem,2vw,1.75rem); margin:2.5rem 0 0; padding:0; list-style:none; max-width:none; }
+    .products-page .product-grid .card { min-width:0; padding:clamp(1.3rem,2vw,2rem); border-radius:1.1rem; border:1px solid #e4d6bf; box-shadow:0 12px 30px #36251411; }
+    .products-page .product-grid .card h3 { font-size:clamp(1.3rem,1.8vw,1.8rem); min-height:2.4em; margin:0 0 1rem; }
+    .products-page .product-grid .card > img { width:100%; height:clamp(190px,19vw,290px); max-height:none; object-fit:contain; background:#f7f2e9; padding:1.25rem; margin:0 0 1rem; }
+    .products-page .product-grid .card p { font-size:1rem; line-height:1.65; }
+    .products-page .product-grid .card .price { font-size:1.25rem; font-weight:800; }
+    .products-page .product-grid .card .cta { min-height:46px; padding:.75rem 1rem; line-height:1.35; }
+    .products-page .equip { width:100%; max-width:850px; gap:1.5rem; }
+    .products-page .equip .page-media { padding:1.2rem; border:1px solid #e7d9c4; border-radius:1rem; }
+    .products-page .equip img { display:block; width:100%; height:350px; object-fit:contain; }
+    .products-page .prose .page-media { max-width:900px; }
+    .products-page .prose .page-media img { max-height:560px; object-fit:contain; }
+    /* Purchase actions read in order: Amazon first where available, webstore beneath. */
+    .products-page .product-grid .card > p:last-child { display:flex; flex-direction:column; gap:.45rem; justify-content:flex-end; }
+    .products-page .product-grid .card > p:last-child .cta { margin:0; width:100%; }
+    .products-page .product-grid .card > p:last-child .cta:has(img) { order:-1; }
+    .products-page .retail-story { background:#fbf8f2; }
+    .products-page .retail-story-heading { max-width:65rem; margin-bottom:2.5rem; }
+    .products-page .retail-story-heading > p:last-child { color:#785b3c; font-family:var(--serif); font-size:clamp(1.2rem,1.6vw,1.5rem); }
+    .products-page .retail-story-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem; align-items:stretch; }
+    .products-page .retail-story-panel { padding:clamp(1.75rem,3vw,3.5rem); border:1px solid #e3d2b9; border-radius:1.25rem; background:#fff; box-shadow:0 14px 32px #3823110c; }
+    .products-page .retail-story-panel h3 { max-width:26ch; margin-top:0; font-size:clamp(1.7rem,2.4vw,2.65rem); }
+    .products-page .retail-story-points { display:grid; gap:.65rem; margin-top:2rem; }
+    .products-page .retail-story-points p { margin:0; padding:.85rem 1rem; border-left:3px solid var(--retail-caramel); background:#f9f1e6; border-radius:.2rem .6rem .6rem .2rem; }
+    .products-page .retail-story-comparison { background:#f4e9d9; }
+    .products-page .retail-bib { background:#25150d; }
+    .products-page .retail-bib-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); align-items:center; gap:clamp(2rem,5vw,6rem); }
+    .products-page .retail-bib h2 { color:#fff; font-size:clamp(2.6rem,4vw,4.5rem); }
+    .products-page .retail-bib h3 { color:#f2c784; font-size:clamp(1.4rem,2vw,2rem); }
+    .products-page .retail-bib p { color:#f2e7d9; }
+    .products-page .retail-bib a:not(.btn) { color:#f2c784; }
+    .products-page .retail-bib-photo { margin:0; border-radius:1.2rem; overflow:hidden; box-shadow:0 24px 55px #0005; }
+    .products-page .retail-bib-photo img { display:block; width:100%; min-height:370px; max-height:590px; object-fit:cover; }
+    .products-page .retail-audiences { background:#fffdf9; }
+    .products-page .retail-audiences > .wrap > h2 { max-width:22ch; margin-bottom:2.5rem; }
+    .products-page .retail-audience-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem; }
+    .products-page .retail-audience-card { min-width:0; overflow:hidden; padding:clamp(1.5rem,2.5vw,3rem); border:1px solid #e3d2b9; border-radius:1.2rem; background:#f7eee2; }
+    .products-page .retail-audience-card h3 { font-size:clamp(1.8rem,2.6vw,2.75rem); margin:0 0 1rem; }
+    .products-page .retail-office { grid-column:1/-1; padding:0; display:grid; grid-template-columns:1fr 1fr; background:#281a11; color:#fff7ed; }
+    .products-page .retail-office .retail-audience-copy { padding:clamp(2rem,4vw,4rem); }
+    .products-page .retail-office h3 { color:#fff; }
+    .products-page .retail-office p { color:#f0e5d9; }
+    .products-page .retail-office-photo { min-width:0; height:100%; margin:0; }
+    .products-page .retail-office-photo img { width:100%; height:100%; min-height:460px; object-fit:cover; display:block; }
+    .products-page .retail-supply .page-media { margin:2rem 0 0; }
+    .products-page .retail-supply .page-media img { max-height:340px; object-fit:contain; }
+    .products-page .retail-home { background:linear-gradient(140deg,#f3e5ce,#fff9f0); display:flex; flex-direction:column; align-items:flex-start; }
+    .products-page .retail-home .btn { margin-top:auto; }
+    @media(max-width:900px) {
+      .products-page .retail-story-grid,.products-page .retail-bib-grid,.products-page .retail-audience-grid,.products-page .retail-office { grid-template-columns:1fr; }
+      .products-page .retail-office-photo img { min-height:300px; max-height:480px; }
+
+      .products-page .page-hero .chips { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .products-page .grid.product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .products-page .media-trio { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .products-page .media-trio > :first-child { grid-column:1/-1; }
+    }
+    @media(max-width:600px) {
+      .products-page .wrap { width:calc(100% - 2.5rem); padding-block:3.5rem; }
+      .products-page .page-hero.retail h1 { font-size:clamp(2.5rem,10vw,4rem); }
+      .products-page .page-hero .chips { grid-template-columns:1fr; }
+      .products-page .grid.product-grid { grid-template-columns:1fr; }
+      .products-page .product-grid .card h3 { min-height:0; }
+      .products-page .product-grid .card > img { height:260px; }
+      .products-page .media-trio { grid-template-columns:1fr; }
+      .products-page .media-trio > :first-child { grid-column:auto; }
+      .products-page .media-trio img,.products-page .media-trio > :not(:first-child) img { height:260px; }
+      .products-page .equip { grid-template-columns:1fr; }
+    }
+  </style>
 </Base>
