@@ -15,7 +15,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
      page copy/parity is verified (product images Block 39 and page-level images Block 40 are placed; the 212-char meta description is now emitted, Block 36) (docs/migration/08-block4-source-capture-results.md). -->
 <Base title="Cold Brew Nitro Coffee Kegs - Bona Fide Nitro Coffee and Tea" description="Nitro cold brew coffee kegs on tap are becoming a necessity for coffee shops. We have them in stock. Ready to be delivered to your office, restaurant, coffee shop, or cafe. Buy our nitro coffee kegs online today." canonicalPath="/products/" breadcrumbs={[{ name: 'Products', path: '/products/' }]} fullBleed scaffold>
   <div class="products-page">
-  <div class="banner-full"><PageImage id="banner" eager /></div>
+  <div class="banner-full"><figure class="products-banner-photo"><img src="/images/product-renders/bona-fide-kegs-sankey-corrected.webp" alt="Bona Fide nitro coffee kegs with authentic Sankey D fittings" fetchpriority="high" decoding="async" /></figure></div>
   <section class="band dark page-hero retail"><div class="wrap">
   <p class="eyebrow">Retail · Craft Draft nitro coffee &amp; tea</p>
   <h1>Best Nitro Cold Brew Coffee Kegs On The Market</h1>
@@ -44,8 +44,8 @@ const specialty = items.filter((p) => p.line === 'specialty');
 
   </div></section>
 <section class="band tint"><div class="wrap media-trio">
-  <PageImage id="threeKegs" />
-  <PageImage id="serving" />
+  <figure class="page-media"><img src="/images/product-renders/bona-fide-nitro-coffee-keg-lineup-top-view.webp" alt="Bona Fide nitro coffee keg lineup with corrected Sankey D fittings" loading="lazy" decoding="async" /></figure>
+  <figure class="page-media"><img src="/images/product-renders/bona-fide-nitro-coffee-pint-with-coffee-beans.webp" alt="Bona Fide nitro coffee pint surrounded by roasted coffee beans" loading="lazy" decoding="async" /></figure>
   <figure class="page-media"><img src="/images/product-renders/bona-fide-cold-brew-coffee-setup.webp" alt="Bona Fide Classic Blend 3L Bag-in-Box with coffee on a kitchen counter" loading="lazy" decoding="async" /></figure>
 
   </div></section>
@@ -132,7 +132,7 @@ const specialty = items.filter((p) => p.line === 'specialty');
     <article class="retail-audience-card retail-supply">
       <h3>Coffee Shop Supply</h3>
       <p>Do you have a coffee bar that can use a lift? Bona Fide caters to independent food and beverage retailers. We offer wholesale prices on coffee &amp; tea kegs at reasonable delivered prices so you can have a healthy margin and start making money as soon as you are up and pouring! Contact us so we can help you select the best solution.</p>
-      <PageImage id="kegBikSet" />
+      <figure class="retail-supply-photo"><img src="/images/product-renders/bona-fide-single-double-tap-office.webp" alt="Bona Fide single and double tap coffee dispensing equipment in an office setting" loading="lazy" decoding="async" /></figure>
     </article>
     <article class="retail-audience-card retail-home">
       <h3>Nitro Coffee For Home</h3>
@@ -159,8 +159,8 @@ const specialty = items.filter((p) => p.line === 'specialty');
     .products-page .band.tint { background:var(--retail-cream); }
     .products-page .band.dark { background:var(--retail-espresso); }
     .products-page .banner-full { width:100%; background:var(--retail-espresso); }
-    .products-page .banner-full .page-media { margin:0; }
-    .products-page .banner-full img { display:block; width:100%; height:clamp(280px,34vw,510px); max-height:none; object-fit:cover; object-position:center 46%; }
+    .products-page .banner-full .page-media,.products-page .products-banner-photo { margin:0; }
+    .products-page .banner-full img { display:block; width:100%; height:clamp(320px,37vw,580px); max-height:none; object-fit:cover; object-position:center 49%; }
     .products-page .page-hero.retail { background:linear-gradient(135deg,#291a10 0%,#1b100b 70%); }
     .products-page .page-hero.retail .wrap { padding-block:clamp(4rem,7vw,7rem); }
     .products-page .page-hero.retail h1 { font-size:clamp(3.1rem,5.1vw,6rem); max-width:20ch; margin:0 0 1.5rem; }
@@ -217,8 +217,8 @@ const specialty = items.filter((p) => p.line === 'specialty');
     .products-page .retail-office p { color:#f0e5d9; }
     .products-page .retail-office-photo { min-width:0; height:100%; margin:0; }
     .products-page .retail-office-photo img { width:100%; height:100%; min-height:460px; object-fit:cover; display:block; }
-    .products-page .retail-supply .page-media { margin:2rem 0 0; }
-    .products-page .retail-supply .page-media img { max-height:340px; object-fit:contain; }
+    .products-page .retail-supply .page-media,.products-page .retail-supply-photo { margin:2rem 0 0; }
+    .products-page .retail-supply .page-media img,.products-page .retail-supply-photo img { display:block; width:100%; max-height:340px; object-fit:cover; border-radius:.85rem; }
     .products-page .retail-home { background:linear-gradient(140deg,#f3e5ce,#fff9f0); display:flex; flex-direction:column; align-items:flex-start; }
     .products-page .retail-home .btn { margin-top:auto; }
     @media(max-width:900px) {
