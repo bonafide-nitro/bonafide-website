@@ -59,7 +59,7 @@ const innerName = (rawInner) => {
   return /<svg\b[^>]*>[\s\S]*?<title\b[^>]*>\s*\S[\s\S]*?<\/title>/i.test(inner);
 };
 
-export const auditHtml = (rawHtml) => {
+export const auditHtml = (rawHtml, { expectedH1 = 1 } = {}) => {
   const findings = [];
   const add = (code, message) => findings.push({ code, message });
   const html = stripNoise(rawHtml);
@@ -75,8 +75,8 @@ export const auditHtml = (rawHtml) => {
   if (mains !== 1) add('main-landmark', `expected exactly one main landmark, found ${mains}`);
 
   const h1s = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)];
-  if (h1s.length !== 1) add('h1-count', `expected exactly one <h1>, found ${h1s.length}`);
-  else if (!innerName(h1s[0][1])) add('h1-empty', '<h1> has no accessible text');
+  if (h1s.length !== expectedH1) add('h1-count', expectedH1 === 1 ? `expected exactly one <h1>, found ${h1s.length}` : `expected exactly ${expectedH1} <h1> (pinned legacy WXR preservation, qa/legacy-h1.mjs), found ${h1s.length}`);
+  else if (h1s.some((m) => !innerName(m[1]))) add('h1-empty', '<h1> has no accessible text');
 
   // ids
   const idCount = new Map();

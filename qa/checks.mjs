@@ -13,6 +13,7 @@ import { scanDist } from './lib/scan.mjs';
 import { jsonLdTypes } from './lib/html.mjs';
 import { findReviewRatingTerms } from './lib/jsonld.mjs';
 import { patternToRegExp, hasPlaceholder } from './lib/patterns.mjs';
+import { expectedH1Count } from './legacy-h1.mjs';
 import { parseXml } from './lib/xml.mjs';
 
 const decodeJpeg = jpeg.decode;
@@ -285,7 +286,9 @@ export const runQa = ({ distDir, baseline, redirects, redirectSchemaError, site,
     if (!page.title) F.add('T4', 'title-missing', INV, page.path, 'missing or empty <title>');
     else titleGroups.set(page.title, [...(titleGroups.get(page.title) ?? []), page.path]);
     if (page.h1Count === 0) F.add('T4', 'h1-missing', INV, page.path, 'no <h1>');
-    if (page.h1Count > 1) F.add('T4', 'h1-multiple', INV, page.path, `${page.h1Count} <h1> elements; exactly one required`);
+    const wantH1 = expectedH1Count(page.path);
+    if (wantH1 === 1 && page.h1Count > 1) F.add('T4', 'h1-multiple', INV, page.path, `${page.h1Count} <h1> elements; exactly one required`);
+    if (wantH1 > 1 && page.h1Count !== wantH1) F.add('T4', 'h1-multiple', INV, page.path, `${page.h1Count} <h1> elements; exactly ${wantH1} required (pinned legacy WXR preservation, qa/legacy-h1.mjs)`);
     for (const s of e?.titleMustContain ?? []) if (!(page.title ?? '').toLowerCase().includes(s.toLowerCase())) F.add('T4', 'title-contract', ck, page.path, `title must contain "${s}"`);
     for (const s of e?.h1MustContain ?? []) if (!(page.h1s[0] ?? '').toLowerCase().includes(s.toLowerCase())) F.add('T4', 'h1-contract', ck, page.path, `H1 must contain "${s}"`);
 

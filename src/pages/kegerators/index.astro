@@ -19,7 +19,7 @@ import Base from '../../layouts/Base.astro';
     <div class="keg-wrap keg-intro-grid">
       <div>
         <p class="keg-kicker">Nitro on demand</p>
-        <h2>Bring the nitro experience to your counter.</h2>
+        <h2>The Best Nitro Coffee Dispensers on the Market!</h2>
       </div>
       <p>A nitro coffee dispenser, machine or kegerator lets you serve nitro cold brew on demand from a keg. Bona Fide equipment covers four groups: a countertop cold nitro dispenser, a double-faucet cold dispenser, a hot nitro dispenser and the traditional keg cooler.</p>
     </div>
@@ -30,7 +30,7 @@ import Base from '../../layouts/Base.astro';
       <figure class="keg-product-stage"><img src="/wp-content/uploads/2018/06/Bona-Fide-Cold-Dispenser-countertop-small-min-1.png" alt="Bona Fide countertop cold nitro coffee dispenser" width="591" height="768" loading="lazy" decoding="async" /></figure>
       <div class="keg-copy">
         <p class="keg-kicker">01 / Cold nitro</p>
-        <h2>Countertop cold nitro dispenser</h2>
+        <h3 class="keg-h">COUNTERTOP COLD NITRO COFFEE DISPENSER</h3>
         <p>A countertop nitro coffee dispenser with Lindr flash chilling serves cold nitro on demand from a Bag-in-Box (BIK compatible) or keg. It runs on a standard 110v setup and has a small countertop footprint, so it fits a counter without a walk-in cooler.</p>
         {commerceIsKnownDead('equipment-starter-kit')
           ? <p class="keg-unavailable" data-known-dead-cta="equipment-starter-kit"><strong>Countertop flash chiller starter kit</strong> The online listing for this kit is currently unavailable. Please <a href="/contact-bona-fide-nitro-coffee-and-tea/">contact us</a> to order.</p>
@@ -44,7 +44,7 @@ import Base from '../../layouts/Base.astro';
       <figure class="keg-product-stage keg-stage-dark"><img src="/wp-content/uploads/2019/08/Bona-Fide-Cold-doble-tap-nitro-machine-compressed.png" alt="Bona Fide double-faucet cold nitro dispensing machine" width="907" height="1209" loading="lazy" decoding="async" /></figure>
       <div class="keg-copy">
         <p class="keg-kicker">02 / Two faucets</p>
-        <h2>Double-faucet cold dispenser</h2>
+        <h3 class="keg-h">COLD NITRO COFFEE DISPENSER DOUBLE FAUCET</h3>
         <p>A double-faucet countertop flash chiller serves two cold nitro cold brew drinks from one machine, with on-demand cold serving and a compressor.</p>
         <p class="keg-actions"><a class="btn btn-primary" href={commerceHref('equipment-double-faucet')}>Double-faucet countertop flash chiller</a></p>
       </div>
@@ -62,7 +62,7 @@ import Base from '../../layouts/Base.astro';
       <figure class="keg-product-stage"><img src="/wp-content/uploads/2019/05/NEW-Hot-Tap-Bona-Fide-Nitro-Coffee-and-tea-for-website-compressed.png" alt="Bona Fide hot nitro dispenser with two faucets" width="671" height="796" loading="lazy" decoding="async" /></figure>
       <div class="keg-copy">
         <p class="keg-kicker">03 / Hot nitro</p>
-        <h2>Hot nitro dispenser</h2>
+        <h3 class="keg-h">WORLDʼS FIRST BEST HOT NITRO COFFEE DISPENSER</h3>
         <p>The hot nitro dispenser serves hot nitro coffee on demand from the keg system, with two faucets.</p>
         <p class="keg-actions"><a class="btn btn-primary" href={commerceHref('equipment-hot-nitro')}>Hot nitro dispenser with 2 faucets</a></p>
       </div>
@@ -74,7 +74,7 @@ import Base from '../../layouts/Base.astro';
       <figure class="keg-product-stage"><img src="/wp-content/uploads/2018/06/Kegerator-counter-top-Bona-Fide.jpg" alt="Bona Fide countertop keg dispensing equipment" width="1920" height="1188" loading="lazy" decoding="async" /></figure>
       <div class="keg-copy">
         <p class="keg-kicker">04 / Keg cooling</p>
-        <h2>Traditional keg cooler (kegerator)</h2>
+        <h3 class="keg-h">TRADITIONAL KEG COOLER</h3>
         <p>A traditional kegerator is a refrigerated keg cooler with a tap. It uses a nitrogen (N2) tank and regulator where applicable to serve nitro cold brew from a keg.</p>
       </div>
     </div>
@@ -97,8 +97,10 @@ import Base from '../../layouts/Base.astro';
 .keg-page { --espresso:#20130c; --roast:#302018; --cream:#f4ecdc; --caramel:#d5a057; --ink:#251a13; overflow-x:clip; }
 .keg-wrap { width:min(100% - clamp(2.5rem,8vw,9rem), 1380px); margin-inline:auto; }
 .keg-page p { font-size:clamp(1rem,1.15vw,1.15rem); line-height:1.75; }
-.keg-page h1,.keg-page h2 { font-family:'Anton',Impact,sans-serif; font-weight:400; letter-spacing:.027em; line-height:1.15; text-wrap:balance; }
+.keg-page h1,.keg-page h2,.keg-page h3.keg-h { font-family:'Anton',Impact,sans-serif; font-weight:400; letter-spacing:.027em; line-height:1.15; text-wrap:balance; }
 .keg-page h2 { font-size:clamp(2.25rem,4.2vw,4.8rem); margin:0 0 1.5rem; }
+/* Original WordPress product headings are H3 (restored); they keep the card-heading look. */
+.keg-page h3.keg-h { font-size:clamp(1.9rem,3.2vw,3.4rem); margin:0 0 1.5rem; }
 .keg-page .keg-kicker { margin:0 0 1rem; color:var(--caramel); font-size:.85rem; letter-spacing:.16em; font-weight:700; text-transform:uppercase; }
 .keg-hero { min-height:min(84vh,850px); position:relative; isolation:isolate; display:flex; align-items:center; background:var(--espresso); color:#fff; overflow:hidden; }
 .keg-hero-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 53%; z-index:-2; }
@@ -141,7 +143,7 @@ import Base from '../../layouts/Base.astro';
 }
 @media(max-width:480px) {
 .keg-product-stage {height:350px;padding:1.25rem;}
-.keg-page h2 {font-size:clamp(2rem,9vw,3.2rem);}
+.keg-page h2 {font-size:clamp(2rem,9vw,3.2rem);} .keg-page h3.keg-h {font-size:clamp(1.7rem,7.5vw,2.6rem);}
 .keg-hero h1 {font-size:clamp(2.6rem,10vw,4rem);}
 .keg-hero-content {padding-block:4.5rem;}
 .keg-hero {min-height:550px;}

@@ -1,8 +1,10 @@
 // Build-level accessibility/functional-HTML gate over every generated .html file in dist/ (see qa/lib/a11y.mjs).
 // Exit 1 on any finding. There is no allowlist: a defect is fixed in the source, not suppressed here.
+// The only per-route input is the pinned legacy H1 count (qa/legacy-h1.mjs, Issue #224): an exact expectation, not a waiver.
 import fs from 'node:fs';
 import path from 'node:path';
 import { auditHtml } from '../qa/lib/a11y.mjs';
+import { expectedH1Count } from '../qa/legacy-h1.mjs';
 
 export const checkDist = (dir) => {
   const results = [];
@@ -12,7 +14,8 @@ export const checkDist = (dir) => {
       if (e.isDirectory()) walk(p);
       else if (e.name.endsWith('.html')) {
         const rel = '/' + path.relative(dir, p).split(path.sep).join('/');
-        for (const f of auditHtml(fs.readFileSync(p, 'utf8'))) results.push({ file: rel, ...f });
+        const route = rel.endsWith('/index.html') ? rel.slice(0, -'index.html'.length) : rel;
+        for (const f of auditHtml(fs.readFileSync(p, 'utf8'), { expectedH1: expectedH1Count(route) })) results.push({ file: rel, ...f });
       }
     }
   };

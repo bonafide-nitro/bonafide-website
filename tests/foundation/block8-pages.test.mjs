@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { POSTS } from '../../src/lib/article-schema.mjs';
+import { LEGACY_H1_COUNT } from '../../qa/legacy-h1.mjs';
 import { vocabOrAbsentInExport, newClaimWords } from './block63-helper.mjs';
 const POST_PATHS = new Set(POSTS.map((x) => x.path));
 
@@ -34,10 +35,12 @@ const DATES = {
 };
 
 for (const [p, [ti, h1]] of Object.entries(CONTRACT)) {
-  t(`${p}: exact title/H1, one H1, self-canonical, indexable, no scripts/forms/embeds/img`, () => {
+  t(`${p}: exact title/H1, one H1 (pinned legacy count where listed), self-canonical, indexable, no scripts/forms/embeds/img`, () => {
     const h = page(p);
     assert.equal(title(h), ti);
-    assert.deepEqual(h1s(h), [h1]);
+    // Issue #224: pinned legacy routes keep their WXR H1s; the page H1 stays first and the count is exact.
+    if (LEGACY_H1_COUNT[p]) { assert.equal(h1s(h)[0], h1); assert.equal((h.match(/<h1[\s>]/g) ?? []).length, LEGACY_H1_COUNT[p]); }
+    else assert.deepEqual(h1s(h), [h1]);
     assert.equal(canonical(h), `https://bonafidenitro.com${p}`);
     assert.ok(!/<script(?![^>]*application\/ld\+json)/.test(h), 'only JSON-LD script allowed');
     assert.ok(!/quickdelivr|coredelivr|mpackage|thrive|sydney/i.test(h));
