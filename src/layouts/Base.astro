@@ -276,6 +276,8 @@ const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': cano
       .page-hero .sep::before { content: ""; display: block; width: 3rem; height: 3px; background: var(--gold); }
       .prose > * { max-width: 48rem; }
       .prose h2, .prose h3 { margin-top: 1.5rem; }
+      /* Legacy WordPress H1 section headings preserved inside body copy (Issue #224): sized like section headings; semantics unchanged. */
+      .prose h1 { font-size: 1.5em; margin-top: 1.5rem; }
       .band.dark h2, .band.dark h3 { color: #fff; }
       .band.dark h3, .band.dark h4 { color: var(--gold); }
       .band.dark p, .band.dark li { max-width: 48rem; }
