@@ -58,6 +58,20 @@ test("paid generate job is gated by mode, exact phrase, and verified preflight",
   assert.match(wf, /default: preflight/);
 });
 
+test("phrase gate is case-sensitive: shell output gates generate, and generate re-checks before submit", () => {
+  const pre = job("preflight");
+  assert.match(pre, /paid_unlocked: \$\{\{ steps\.unlock\.outputs\.paid_unlocked \}\}/);
+  assert.match(pre, /id: unlock/);
+  assert.ok(pre.includes(`[ "$PAID_CONFIRMATION" != "${PHRASE}" ]`));
+  assert.match(pre, /echo "paid_unlocked=true" >> "\$GITHUB_OUTPUT"/);
+  const gen = job("generate");
+  assert.match(gen, /needs\.preflight\.outputs\.paid_unlocked == 'true'/);
+  assert.match(gen, /PAID_CONFIRMATION: \$\{\{ inputs\.paid_confirmation \}\}/);
+  const check = gen.indexOf(`[ "$PAID_CONFIRMATION" != "${PHRASE}" ]`);
+  assert.ok(check > 0, "generate re-checks the phrase in shell");
+  assert.ok(check < gen.indexOf("https://queue.fal.run/${MODEL_ENDPOINT}"), "re-check happens before submit");
+});
+
 test("untrusted inputs reach shell only via env, never inline expressions in run", () => {
   const runs = [...wf.matchAll(/run: \|\n((?:(?:          .*)?\n)+)/g)].map((m) => m[1]);
   assert.ok(runs.length >= 3);

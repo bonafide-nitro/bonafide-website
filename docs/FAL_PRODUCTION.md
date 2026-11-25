@@ -14,7 +14,7 @@ A manual-only GitHub Actions entry point for running fal.ai jobs under the **Bon
 | Secret handling | `FAL_KEY` is read from the `fal-production` environment and written only to a private (mode 600) header file. It is never echoed, put on a command line, or traced (`set +x`). |
 | Identity | Every run calls fal's read-only Platform API `GET https://api.fal.ai/v1/account/billing`. The `username` it returns must equal `FAL_EXPECTED_ACCOUNT`. |
 | MOLOSOC isolation | A run fails closed if either the expected account or the key's actual account contains `molosoc`. |
-| Paid gate | The `generate` job runs only if (1) `mode = generate`, (2) `paid_confirmation` is exactly `I APPROVE A PAID FAL.AI GENERATION FOR BONA FIDE`, (3) this run's preflight verified the account, and (4) the `fal-production` environment approval is granted for that job. |
+| Paid gate | The `generate` job runs only if (1) `mode = generate`, (2) `paid_confirmation` is exactly `I APPROVE A PAID FAL.AI GENERATION FOR BONA FIDE` (case-sensitive: checked in shell in both jobs, because the Actions `==` operator in `if:` ignores case), (3) this run's preflight verified the account, and (4) the `fal-production` environment approval is granted for that job. |
 
 ## Modes
 
