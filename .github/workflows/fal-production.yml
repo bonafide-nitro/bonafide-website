@@ -1,0 +1,230 @@
+name: fal.ai production (manual, Bona Fide team only)
+
+# Manual-only fal.ai entry point for the Bona Fide fal team.
+# - Default mode `preflight` is free: it checks that FAL_KEY is present (never echoed)
+#   and verifies the key's account through fal's read-only Platform API
+#   (GET https://api.fal.ai/v1/account/billing). No model call, no upload, no spend.
+# - Mode `generate` is PAID. It runs only from main, only after this run's preflight
+#   verified the Bona Fide account, only with the exact typed confirmation phrase, and
+#   only after the protected `fal-production` environment's approval for that job.
+# - Never uses MOLOSOC's key, billing, files or workflows. No checkout, no repository
+#   write, no site deploy. See docs/FAL_PRODUCTION.md.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "preflight = free identity check only. generate = PAID fal.ai job (needs the confirmation phrase)."
+        type: choice
+        options:
+          - preflight
+          - generate
+        default: preflight
+      model_endpoint:
+        description: "generate only: fal model endpoint id, e.g. fal-ai/flux/dev"
+        type: string
+        default: ""
+      input_json:
+        description: "generate only: JSON object sent as the model input"
+        type: string
+        default: "{}"
+      paid_confirmation:
+        description: "generate only: type exactly  I APPROVE A PAID FAL.AI GENERATION FOR BONA FIDE"
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: fal-production
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    # Fail closed: only the default branch may reach the fal-production secret.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Protected Environment holding FAL_KEY (secret) and FAL_EXPECTED_ACCOUNT (variable).
+    environment: fal-production
+    outputs:
+      verified: ${{ steps.identity.outputs.verified }}
+      # Set only by the case-sensitive shell check below. Actions `==` ignores case,
+      # so the generate job must not rely on its `if:` phrase comparison alone.
+      paid_unlocked: ${{ steps.unlock.outputs.paid_unlocked }}
+    env:
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      FAL_EXPECTED_ACCOUNT: ${{ vars.FAL_EXPECTED_ACCOUNT }}
+    steps:
+      - name: Verify FAL_KEY presence and Bona Fide account identity (free, read-only)
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+
+          fail() {
+            echo "::error::[stage=$1] $2"
+            exit 1
+          }
+
+          if [ -z "${FAL_KEY:-}" ]; then
+            fail missing-secret "FAL_KEY is not configured on the fal-production environment. Failing closed."
+          fi
+          echo "FAL_KEY is present (value not shown)."
+          if [ -z "${FAL_EXPECTED_ACCOUNT:-}" ]; then
+            fail missing-variable "FAL_EXPECTED_ACCOUNT is not set on the fal-production environment. Identity verification incomplete. Failing closed."
+          fi
+          expected_lc="$(printf '%s' "$FAL_EXPECTED_ACCOUNT" | tr '[:upper:]' '[:lower:]')"
+          case "$expected_lc" in
+            *molosoc*) fail isolation "FAL_EXPECTED_ACCOUNT names a MOLOSOC account. This workflow is Bona Fide only. Failing closed." ;;
+          esac
+
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          # The key goes into a private header file, never onto a command line or into the log.
+          printf 'Authorization: Key %s\n' "$FAL_KEY" > "$work/auth"
+
+          code="$(curl -sS -o "$work/body" -w '%{http_code}' --max-time 20 \
+            -H @"$work/auth" -H 'Accept: application/json' \
+            'https://api.fal.ai/v1/account/billing' 2> "$work/err")" || \
+            fail identity-request "Could not reach the fal.ai Platform API. Identity verification incomplete. Failing closed."
+          case "$code" in
+            200) ;;
+            401|403) fail identity-auth "fal.ai rejected the identity read (HTTP ${code}): the key is invalid or lacks billing-read scope. Identity verification incomplete. Failing closed." ;;
+            *) fail identity-request "fal.ai identity read returned HTTP ${code}. Identity verification incomplete. Failing closed." ;;
+          esac
+
+          actual="$(jq -r 'if type == "object" and (.username | type) == "string" then .username else "" end' "$work/body" 2>/dev/null || true)"
+          if [ -z "$actual" ]; then
+            fail identity-parse "fal.ai response did not include an account username. Identity verification incomplete. Failing closed."
+          fi
+          actual_lc="$(printf '%s' "$actual" | tr '[:upper:]' '[:lower:]')"
+          case "$actual_lc" in
+            *molosoc*) fail isolation "FAL_KEY belongs to a MOLOSOC account. Refusing to use it for Bona Fide. Failing closed." ;;
+          esac
+          if [ "$actual_lc" != "$expected_lc" ]; then
+            fail identity-mismatch "FAL_KEY's fal account does not match FAL_EXPECTED_ACCOUNT. Failing closed."
+          fi
+
+          echo "verified=true" >> "$GITHUB_OUTPUT"
+          echo "fal.ai account verified as the expected Bona Fide team. No generation was run and nothing was spent."
+
+      - name: Report whether the paid job is unlocked
+        id: unlock
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+          PAID_CONFIRMATION: ${{ inputs.paid_confirmation }}
+        run: |
+          set -euo pipefail
+          if [ "$MODE" != "generate" ]; then
+            echo "Mode is preflight: the paid generate job will be skipped."
+          elif [ "$PAID_CONFIRMATION" != "I APPROVE A PAID FAL.AI GENERATION FOR BONA FIDE" ]; then
+            echo "::warning::Mode is generate but the confirmation phrase does not match exactly. The paid job will be skipped; nothing will be spent."
+          else
+            echo "paid_unlocked=true" >> "$GITHUB_OUTPUT"
+            echo "Confirmation phrase matches. The paid generate job still needs the fal-production environment approval."
+          fi
+
+  generate:
+    needs: preflight
+    # PAID path: main only, verified identity in this same run, exact typed confirmation.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      inputs.mode == 'generate' &&
+      inputs.paid_confirmation == 'I APPROVE A PAID FAL.AI GENERATION FOR BONA FIDE' &&
+      needs.preflight.outputs.verified == 'true' &&
+      needs.preflight.outputs.paid_unlocked == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Second protected-environment approval, specific to the paid job.
+    environment: fal-production
+    env:
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      MODEL_ENDPOINT: ${{ inputs.model_endpoint }}
+      INPUT_JSON: ${{ inputs.input_json }}
+      PAID_CONFIRMATION: ${{ inputs.paid_confirmation }}
+    steps:
+      - name: Submit one fal.ai queue job and save the result
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+
+          fail() {
+            echo "::error::[stage=$1] $2"
+            exit 1
+          }
+
+          # Case-sensitive re-check before any spend (Actions `==` in `if:` ignores case).
+          if [ "$PAID_CONFIRMATION" != "I APPROVE A PAID FAL.AI GENERATION FOR BONA FIDE" ]; then
+            fail confirmation "The confirmation phrase does not match exactly (case-sensitive). Nothing was submitted."
+          fi
+          if [ -z "${FAL_KEY:-}" ]; then
+            fail missing-secret "FAL_KEY is not configured. Failing closed."
+          fi
+          if ! printf '%s' "$MODEL_ENDPOINT" | grep -Eq '^[A-Za-z0-9_-]+/[A-Za-z0-9._/-]+$' \
+             || printf '%s' "$MODEL_ENDPOINT" | grep -q '\.\.'; then
+            fail input "model_endpoint must look like owner/model (e.g. fal-ai/flux/dev). Nothing was submitted."
+          fi
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          if ! printf '%s' "$INPUT_JSON" | jq -e 'type == "object"' > /dev/null 2>&1; then
+            fail input "input_json must be a JSON object. Nothing was submitted."
+          fi
+          printf '%s' "$INPUT_JSON" | jq -c '.' > "$work/input.json"
+          printf 'Authorization: Key %s\n' "$FAL_KEY" > "$work/auth"
+
+          code="$(curl -sS -o "$work/submit" -w '%{http_code}' --max-time 30 \
+            -H @"$work/auth" -H 'Content-Type: application/json' \
+            --data-binary @"$work/input.json" \
+            "https://queue.fal.run/${MODEL_ENDPOINT}" 2>/dev/null)" || fail submit "Could not reach queue.fal.run."
+          case "$code" in
+            2??) ;;
+            *) fail submit "fal.ai queue submit returned HTTP ${code}." ;;
+          esac
+          request_id="$(jq -r '.request_id // empty' "$work/submit")"
+          status_url="$(jq -r '.status_url // empty' "$work/submit")"
+          response_url="$(jq -r '.response_url // empty' "$work/submit")"
+          for u in "$status_url" "$response_url"; do
+            case "$u" in
+              https://queue.fal.run/*) ;;
+              *) fail submit "Unexpected queue URL in fal.ai response; refusing to send the key elsewhere." ;;
+            esac
+          done
+          echo "Submitted fal.ai request ${request_id}."
+
+          deadline=$((SECONDS + 1500))
+          while :; do
+            code="$(curl -sS -o "$work/status" -w '%{http_code}' --max-time 20 \
+              -H @"$work/auth" "$status_url" 2>/dev/null)" || code=000
+            status="$(jq -r '.status // empty' "$work/status" 2>/dev/null || true)"
+            if [ "$status" = "COMPLETED" ]; then
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              fail timeout "Request ${request_id} did not complete in time (last status: ${status:-unknown}, HTTP ${code}). Fetch it later from the fal dashboard."
+            fi
+            sleep 5
+          done
+
+          mkdir -p fal-result
+          code="$(curl -sS -o fal-result/result.json -w '%{http_code}' --max-time 60 \
+            -H @"$work/auth" "$response_url" 2>/dev/null)" || fail result "Could not fetch the result."
+          case "$code" in
+            2??) ;;
+            *) fail result "fal.ai result fetch returned HTTP ${code}." ;;
+          esac
+          jq -n --arg id "$request_id" --arg ep "$MODEL_ENDPOINT" \
+            '{request_id: $id, model_endpoint: $ep}' > fal-result/request.json
+          echo "Result for request ${request_id} saved as the run artifact."
+
+      - name: Upload result as run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fal-result-${{ github.run_id }}
+          path: fal-result/
+          retention-days: 30
+          if-no-files-found: error
